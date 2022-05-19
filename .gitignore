@@ -133,3 +133,6 @@ dmypy.json
 .isort.cfg
 .flake8
 .markdownlint.yaml
+
+# vscode
+.vscode/
