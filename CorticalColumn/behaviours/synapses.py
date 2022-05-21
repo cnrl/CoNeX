@@ -22,7 +22,7 @@ class ProximalInput(DendriticInput):
 
     def new_iteration(self, synapses):
         synapses.dst.proximal_input_current = self.current_coef * np.sum(
-            self.strength, axis=-1
+            self.strength * self.pre.spikes, axis=-1
         )
 
 
@@ -33,7 +33,7 @@ class DistalInput(DendriticInput):
 
     def new_iteration(self, synapses):
         return (synapses.dst.v - synapses.dst.v_rest) * np.tanh(
-            np.sum(self.strength, axis=-1)
+            np.sum(self.strength * self.pre.spikes, axis=-1)
         )
 
 
