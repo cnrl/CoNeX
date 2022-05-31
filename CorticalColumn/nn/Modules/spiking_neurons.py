@@ -33,7 +33,6 @@ class SpikingNeuronGroup(NeuronGroup):
 
         self.v = self.v_rest * self.get_neuron_vec(mode="ones()")
         self.spikes = self.get_neuron_vec(mode="zeros()")
-        self.trace = self.get_neuron_vec(mode="zeros()")
 
         net.add_behaviours_to_object({1: Fire()}, self)
 

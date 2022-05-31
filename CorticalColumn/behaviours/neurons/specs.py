@@ -15,3 +15,13 @@ class Fire(Behaviour):
     def new_iteration(self, neurons):
         neurons.spikes = neurons.v >= neurons.threshold
         neurons.v[neurons.spikes] = neurons.v_reset
+
+
+class SpikeTrace(Behaviour):
+    def set_variables(self, neurons):
+        self.set_init_attrs_as_variables(neurons)
+        neurons.trace = neurons.get_neuron_vec(mode="zeros()")
+
+    def new_iteration(self, neurons):
+        dx = -neurons.trace / neurons.tau_s + neurons.spikes
+        neurons.trace += dx
