@@ -25,6 +25,12 @@ class DendriticInput(Behaviour):
             -1 if ("GABA" in synapses.src.tags) or ("inh" in synapses.src.tags) else 1
         )
 
+    def new_iteration(self, synapses):
+        if "history" in synapses.src.tags:
+            return synapses.src.spike_history[:, synapses.delays]
+        else:
+            return synapses.src.spikes
+
 
 class ProximalInput(DendriticInput):
     """
@@ -50,8 +56,9 @@ class ProximalInput(DendriticInput):
         Args:
             synapses (SynapseGroup): Synapses on which the dendrites are defined.
         """
+        effective_spikes = super().new_iteration(synapses)
         synapses.dst.proximal_input_current = self.current_coef * np.sum(
-            self.weights * self.pre.spikes, axis=-1
+            self.weights * effective_spikes, axis=-1
         )
 
 
@@ -80,8 +87,9 @@ class DistalInput(DendriticInput):
         Args:
             synapses (SynapseGroup): Synapses on which the dendrites are defined.
         """
+        effective_spikes = super().new_iteration(synapses)
         return (synapses.dst.v - synapses.dst.v_rest) * np.tanh(
-            np.sum(self.weights * self.src.spikes, axis=-1)
+            np.sum(self.weights * effective_spikes, axis=-1)
         )
 
 
