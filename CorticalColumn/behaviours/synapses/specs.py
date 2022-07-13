@@ -1,9 +1,21 @@
 """
-Synaptic-weight-related behaviors.
+Synapse-related behaviors.
 """
 
 import numpy as np
 from PymoNNto import Behaviour
+
+
+class WeightInitializer(Behaviour):
+    def set_variables(self, synapses):
+        init_mode = self.get_init_attr("mode", "random")
+        synapses.weights = synapses.get_synapse_mat(mode=init_mode)
+
+
+class DelayInitializer(Behaviour):
+    def set_variables(self, synapses):
+        init_mode = self.get_init_attr("mode", "random")
+        synapses.delays = synapses.get_synapse_mat(mode=init_mode)
 
 
 class WeightClip(Behaviour):
