@@ -9,6 +9,7 @@ from PymoNNto import SynapseGroup
 from CorticalColumn.behaviours.synapses.specs import DelayInitializer, WeightInitializer
 
 
+# TODO: add a method to return the mask for synapse subgroups
 class TopologicalSynapseGroup(SynapseGroup):
     def __init__(self, src, dst, net, max_delay=1.0, tag=None, behaviour={}):
         assert max_delay >= 1.0, f"Invalid value for max_delay: {max_delay}."
@@ -33,6 +34,14 @@ class TopologicalSynapseGroup(SynapseGroup):
         returns [exponent, fraction] of delay
         """
         raise NotImplementedError
+
+    def get_masks(self, src_inds=None, dst_inds=None):
+        """
+        returns two ndarrays, each of which is a binary mask or 
+        indices matrix for a population
+        """
+        if src_inds is None and dst_inds is None:
+            return self.get_topology()
 
     def broadcast(self):
         raise NotImplementedError

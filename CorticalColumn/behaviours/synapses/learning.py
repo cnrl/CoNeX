@@ -5,6 +5,11 @@ Learning rules.
 import numpy as np
 from PymoNNto import Behaviour
 
+from CorticalColumn.nn.Modules.topological_connections import (
+    ConvSynapseGroup,
+    SparseSynapseGroup,
+)
+
 
 class STDP(Behaviour):
     def set_variables(self, synapses):
@@ -34,9 +39,29 @@ class STDP(Behaviour):
         return dw_plus - dw_minus
 
     def new_iteration(self, synapses):
-        dw = self.compute(synapses)
-        indices = self.get_topology()
-        self.weights[indices] += dw[indices]
+        if isinstance(synapses, SparseSynapseGroup):
+            # TODO: should we restrict updates to synapse subgroups?
+            dw = self.compute(synapses)
+            indices = self.get_topology()
+            self.weights[indices] += dw[indices]
+        elif isinstance(synapses, ConvSynapseGroup):
+            """
+            TODO:
+            1) add new dimension to src and dst (mod to filter size in src & repeat in dst).
+            2) write a for loop using numba and make calls to compute.
+            3) sum the dimensions to compute dw.
+            """
+            dw = synapses.get_synapse_mat(mode='zeros')
+            dim = np.prod(synapses.receptive_field)
+            src_grid = np.indices((synapses.src.x, synapses.src.y, synapses.src.z))
+            dst_grid = np.indices((synapses.dst.x, synapses.dst.y, synapses.dst.z))
+            new_src = (np.arange(dim) == src_grid[...,None]-1).astype(int)
+            new_dst = np.repeat(dst_grid[:, :, :, np.newaxis], dim, axis=-1)
+            for i in range(dim):
+                subsyn = synapses.get_sub_synapse_group(new_src[i], new_dst[i])
+                dw[i] = self.compute(subsyn)
+            self.weights += dw
+            pass
 
 
 class RSTDP(STDP):
