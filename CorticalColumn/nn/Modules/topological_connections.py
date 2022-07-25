@@ -37,7 +37,7 @@ class TopologicalSynapseGroup(SynapseGroup):
 
     def get_masks(self, src_inds=None, dst_inds=None):
         """
-        returns two ndarrays, each of which is a binary mask or 
+        returns two ndarrays, each of which is a binary mask or
         indices matrix for a population
         """
         if src_inds is None and dst_inds is None:
@@ -287,8 +287,9 @@ class ConvSynapseGroup(StructuredSynapseGroup):
         return x_range, y_range, z_range
 
     def get_delay_as_index(self):
-        # TODO
-        pass
+        d_int = np.trunc(self.delay)
+        d_fraction = self.delay - d_int
+        return d_int, d_fraction
 
     def broadcast(self):
         # TODO

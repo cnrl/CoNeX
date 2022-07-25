@@ -2,6 +2,7 @@
 Learning rules.
 """
 
+import numba
 import numpy as np
 from PymoNNto import Behaviour
 
@@ -38,30 +39,42 @@ class STDP(Behaviour):
         dw_minus = self.a_minus * synapses.dst.trace * src_spikes
         return dw_plus - dw_minus
 
+    @numba.jit(nopython=True, parallel=True)
     def new_iteration(self, synapses):
         if isinstance(synapses, SparseSynapseGroup):
-            # TODO: should we restrict updates to synapse subgroups?
+            # TODO: compare efficiency with the case of working with sub-synapses
             dw = self.compute(synapses)
             indices = self.get_topology()
             self.weights[indices] += dw[indices]
+
         elif isinstance(synapses, ConvSynapseGroup):
-            """
-            TODO:
-            1) add new dimension to src and dst (mod to filter size in src & repeat in dst).
-            2) write a for loop using numba and make calls to compute.
-            3) sum the dimensions to compute dw.
-            """
-            dw = synapses.get_synapse_mat(mode='zeros')
-            dim = np.prod(synapses.receptive_field)
+            dw = synapses.get_synapse_mat(mode="zeros")
+
             src_grid = np.indices((synapses.src.x, synapses.src.y, synapses.src.z))
             dst_grid = np.indices((synapses.dst.x, synapses.dst.y, synapses.dst.z))
-            new_src = (np.arange(dim) == src_grid[...,None]-1).astype(int)
+
+            dim = np.prod(synapses.receptive_field)
+            new_src = (np.arange(dim) == src_grid[..., None] - 1).astype(int)
             new_dst = np.repeat(dst_grid[:, :, :, np.newaxis], dim, axis=-1)
-            for i in range(dim):
+
+            for i in numba.prange(dim):
+                x = i // synapses.receptive_field[0]
+                yz = i % synapses.receptive_field[0]
+                y = yz // synapses.receptive_field[1]
+                z = yz % synapses.receptive_field[1]
+                z = z // synapses.receptive_field[2]
+
                 subsyn = synapses.get_sub_synapse_group(new_src[i], new_dst[i])
-                dw[i] = self.compute(subsyn)
+                subsyn.delay = synapses.delay[x, y, z]
+                subsyn.weights = synapses.weights[x, y, z]
+
+                dw[x, y, z] = self.compute(subsyn).sum()
+
+                del subsyn
+
+            del src_grid, dst_grid, new_src, new_dst
+
             self.weights += dw
-            pass
 
 
 class RSTDP(STDP):
