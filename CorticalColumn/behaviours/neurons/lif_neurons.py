@@ -36,6 +36,11 @@ class LIF(Behaviour):
             + neurons.basal_input_current
             + neurons.apical_input_current
         )
+        
+        if neurons.noisy_current is not None:
+            current += neurons.noisy_current
+            neurons.noisy_current = neurons.get_neuron_vec(mode="uniform(0.0, 1.0)")
+
         ri = neurons.r * current
         dv_dt = delta_v + ri
 
