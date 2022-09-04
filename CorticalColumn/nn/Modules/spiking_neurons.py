@@ -20,7 +20,7 @@ class SpikingNeuronGroup(NeuronGroup):
         threshold=10.0,
         has_noise=True,
     ):
-        assert 1 not in behaviour, "Behaviour index 1 is reserved for firing behaviour."
+        assert 2 not in behaviour, "Behaviour index 1 is reserved for firing behaviour."
 
         if tag is None and net is not None:
             tag = "SpikingNeuronGroup_" + str(len(net.NeuronGroups) + 1)
@@ -34,7 +34,7 @@ class SpikingNeuronGroup(NeuronGroup):
         self.v = self.v_rest * self.get_neuron_vec(mode="ones()")
         self.spikes = self.get_neuron_vec(mode="zeros()")
 
-        net.add_behaviours_to_object({1: Fire()}, self)
+        net.add_behaviours_to_object({2: Fire()}, self)
 
         if has_noise:
             self.noisy_current = self.get_neuron_vec(mode="uniform(0.0, 1.0)")
