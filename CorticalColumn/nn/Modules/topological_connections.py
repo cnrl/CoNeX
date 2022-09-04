@@ -1,7 +1,7 @@
 """
 Structured SynapseGroup connection schemes.
 """
-
+# TODO: check the whole thing once again for the sake of consistency
 import numpy as np
 import scipy.sparse as sp
 from PymoNNto import SynapseGroup

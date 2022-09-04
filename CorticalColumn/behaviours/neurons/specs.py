@@ -3,7 +3,7 @@ General specifications needed for spiking neurons.
 """
 
 from PymoNNto import Behaviour
-
+# TODO: add KWTA behavior.
 
 class Fire(Behaviour):
     """
