@@ -2,8 +2,7 @@
 General specifications needed for spiking neurons.
 """
 
-import numpy as np
-from PymoNNto import Behaviour
+from pymonntorch import Behavior
 
 
 class Fire(Behaviour):

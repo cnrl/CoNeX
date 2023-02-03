@@ -2,10 +2,10 @@
 Reward definition base.
 """
 
-from PymoNNto import Behaviour
+from pymonntorch import Behavior
 
 
-class Reward(Behaviour):
+class Reward(Behavior):
     """
     Base behavior class to define reward function. Define the desired reward
     function by inheriting this class and defining `new_iteration` abstract

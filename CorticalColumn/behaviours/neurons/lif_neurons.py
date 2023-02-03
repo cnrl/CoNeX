@@ -2,8 +2,7 @@
 Leaky Integrate-and-Fire variants.
 """
 
-import numpy as np
-from PymoNNto import Behaviour
+from pymonntorch import Behavior
 
 
 class LIF(Behaviour):
