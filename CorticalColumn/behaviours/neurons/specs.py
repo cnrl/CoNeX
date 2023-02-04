@@ -3,9 +3,12 @@ General specifications needed for spiking neurons.
 """
 
 from pymonntorch import Behavior
+import torch
 
+# TODO inhibition of KWTA, how should it be???
+# TODO adaptive neuorns will KWTA, What behaviour should I expect???
 
-class Fire(Behaviour):
+class Fire(Behavior):
     """
     Basic firing behavior of spiking neurons:
 
@@ -15,65 +18,42 @@ class Fire(Behaviour):
     def new_iteration(self, neurons):
         neurons.spikes = neurons.v >= neurons.threshold
         neurons.v[neurons.spikes] = neurons.v_reset
-        neurons.effective_spikes = neurons.spikes.copy()
 
 
-class KWTA(Behaviour):
+class KWTA(Behavior):
     """
     KWTA behavior of spiking neurons:
 
-    if v >= threshold then v = v_reset and all other neurons are inhibited.
+    if v >= threshold then v = v_reset and all other spiked neurons are inhibited.
+
+    Note: Population should be built by NeuronDimension.
+
+    Args:
+        k (int): number of winners.
+        dimension (integer, optional): K-WTA on specific dimension. defaults to None.
     """
 
-    def __calc_inhibited(self, neurons, winners_masked):
-        """
-        Calculates the inhibition rate for each neuron.
-        """
-        max_sub_threshold = neurons.v[neurons.v < neurons.threshold].max()
-        val = neurons.threshold - max_sub_threshold
-        sup_threshold = winners_masked[
-            (~winners_masked.mask) & (winners_masked >= neurons.threshold)
-        ]
-        return (
-            val * (sup_threshold - sup_threshold.min()) / sup_threshold.ptp()
-            - max_sub_threshold
-        )
-
     def set_variables(self, neurons):
-        self.k = self.get_init_attr("k", 10)
+        self.k = self.get_init_attr("k", None)
+        self.dimension = self.get_init_attr('dimension', None)
+        self.shape = (neurons.width, neurons.height, neurons.depth)
 
     def new_iteration(self, neurons):
-        will_spike = neurons.v * (neurons.v >= neurons.threshold)
+        will_spike = (neurons.v >= neurons.threshold)
 
-        if will_spike.sum() <= self.k:
+        will_spike_v = (will_spike * (neurons.v - neurons.threshold))
+
+        if self.dimension:
+            will_spike_v = will_spike_v.reshape(self.shape)
+            will_spike = will_spike.reshape(self.shape)
+        else:
+            self.dimension = 0
+        
+        if (will_spike.sum(axis=self.dimension) <= self.k).all():
             return
 
-        kw = np.argpartition(will_spike, -self.k)[-self.k :]
-        winners_masked = np.ma.array(neurons.v, mask=False)
-        winners_masked.mask[kw] = True
-        winners_masked[
-            (~winners_masked.mask) & (winners_masked >= neurons.threshold)
-        ] = self.__calc_inhibited(neurons, winners_masked)
+        k_values, k_winners_indices = torch.topk(will_spike_v, min(self.k+1, will_spike_v.size(self.dimension)), dim=self.dimension)
+        winners = will_spike_v > k_values[-1].expand(will_spike_v.size())
+        ignored = will_spike * (~winners)
 
-
-class SpikeTrace(Behaviour):
-    def set_variables(self, neurons):
-        self.set_init_attrs_as_variables(neurons)
-        self.add_tag("trace")
-        t = neurons.afferent_synapses.max_delay
-        neurons.traces = neurons.get_neuron_vec_buffer(t)
-
-    def new_iteration(self, neurons):
-        dx = -neurons.traces / neurons.tau_s + neurons.spikes
-        x = neurons.traces[:, 0] + dx
-        neurons.buffer_roll(neurons.traces, x)
-
-
-class SpikeHistory(Behaviour):
-    def set_variables(self, neurons):
-        self.add_tag("history")
-        t = neurons.afferent_synapses.max_delay
-        neurons.spike_history = neurons.get_neuron_vec_buffer(t)
-
-    def new_iteration(self, neurons):
-        neurons.buffer_roll(neurons.spike_history, neurons.spikes)
+        neurons.v[ignored.reshape((-1,))] = v_reset

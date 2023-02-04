@@ -26,9 +26,8 @@ class Dopamine(Behavior):
         """
         self.add_tag("Dopamine")
 
-        network.tau_dopamine = self.get_init_attr("tau_dopamine", 0.0, network)
-
-        network.dopamine_concentration = self.get_init_attr("initial_dopamine_concentration", network.reward, network) 
+        network.tau_dopamine = self.get_init_attr("tau_dopamine", 0.0)
+        network.dopamine_concentration = self.get_init_attr("initial_dopamine_concentration", network.reward) 
 
     def new_iteration(self, network):
         """
