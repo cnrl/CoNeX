@@ -11,17 +11,17 @@ tau*dv/dt = F(u) + RI(u).
 from pymonntorch import Behavior
 import torch
 
-
 class LIF(Behavior):
     """
     The neural dynamics of LIF is defined by:
 
     F(u) = v_rest - v,
-    RI(u) = R*I,
+    RI(u) = R*I.
 
     We assume that the input to the neuron is current-based.
 
-    Note: at least one Input mechanism and one Firing mechanism should be added to the behaviors of the population
+    Note: at least one Input mechanism  should be added to the behaviors of the population.
+          and Fire method should be called by other behaviors.
 
     Args:
         tau (float): time constant of voltage decay.
@@ -33,7 +33,7 @@ class LIF(Behavior):
 
     def set_variables(self, neurons):
         """
-        Set neuron attributes.
+        Set neuron attributes. and adds Fire fucntion as attribute to population.
 
         Args:
             neurons (NeuronGroup): the neural population.
@@ -51,17 +51,30 @@ class LIF(Behavior):
         neurons.v = self.get_init_attr('init_v', neurons.get_neuron_vec())
         neurons.spikes = self.get_init_attr('init_s', neurons.v >= neurons.threshold)
 
-    def _RIu(self, n):
+        neurons.Fire = self.Fire
+
+    def _RIu(self, neurons):
         """
         Part of neuron dynamic for voltage-dependent input resistance and internal currents.
         """
-        return n.R * n.I
+        return neurons.R * neurons.I
 
-    def _Fu(self, n):
+    def _Fu(self, neurons):
         """
         Leakage dynamic
         """
-        return -1 * (n.u - n.u_rest)
+        return -1 * (neurons.v - neurons.v_rest)
+
+    @classmethod
+    def Fire(cls, neurons):
+        """
+        Basic firing behavior of spiking neurons:
+
+        if v >= threshold then v = v_reset.
+        """
+        neurons.spikes = neurons.v >= neurons.threshold
+        neurons.v[neurons.spikes] = neurons.v_reset
+
 
     def new_iteration(self, neurons):
         """
@@ -159,7 +172,8 @@ class AELIF(ELIF):
         """
         return -1 * (neurons.R * neurons.omega) + super()._RIu(neurons)
 
-    def _domega_dt(self, neurons):
+    @classmethod
+    def domega_dt(cls, neurons):
         """
         Single step adaptation dynamics of AELIF neurons.
 
@@ -167,15 +181,17 @@ class AELIF(ELIF):
             neurons (NeuronGroup): the neural population.
         """
         spike_adaptation = neurons.beta * neurons.w_tau * neurons.spikes
-        sub_thresh_adaptation = neurons.alpha * (neurons.v - neurons.v_rest) - neurons.omega
+        sub_thresh_adaptation = neurons.alpha * (neurons.v - neurons.v_rest)
         return (sub_thresh_adaptation - neurons.omega + spike_adaptation) * neurons.dt / neurons.w_tau
 
-    def new_iteration(self, neurons):
+    @classmethod
+    def Fire(cls, neurons):
         """
-        Single step of dynamics.
+        Basic firing behavior of spiking neurons:
 
-        Args:
-            neurons (NeuronGroup): the neural population.
+        if v >= threshold then v = v_reset.
+        
+        and it do the adaptation.
         """
-        super().new_iteration(neurons)
-        neurons.omega += self._domega_dt(neurons)
+        super().Fire(neurons)
+        neurons.omega += cls.domega_dt(neurons)

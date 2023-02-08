@@ -10,15 +10,10 @@ import torch
 
 class Fire(Behavior):
     """
-    Basic firing behavior of spiking neurons:
-
-    if v >= threshold then v = v_reset.
+    Asks neurons to Fire.
     """
-
     def new_iteration(self, neurons):
-        neurons.spikes = neurons.v >= neurons.threshold
-        neurons.v[neurons.spikes] = neurons.v_reset
-
+        neurons.Fire(neurons)
 
 class KWTA(Behavior):
     """
@@ -27,16 +22,17 @@ class KWTA(Behavior):
     if v >= threshold then v = v_reset and all other spiked neurons are inhibited.
 
     Note: Population should be built by NeuronDimension.
+    and firing behavior should be added too.
 
     Args:
         k (int): number of winners.
-        dimension (integer, optional): K-WTA on specific dimension. defaults to None.
+        dimension (int, optional): K-WTA on specific dimension. defaults to None.
     """
 
     def set_variables(self, neurons):
         self.k = self.get_init_attr("k", None)
         self.dimension = self.get_init_attr('dimension', None)
-        self.shape = (neurons.width, neurons.height, neurons.depth)
+        self.shape = (neurons.depht, neurons.height, neurons.width)
 
     def new_iteration(self, neurons):
         will_spike = (neurons.v >= neurons.threshold)
@@ -52,8 +48,9 @@ class KWTA(Behavior):
         if (will_spike.sum(axis=self.dimension) <= self.k).all():
             return
 
-        k_values, k_winners_indices = torch.topk(will_spike_v, min(self.k+1, will_spike_v.size(self.dimension)), dim=self.dimension)
-        winners = will_spike_v > k_values[-1].expand(will_spike_v.size())
+        k_values, k_winners_indices = torch.topk(will_spike_v, self.k+1, dim=self.dimension, sorted=False)
+        min_values = k_values.min(dim = 0).values
+        winners = will_spike_v > min_values.expand(will_spike_v.size())
         ignored = will_spike * (~winners)
 
-        neurons.v[ignored.reshape((-1,))] = v_reset
+        neurons.v[ignored.reshape((-1,))] = neurons.v_reset

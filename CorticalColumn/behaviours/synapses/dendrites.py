@@ -1,15 +1,23 @@
 """
 Dendritic behaviors.
 """
+from pymonntorch import Behavior
+import torch
 
-import numpy as np
-from PymoNNto import Behaviour
+# TODO not priming neurons with over threshold potential.
+# TODO lower than threshold nonPriming
+# TODO Priming inhibtory neurons???? by inhibitory neurons
 
-
-class DendriticInput(Behaviour):
+class DendriticInput(Behavior):
     """
-    Base dendrite behavior. It checks for excitatory/inhibitory attributes of
-    pre-synaptic neurons and sets a coefficient, accordingly.
+    Base dendrite behavior. It checks for excitatory/inhibitory attributes 
+    of pre-synaptic neurons and sets a coefficient, accordingly.
+
+    Note: weights must be intialize by others behaviors.
+          Also, Axon paradigm should be added to synapse beforehand.
+
+    Args:
+        current_coef (float): scaller coefficient that multiplys weights
     """
 
     def set_variables(self, synapses):
@@ -19,17 +27,12 @@ class DendriticInput(Behaviour):
         Args:
             synapses (SynapseGroup): Synapses on which the dendrites are defined.
         """
-        self.set_init_attrs_as_variables(synapses)
+        self.add_tag(self.__class__.__name__)
 
-        self.current_coef = (
-            -1 if ("GABA" in synapses.src.tags) or ("inh" in synapses.src.tags) else 1
+        self.current_coef = synapses.get_init_attr('current_coef', 1)
+        self.current_type = (
+        -1 if ("GABA" in synapses.src.tags) or ("inh" in synapses.src.tags) else 1
         )
-
-    def new_iteration(self, synapses):
-        if "history" in synapses.src.tags:
-            return synapses.src.spike_history[:, synapses.delays]
-        else:
-            return synapses.src.spikes
 
 
 class ProximalInput(DendriticInput):
@@ -37,16 +40,6 @@ class ProximalInput(DendriticInput):
     Proximal dendrite behavior. It basically calculates a current accumulation based
     on synaptic weights.
     """
-
-    def set_variables(self, synapses):
-        """
-        Sets the current_coef to -1 if the pre-synaptic neurons are inhibitory.
-
-        Args:
-            synapses (SynapseGroup): Synapses on which the dendrites are defined.
-        """
-        self.add_tag("Proximal")
-        super().set_variables(synapses)
 
     def new_iteration(self, synapses):
         """
@@ -56,18 +49,26 @@ class ProximalInput(DendriticInput):
         Args:
             synapses (SynapseGroup): Synapses on which the dendrites are defined.
         """
-        effective_spikes = super().new_iteration(synapses)
-        synapses.dst.proximal_input_current = self.current_coef * np.sum(
-            self.weights * effective_spikes, axis=-1
-        )
+        synapses.Is['proximal'] = self.current_type * self.current_coef * torch.sum(
+            self.weights[:, synapses.spikes], axis=1
+            )
 
 
-class DistalInput(DendriticInput):
+class NonPriming(DendriticInput):
     """
-    Distal dendrite behavior. These dendrites increase the input current to the
-    post-synaptic neurons by:
+    Base Non Priming dendrite behavior. It checks for excitatory/inhibitory attributes 
+    of pre-synaptic neurons and sets a coefficient, accordingly.
+    These dendrites increase the input current to the post-synaptic neurons which have 
+    membrane potentioal below the threshold by:
 
-    (dst.v - dst.v_rest) * tanh(sum(weights*src.spikes)).
+    (dst.threshold - dst.v) * tanh(sum(weights*src.spikes)).
+
+    Note: weights must be intialize by others behaviors.
+          Also, Axon paradigm should be added to synapse beforehand.
+
+    Args:
+        current_coef (float): scaller coefficient that multiplys weights
+        provocativeness (float): the percentage these dendrites can stimulate 
     """
 
     def set_variables(self, synapses):
@@ -77,39 +78,32 @@ class DistalInput(DendriticInput):
         Args:
             synapses (SynapseGroup): Synapses on which the dendrites are defined.
         """
-        self.add_tag("Distal")
         super().set_variables(synapses)
+        self.provocativeness = synapses.get_init_attr('provocativeness', None)
 
-    def new_iteration(self, synapses):
+    def _increase_potential(self, synapses):
         """
         Returns the current value to be added to the post-synaptic neurons.
 
         Args:
             synapses (SynapseGroup): Synapses on which the dendrites are defined.
+
         """
-        effective_spikes = super().new_iteration(synapses)
-        return (synapses.dst.v - synapses.dst.v_rest) * np.tanh(
-            np.sum(self.weights * effective_spikes, axis=-1)
-        )
+        provocative_limite = synapses.dst.v_rest + self.provocativeness * (synapses.dst.threshold - synapses.dst.v_rest) # TODO v_rest or v_reset ? stupid question anyway.
+        dv = torch.clip(provocative_limite - synapses.dst.v, min=0)
+        return  dv * torch.Tanh(torch.sum(self.weights[:, synapses.spikes], axis=1))
 
 
-class ApicalInput(DistalInput):
+class ApicalInput(NonPriming):
     """
     Apical dendrite behavior. These dendrites increase the input current to the
     post-synaptic neurons by:
 
-    (dst.v - dst.v_rest) * tanh(sum(weights*src.spikes)).
+    (dst.threshold - dst.v) * tanh(sum(weights*src.spikes)).
+
+    Note: weights must be intialize by others behaviors.
+          Also, Axon paradigm should be added to synapse beforehand.
     """
-
-    def set_variables(self, synapses):
-        """
-        Sets the current_coef to -1 if the pre-synaptic neurons are inhibitory.
-
-        Args:
-            synapses (SynapseGroup): Synapses on which the dendrites are defined.
-        """
-        self.add_tag("Apical")
-        super().set_variables(synapses)
 
     def new_iteration(self, synapses):
         """
@@ -118,27 +112,20 @@ class ApicalInput(DistalInput):
         Args:
             synapses (SynapseGroup): Synapses on which the dendrites are defined.
         """
-        update_values = super().new_iteration(synapses)
-        synapses.apical_input_current = self.current_coef * update_values
+        update_values = self._increase_potential(synapses)
+        synapses.Is['apical'] = self.current_type * self.current_coef * update_values
 
 
-class BasalInput(DistalInput):
+class DistalInput(NonPriming):
     """
-    Basal dendrite behavior. These dendrites increase the input current to the
+    Distal dendrite behavior. These dendrites increase the input current to the
     post-synaptic neurons by:
 
-    (dst.v - dst.v_rest) * tanh(sum(weights*src.spikes)).
+    (dst.threshold - dst.v) * tanh(sum(weights*src.spikes)).
+
+    Note: weights must be intialize by others behaviors.
+          Also, Axon paradigm should be added to synapse beforehand.
     """
-
-    def set_variables(self, synapses):
-        """
-        Sets the current_coef to -1 if the pre-synaptic neurons are inhibitory.
-
-        Args:
-            synapses (SynapseGroup): Synapses on which the dendrites are defined.
-        """
-        self.add_tag("Basal")
-        super().set_variables(synapses)
 
     def new_iteration(self, synapses):
         """
@@ -147,5 +134,5 @@ class BasalInput(DistalInput):
         Args:
             synapses (SynapseGroup): Synapses on which the dendrites are defined.
         """
-        update_values = super().new_iteration(synapses)
-        synapses.basal_input_current = self.current_coef * update_values
+        update_values = self._increase_potential(synapses)
+        synapses.Is['basal'] = self.current_type * self.current_coef * update_values

@@ -2,6 +2,7 @@
 Structured SynapseGroup connection schemes.
 """
 # TODO: check the whole thing once again for the sake of consistency
+
 import numpy as np
 import scipy.sparse as sp
 from PymoNNto import SynapseGroup
@@ -10,6 +11,7 @@ from CorticalColumn.behaviours.synapses.specs import DelayInitializer, WeightIni
 
 
 # TODO: add a method to return the mask for synapse subgroups
+
 class TopologicalSynapseGroup(SynapseGroup):
     def __init__(self, src, dst, net, max_delay=1.0, tag=None, behaviour={}):
         assert max_delay >= 1.0, f"Invalid value for max_delay: {max_delay}."
