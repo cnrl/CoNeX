@@ -2,17 +2,89 @@
 Learning rules.
 """
 
-import numba
-import numpy as np
-from PymoNNto import Behaviour
+from pymonntorch import Behavior
 
-from CorticalColumn.nn.Modules.topological_connections import (
-    ConvSynapseGroup,
-    SparseSynapseGroup,
-)
+import torch
+import torch.nn.functional as F 
 
+# TODO do we need padding?
 
 class STDP(Behaviour):
+    def set_variables(self, synapse):
+        self.a_plus = self.get_init_attr('a_plus', None)
+        self.a_minus = self.get_init_attr('a_minus', None)
+
+    def get_spike_and_trace(self, synapse):
+        src_spike = synapse.src.get_spike(synapse.src, synapse.src_delay)
+        dst_spike = synapse.dst.get_spike(synapse.dst, synapse.dst_delay)
+
+        src_spike_trace = synapse.src.get_spike_trace(synapse.src, synapse.src_delay)
+        dst_spike_trace = synapse.dst.get_spike_trace(synapse.dst, synapse.dst_delay)
+
+        return src_spike, dst_spike, src_spike_trace, dst_spike_trace
+
+    def new_iteration(self, synapse):
+        src_spike, dst_spike, src_spike_trace, dst_spike_trace = self.get_spike_and_trace(synapse)
+
+        dw_plus = torch.outer(dst_spike_trace, src_spike) * self.a_plus
+        dw_minus = torch.outer(src_spike_trace, dst_spike) * self.a_minus
+
+        synapse.weights += dw_plus - dw_minus
+
+class Conv2dSTDP(STDP):
+    def set_variables(self, synapse):
+        super().set_variables(synapse)
+        self.weight_divisor = synapse.dst_shape[2] * synapse.dst_shape[1]
+
+    def new_iteration(self, synapse):
+        src_spike, dst_spike, src_spike_trace, dst_spike_trace = self.get_spike_and_trace(synapse)
+
+        src_spike = src_spike.reshape(synapse.src_shape)
+        src_spike = src_spike.unfold(kernel_size=synapse.weights.size()[-2:], stride = synapse.stride)
+        src_spike = src_spike.expand(synapse.dst_shape[0], *src_spike.shape)
+
+        dst_spike_trace = dst_spike_trace.reshape((synapse.dst_shape[0], -1, 1))
+        
+        dw_minus = torch.bmm(src_spike, dst_spike_trace).reshape(synapse.weights.shape)
+        
+        src_spike_trace = src_spike_trace.reshape(synapse.src_shape)
+        src_spike_trace = src_spike_trace.unfold(kernel_size=synapse.weights.size()[-2:], stride = synapse.stride)
+        src_spike_trace = src_spike_trace.expand(synapse.dst_shape[0], *src_spike_trace.shape)
+
+        dst_spike = dst_spike_.reshape((synapse.dst_shape[0], -1, 1))
+        
+        dw_plus = torch.bmm(src_spike_trace, dst_spike).reshape(synapse.weights.shape)
+
+        synapse.weights += (dw_plus * self.a_plus - dw_minus * slef.a_minus) / self.weight_divisor
+
+class Local2dSTDP(STDP):
+    def new_iteration(self, synapse):
+        src_spike, dst_spike, src_spike_trace, dst_spike_trace = self.get_spike_and_trace(synapse)
+
+        src_spike = src_spike.reshape(synapse.src_shape)
+        src_spike = src_spike.unfold(kernel_size=synapse.kernel_shape, stride = synapse.stride)
+        src_spike = src_spike.transpose(0, 1)
+        src_spike = src_spike.expand(synapse.dst_shape[0], *src_spike.shape)
+
+        dst_spike_trace = dst_spike_trace.reshape((synapse.dst_shape[0], -1, 1))
+        dst_spike_trace = dst_spike_trace.expand(synapse.weight.shape)
+
+        dw_minus = dst_spike_trace * src_spike
+        
+        src_spike_trace = src_spike_trace.reshape(synapse.src_shape)
+        src_spike_trace = src_spike_trace.unfold(kernel_size=synapse.kernel_shape, stride = synapse.stride)
+        src_spike_trace = src_spike_trace.transpose(0, 1)
+        src_spike_trace = src_spike_trace.expand(synapse.dst_shape[0], *src_spike_trace.shape)
+
+        dst_spike = dst_spike.reshape((synapse.dst_shape[0], -1, 1))
+        dst_spike = dst_spike.expand(synapse.weight.shape)
+
+        dw_plus = dst_spike * src_spike_trace
+
+        synapse.weights += (dw_plus * self.a_plus - dw_minus * slef.a_minus) / self.weight_divisor
+
+
+class STDP_behaviour(Behaviour):
     def set_variables(self, synapses):
         self.get_init_attr("a_plus", 1.0, synapses)
         self.get_init_attr("a_minus", 1.0, synapses)
@@ -77,7 +149,7 @@ class STDP(Behaviour):
             self.weights += dw
 
 
-class RSTDP(STDP):
+class RSTDP_behaviour(STDP_behaviour):
     def set_variables(self, synapses):
         self.get_init_attr("tau_c", 1000.0, synapses, required=True)
         synapses.c = synapses.get_mat(mode="zeros()")
