@@ -17,11 +17,11 @@ class SpikeTrace(Behavior):
     Args:
         tau_s (float): ddcay term for spike trace
     """
-    def set_variables(self, neruons):
+    def set_variables(self, neurons):
         self.tau_s = self.get_init_attr('tau_s', None)
-        neurons.trace = neruons.get_neuron_vec(0.0)
+        neurons.trace = neurons.get_neuron_vec(0.0)
 
-    def new_iteration(self, neurons):
+    def forward(self, neurons):
         neurons.trace -= neurons.trace / self.tau_s
         neurons.trace += neurons.spike 
 
@@ -35,37 +35,37 @@ class NeuronAxon(Behavior):
         max_delay (int): delay of all dendrit connected neurons.
         have_trace (boolean): wether to calculate trace or not. default False. 
     """
-    def set_variables(self, neruons):
+    def set_variables(self, neurons):
         self.max_delay = self.get_init_attr('max_delay',None)
         self.have_trace = self.get_init_attr('have_trace', False)
 
         if self.max_delay is not None:
-            self.spike_history = neruons.get_neuron_vec_buffer(self.max_delay)
+            self.spike_history = neurons.get_neuron_vec_buffer(self.max_delay)
             if self.have_trace:
-                self.trace_history = neruons.get_neuron_vec_buffer(self.max_delay)
+                self.trace_history = neurons.get_neuron_vec_buffer(self.max_delay)
 
-        neuron.axon = self
+        neurons.axon = self
 
-    def get_spike(self, neruons, delay=None):
+    def get_spike(self, neurons, delay=None):
         if self.max_delay  is not None:
             return self.spike_history[delay]
         else:
-            return neruons.spikes
+            return neurons.spikes
 
     def get_spike_trace(self, neuorns, delay=None):
         if self.max_delay  is not None:
             return self.trace_history[delay]
         else:
-            return neruons.trace
+            return neurons.trace
     
-    def new_iteration(self, neurons):
+    def forward(self, neurons):
         if self.max_delay:
-            self.spike_history.buffer_roll(neruons.spike)
+            self.spike_history.buffer_roll(neurons.spike)
             if have_trace:
                 self.trace_history.buffer_roll(neurons.trace)
                 # TODO should trace decay as it propagate throught the axon 
 
-class NeuronDendrite(Behavior):
+class NeuronDendrite(Behavior): # TODO seperation
     """
     Sums the different kind of dendrite entering the neurons.
 
@@ -77,16 +77,17 @@ class NeuronDendrite(Behavior):
         self.distal_provocativeness = self.get_init_attr('distal_provocativeness', None)
         self.I_tau = self.get_init_attr('I_tau', None)
 
+        neurons.I = 0
         neurons.apical_input = 0
         neurons.distal_input = 0
         neurons.proximal_input = 0
     
     def _calc_ratio(self, neurons, provocativeness):
-        provocative_limite = neurons.v_rest + provocativeness * (neurons.threshold - neurons.v_rest) # TODO v_rest or v_reset ? stupid question anyway.
-        dv = torch.clip(provocative_limite -neurons.v, min=0)
+        provocative_limite = neurons.v_rest + provocativeness * (neurons.threshold - neurons.v_rest)
+        dv = torch.clip(provocative_limite - neurons.v, min=0)
         return dv
 
-    def new_iteration(self, neurons):
+    def forward(self, neurons):
         if self.I_tau is not None:
             neurons.I -= neurons.I / self.I_tau
         
@@ -98,7 +99,8 @@ class NeuronDendrite(Behavior):
         if self.distal_provocativeness is not None:
             non_priming += torch.Tanh(neurons.distal_input) * self._calc_ratio(neurons, self.distal_provocativeness)
         
-        neurons.I += non_priming/neurons.R
+        neurons.I += non_priming/neurons.R # TODO what to do ? (* tau)
+
 
         neurons.apical_input = 0
         neurons.distal_input = 0
@@ -109,7 +111,7 @@ class Fire(Behavior):
     """
     Asks neurons to Fire.
     """
-    def new_iteration(self, neurons):
+    def forward(self, neurons):
         neurons.Fire(neurons)
 
 class KWTA(Behavior):
@@ -129,9 +131,9 @@ class KWTA(Behavior):
     def set_variables(self, neurons):
         self.k = self.get_init_attr("k", None)
         self.dimension = self.get_init_attr('dimension', None)
-        self.shape = (neurons.depht, neurons.height, neurons.width)
+        self.shape = (neurons.depth, neurons.height, neurons.width)
 
-    def new_iteration(self, neurons):
+    def forward(self, neurons):
         will_spike = (neurons.v >= neurons.threshold)
 
         will_spike_v = (will_spike * (neurons.v - neurons.threshold))

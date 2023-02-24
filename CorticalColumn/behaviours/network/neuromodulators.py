@@ -29,7 +29,7 @@ class Dopamine(Behavior):
         network.tau_dopamine = self.get_init_attr("tau_dopamine", 0.0)
         network.dopamine_concentration = self.get_init_attr("initial_dopamine_concentration", network.reward) 
 
-    def new_iteration(self, network):
+    def forward(self, network):
         """
         Compute extracellular dopamine concentration at each time step by:
 

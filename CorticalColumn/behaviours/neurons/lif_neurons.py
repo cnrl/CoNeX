@@ -40,8 +40,6 @@ class LIF(Behavior):
         """
         self.add_tag(self.__class__.__name__)
 
-        neurons.dt = self.get_init_attr('dt', 1)
-
         neurons.R = self.get_init_attr('R', None)
         neurons.tau = self.get_init_attr('tau', None)
         neurons.threshold = self.get_init_attr('threshold', None)
@@ -76,14 +74,14 @@ class LIF(Behavior):
         neurons.v[neurons.spikes] = neurons.v_reset
 
 
-    def new_iteration(self, neurons):
+    def forward(self, neurons):
         """
         Single step of dynamics.
 
         Args:
             neurons (NeuronGroup): the neural population.
         """
-        neurons.v += (self._Fu(neurons) + self._RIu(neurons)) * neurons.dt / neurons.tau
+        neurons.v += (self._Fu(neurons) + self._RIu(neurons)) * neurons.network.dt / neurons.tau
 
 
 class ELIF(LIF):
@@ -182,7 +180,7 @@ class AELIF(ELIF):
         """
         spike_adaptation = neurons.beta * neurons.w_tau * neurons.spikes
         sub_thresh_adaptation = neurons.alpha * (neurons.v - neurons.v_rest)
-        return (sub_thresh_adaptation - neurons.omega + spike_adaptation) * neurons.dt / neurons.w_tau
+        return (sub_thresh_adaptation - neurons.omega + spike_adaptation) * neurons.network.dt / neurons.w_tau
 
     @classmethod
     def Fire(cls, neurons):

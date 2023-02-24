@@ -30,7 +30,7 @@ class SimpleDendriticInput(Behavior):
         Args:
             synapse (SynapseGroup): Synapses on which the dendrites are defined.
         """
-        self.add_tag(self.__class__.__name__)
+        synapse.add_tag(self.__class__.__name__)
         self.current_coef = self.get_init_attr('current_coef', 1)
         self.connection_type = self.get_init_attr('connection_type', 'proximal')
 
@@ -43,7 +43,7 @@ class SimpleDendriticInput(Behavior):
         spikes = synapse.src.get_spike(synapse.src, self.src_delay)
         return torch.sum(synapse.weights[:, spikes], axis=1)
     
-    def new_iteration(self, synapse):
+    def forward(self, synapse):
         synapse.dst.__dict__[self.connection_type] += self.current_coef * self.current_type * self.calculate_input(synapse)
 
 class Conv2dDendriteInput(SimpleDendriticInput):

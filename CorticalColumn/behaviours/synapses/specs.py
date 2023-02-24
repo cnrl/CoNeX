@@ -11,8 +11,8 @@ import torch
 
 class SynapseInit(Behavior):
     def set_variables(self, synapse):
-        synapse.src_shape = (synapse.src.depht, synapse.src.height, synapse.src.width)
-        synapse.dst_shape = (synapse.dst.depht, synapse.dst.height, synapse.dst.width)
+        synapse.src_shape = (synapse.src.depth, synapse.src.height, synapse.src.width)
+        synapse.dst_shape = (synapse.dst.depth, synapse.dst.height, synapse.dst.width)
 
         synapse.src_delay = None
         synapse.dst_delay = None
@@ -63,19 +63,19 @@ class DelayInitializer(Behavior):
         offset = self.get_init_attr('offset', 0)
         isDestination = self.get_init_attr('destination', False)
 
-        neruons = synapse.src
+        neurons = synapse.src
         attribute = 'src'
         if isDestination:
-            neruons = synapse.dst
+            neurons = synapse.dst
             attribute = 'dst'
 
-        if init_mode is not None and synapse.delays is None:
-            delays = neruons.get_neuron_vec(mode=init_mode)
+        if init_mode is not None and delays is None:
+            delays = neurons.get_neuron_vec(mode=init_mode)
             delays *= scale
             delays += offset
         
         delays = delays.to(torch.long)
-        synapse.__dict__[f'{attribute}_delay'] = (torch.arange(0, delays.size(0)).to(delays.get_device()), delays)
+        synapse.__dict__[f'{attribute}_delay'] = (torch.arange(0, delays.size(0)).to(delays.device), delays)
 
 
 
@@ -99,7 +99,7 @@ class WeightClip(Behavior):
         self.w_max = self.get_init_attr('w_max', 1)
 
 
-    def new_iteration(self, synapses):
+    def forward(self, synapses):
         """
         Clip the synaptic weights in each time step.
 
