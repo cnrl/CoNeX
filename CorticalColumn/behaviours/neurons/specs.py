@@ -77,10 +77,10 @@ class NeuronDendrite(Behavior): # TODO seperation
         self.distal_provocativeness = self.get_init_attr('distal_provocativeness', None)
         self.I_tau = self.get_init_attr('I_tau', None)
 
-        neurons.I = 0
-        neurons.apical_input = 0
-        neurons.distal_input = 0
-        neurons.proximal_input = 0
+        neurons.I = neurons.get_neuron_vec()
+        neurons.apical_input = neurons.get_neuron_vec(0) if self.apical_provocativeness is not None else 0
+        neurons.distal_input = neurons.get_neuron_vec(0) if self.distal_provocativeness is not None else 0
+        neurons.proximal_input = neurons.get_neuron_vec(0)
     
     def _calc_ratio(self, neurons, provocativeness):
         provocative_limite = neurons.v_rest + provocativeness * (neurons.threshold - neurons.v_rest)

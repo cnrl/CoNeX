@@ -17,23 +17,6 @@ class SynapseInit(Behavior):
         synapse.src_delay = None
         synapse.dst_delay = None
 
-class WeightInitializer(Behavior):
-    """
-    Intialize the weights of synapse.
-
-    Args:
-        mode (str or number): string should be torch functions that fills a tensor like:
-                              "random", "normal", "zeros", "ones", ... .
-                              In number case the synapse weights will be filled with that number.
-        weights (tensor): giving the weights directly.
-    """
-
-    def set_variables(self, synapse):
-        init_mode = self.get_init_attr("mode", None)
-        synapse.weights = self.get_init_attr('weights', None)
-
-        if init_mode is not None and synapse.weights is None:
-            synapse.weights = synapse.get_synapse_mat(mode=init_mode)
 
 class DelayInitializer(Behavior):
     """
@@ -77,6 +60,28 @@ class DelayInitializer(Behavior):
         delays = delays.to(torch.long)
         synapse.__dict__[f'{attribute}_delay'] = (torch.arange(0, delays.size(0)).to(delays.device), delays)
 
+
+class WeightInitializer(Behavior):
+    """
+    Intialize the weights of synapse.
+
+    Args:
+        mode (str or number): string should be torch functions that fills a tensor like:
+                              "random", "normal", "zeros", "ones", ... .
+                              In number case the synapse weights will be filled with that number.
+        weights (tensor): giving the weights directly.
+    """
+
+    def set_variables(self, synapse):
+        init_mode = self.get_init_attr("mode", None)
+        synapse.weights = self.get_init_attr('weights', None)
+        synapse.weight_shape = self.get_init_attr('weight_shape', None)
+
+        if init_mode is not None and synapse.weights is None:
+            if synapse.weight_shape is None:
+                synapse.weights = synapse.get_synapse_mat(mode=init_mode)
+            else:
+                synapse.weights = synapse._get_mat(mode=init_mode, dim=synapse.weight_shape)
 
 
 class WeightClip(Behavior):

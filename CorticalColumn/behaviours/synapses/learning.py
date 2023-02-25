@@ -20,11 +20,11 @@ class SimpleSTDP(Behavior):
         self.a_minus = self.get_init_attr('a_minus', None)
 
     def get_spike_and_trace(self, synapse):
-        src_spike = synapse.src.get_spike(synapse.src, synapse.src_delay)
-        dst_spike = synapse.dst.get_spike(synapse.dst, synapse.dst_delay)
+        src_spike = synapse.src.axon.get_spike(synapse.src, synapse.src_delay)
+        dst_spike = synapse.dst.axon.get_spike(synapse.dst, synapse.dst_delay)
 
-        src_spike_trace = synapse.src.get_spike_trace(synapse.src, synapse.src_delay)
-        dst_spike_trace = synapse.dst.get_spike_trace(synapse.dst, synapse.dst_delay)
+        src_spike_trace = synapse.src.axon.get_spike_trace(synapse.src, synapse.src_delay)
+        dst_spike_trace = synapse.dst.axon.get_spike_trace(synapse.dst, synapse.dst_delay)
 
         return src_spike, dst_spike, src_spike_trace, dst_spike_trace
 
@@ -67,7 +67,7 @@ class Local2dSTDP(SimpleSTDP):
         src_spike, dst_spike, src_spike_trace, dst_spike_trace = self.get_spike_and_trace(synapse)
 
         src_spike = src_spike.type(float).reshape(synapse.src_shape)
-        src_spike = src_spike.unfold(kernel_size=synapse.kernel_shape, stride = synapse.stride)
+        src_spike = src_spike.unfold(kernel_size=synapse.weight_shape, stride = synapse.stride)
         src_spike = src_spike.transpose(0, 1)
         src_spike = src_spike.expand(synapse.dst_shape[0], *src_spike.shape)
 
@@ -77,7 +77,7 @@ class Local2dSTDP(SimpleSTDP):
         dw_minus = dst_spike_trace * src_spike
         
         src_spike_trace = src_spike_trace.reshape(synapse.src_shape)
-        src_spike_trace = src_spike_trace.unfold(kernel_size=synapse.kernel_shape, stride = synapse.stride)
+        src_spike_trace = src_spike_trace.unfold(kernel_size=synapse.weight_shape, stride = synapse.stride)
         src_spike_trace = src_spike_trace.transpose(0, 1)
         src_spike_trace = src_spike_trace.expand(synapse.dst_shape[0], *src_spike_trace.shape)
 

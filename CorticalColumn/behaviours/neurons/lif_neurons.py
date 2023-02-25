@@ -121,7 +121,7 @@ class ELIF(LIF):
         """
         Leakage dynamic
         """
-        return super()._Fu(neurons) + neurons.delta * torch.exp((neurons.u - neurons.theta_rh) / neurons.delta)
+        return super()._Fu(neurons) + neurons.delta * torch.exp((neurons.v - neurons.theta_rh) / neurons.delta)
 
 
 class AELIF(ELIF):

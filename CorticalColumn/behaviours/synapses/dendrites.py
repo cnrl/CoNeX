@@ -32,7 +32,7 @@ class SimpleDendriticInput(Behavior):
         """
         synapse.add_tag(self.__class__.__name__)
         self.current_coef = self.get_init_attr('current_coef', 1)
-        self.connection_type = self.get_init_attr('connection_type', 'proximal')
+        self.connection_type = self.get_init_attr('connection_type', 'proximal_input')
 
         self.add_tag(self.connection_type)
         self.current_type = (
@@ -40,7 +40,7 @@ class SimpleDendriticInput(Behavior):
         )
 
     def calculate_input(self, synapse):
-        spikes = synapse.src.get_spike(synapse.src, self.src_delay)
+        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay)
         return torch.sum(synapse.weights[:, spikes], axis=1)
     
     def forward(self, synapse):
@@ -51,10 +51,9 @@ class Conv2dDendriteInput(SimpleDendriticInput):
         super().set_variables(synapse)
         
         synapse.stride = self.get_init_attr('stride', 1)
-        synapse.kernel_shape = self.get_init_attr('kernel_shape', None)
 
     def calculate_input(self, synapse):
-        spikes = synapse.src.get_spike(synapse.src, self.src_delay)
+        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay)
         spikes = spikes.reshape(synapse.src_shape)
         return F.conv2d(input = spikes.float(), weight = synapse.weights, stride = synapse.stride)
 
@@ -66,7 +65,7 @@ class Local2dDendriteInput(SimpleDendriticInput):
     #               inpit_channel * kernel_height * kernel_weight)
 
     def calculate_input(self, synapse):
-        spikes = synapse.src.get_spike(synapse.src, self.src_delay) # to.float()
+        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay) # to.float()
         spikes = spikes.reshape(synapse.src_shape)
         spikes = spikes.unfold(kernel_size=synapse.weights.size()[-2:], stride = synapse.stride).transpose(1,2)
         I = (spikes * synapse.weights).sum(axis=-1) 
