@@ -1,151 +1,72 @@
 """
 Dendritic behaviors.
 """
+from pymonntorch import Behavior
 
-import numpy as np
-from PymoNNto import Behaviour
+import torch
+import torch.nn.functional as F
 
+# TODO not priming neurons with over threshold potential.
+# TODO lower than threshold nonPriming
+# TODO Priming inhibtory neurons???? by inhibitory neurons
+# TODO Conv2d NonPriming
 
-class DendriticInput(Behaviour):
+class SimpleDendriticInput(Behavior):
     """
-    Base dendrite behavior. It checks for excitatory/inhibitory attributes of
-    pre-synaptic neurons and sets a coefficient, accordingly.
+    Base dendrite behavior. It checks for excitatory/inhibitory attributes 
+    of pre-synaptic neurons and sets a coefficient, accordingly.
+
+    Note: weights must be intialize by others behaviors.
+          Also, Axon paradigm should be added to synapse beforehand.
+
+    Args:
+        current_coef (float): scaller coefficient that multiplys weights
     """
 
-    def set_variables(self, synapses):
+    def set_variables(self, synapse):
         """
         Sets the current_coef to -1 if the pre-synaptic neurons are inhibitory.
 
         Args:
-            synapses (SynapseGroup): Synapses on which the dendrites are defined.
+            synapse (SynapseGroup): Synapses on which the dendrites are defined.
         """
-        self.set_init_attrs_as_variables(synapses)
+        synapse.add_tag(self.__class__.__name__)
+        self.current_coef = self.get_init_attr('current_coef', 1)
+        self.connection_type = self.get_init_attr('connection_type', 'proximal_input')
 
-        self.current_coef = (
-            -1 if ("GABA" in synapses.src.tags) or ("inh" in synapses.src.tags) else 1
+        self.add_tag(self.connection_type)
+        self.current_type = (
+        -1 if ("GABA" in synapse.src.tags) or ("inh" in synapse.src.tags) else 1
         )
 
-    def new_iteration(self, synapses):
-        if "history" in synapses.src.tags:
-            return synapses.src.spike_history[:, synapses.delays]
-        else:
-            return synapses.src.spikes
+    def calculate_input(self, synapse):
+        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay)
+        return torch.sum(synapse.weights[:, spikes], axis=1)
+    
+    def forward(self, synapse):
+        synapse.dst.__dict__[self.connection_type] += self.current_coef * self.current_type * self.calculate_input(synapse)
 
+class Conv2dDendriteInput(SimpleDendriticInput):
+    def set_variables(self, synapse):
+        super().set_variables(synapse)
+        
+        synapse.stride = self.get_init_attr('stride', 1)
 
-class ProximalInput(DendriticInput):
-    """
-    Proximal dendrite behavior. It basically calculates a current accumulation based
-    on synaptic weights.
-    """
+    def calculate_input(self, synapse):
+        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay)
+        spikes = spikes.reshape(synapse.src_shape)
+        return F.conv2d(input = spikes.float(), weight = synapse.weights, stride = synapse.stride)
 
-    def set_variables(self, synapses):
-        """
-        Sets the current_coef to -1 if the pre-synaptic neurons are inhibitory.
+class Local2dDendriteInput(SimpleDendriticInput):
 
-        Args:
-            synapses (SynapseGroup): Synapses on which the dendrites are defined.
-        """
-        self.add_tag("Proximal")
-        super().set_variables(synapses)
+    # weight shape (o_n, p_h, p_w, p_c, w_h, w_w)
+    # weight shape (out channel, 
+    #               result_height * result_weight,
+    #               inpit_channel * kernel_height * kernel_weight)
 
-    def new_iteration(self, synapses):
-        """
-        Calculates the proximal input current by a summation over synaptic weights,
-        weighted by current_coef.
-
-        Args:
-            synapses (SynapseGroup): Synapses on which the dendrites are defined.
-        """
-        effective_spikes = super().new_iteration(synapses)
-        synapses.dst.proximal_input_current = self.current_coef * np.sum(
-            self.weights * effective_spikes, axis=-1
-        )
-
-
-class DistalInput(DendriticInput):
-    """
-    Distal dendrite behavior. These dendrites increase the input current to the
-    post-synaptic neurons by:
-
-    (dst.v - dst.v_rest) * tanh(sum(weights*src.spikes)).
-    """
-
-    def set_variables(self, synapses):
-        """
-        Sets the current_coef to -1 if the pre-synaptic neurons are inhibitory.
-
-        Args:
-            synapses (SynapseGroup): Synapses on which the dendrites are defined.
-        """
-        self.add_tag("Distal")
-        super().set_variables(synapses)
-
-    def new_iteration(self, synapses):
-        """
-        Returns the current value to be added to the post-synaptic neurons.
-
-        Args:
-            synapses (SynapseGroup): Synapses on which the dendrites are defined.
-        """
-        effective_spikes = super().new_iteration(synapses)
-        return (synapses.dst.v - synapses.dst.v_rest) * np.tanh(
-            np.sum(self.weights * effective_spikes, axis=-1)
-        )
-
-
-class ApicalInput(DistalInput):
-    """
-    Apical dendrite behavior. These dendrites increase the input current to the
-    post-synaptic neurons by:
-
-    (dst.v - dst.v_rest) * tanh(sum(weights*src.spikes)).
-    """
-
-    def set_variables(self, synapses):
-        """
-        Sets the current_coef to -1 if the pre-synaptic neurons are inhibitory.
-
-        Args:
-            synapses (SynapseGroup): Synapses on which the dendrites are defined.
-        """
-        self.add_tag("Apical")
-        super().set_variables(synapses)
-
-    def new_iteration(self, synapses):
-        """
-        Sets the apical input current.
-
-        Args:
-            synapses (SynapseGroup): Synapses on which the dendrites are defined.
-        """
-        update_values = super().new_iteration(synapses)
-        synapses.apical_input_current = self.current_coef * update_values
-
-
-class BasalInput(DistalInput):
-    """
-    Basal dendrite behavior. These dendrites increase the input current to the
-    post-synaptic neurons by:
-
-    (dst.v - dst.v_rest) * tanh(sum(weights*src.spikes)).
-    """
-
-    def set_variables(self, synapses):
-        """
-        Sets the current_coef to -1 if the pre-synaptic neurons are inhibitory.
-
-        Args:
-            synapses (SynapseGroup): Synapses on which the dendrites are defined.
-        """
-        self.add_tag("Basal")
-        super().set_variables(synapses)
-
-    def new_iteration(self, synapses):
-        """
-        Sets the basal input current.
-
-        Args:
-            synapses (SynapseGroup): Synapses on which the dendrites are defined.
-        """
-        update_values = super().new_iteration(synapses)
-        synapses.basal_input_current = self.current_coef * update_values
+    def calculate_input(self, synapse):
+        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay) # to.float()
+        spikes = spikes.reshape(synapse.src_shape)
+        spikes = spikes.unfold(kernel_size=synapse.weights.size()[-2:], stride = synapse.stride).transpose(1,2)
+        I = (spikes * synapse.weights).sum(axis=-1) 
+        return I.reshape((-1,))

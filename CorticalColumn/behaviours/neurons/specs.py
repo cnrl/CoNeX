@@ -2,79 +2,154 @@
 General specifications needed for spiking neurons.
 """
 
-import numpy as np
-from PymoNNto import Behaviour
+from pymonntorch import Behavior
+import torch
 
+# TODO inhibition of KWTA, how should it be???
+# TODO adaptive neuorns will KWTA, What behaviour should I expect???
 
-class Fire(Behaviour):
+class SpikeTrace(Behavior):
     """
-    Basic firing behavior of spiking neurons:
+    calculates the spike trace.
 
-    if v >= threshold then v = v_reset.
+    Note : should be placed after Fire behavior.
+
+    Args:
+        tau_s (float): ddcay term for spike trace
     """
+    def set_variables(self, neurons):
+        self.tau_s = self.get_init_attr('tau_s', None)
+        neurons.trace = neurons.get_neuron_vec(0.0)
 
-    def new_iteration(self, neurons):
-        neurons.spikes = neurons.v >= neurons.threshold
-        neurons.v[neurons.spikes] = neurons.v_reset
-        neurons.effective_spikes = neurons.spikes.copy()
+    def forward(self, neurons):
+        neurons.trace -= neurons.trace / self.tau_s
+        neurons.trace += neurons.spike 
+
+class NeuronAxon(Behavior):
+    """
+    Propogate the spikes. and applys the delay mechanism.
+
+    Note: should be added after fire and trace behavior.
+
+    Args:
+        max_delay (int): delay of all dendrit connected neurons.
+        have_trace (boolean): wether to calculate trace or not. default False. 
+    """
+    def set_variables(self, neurons):
+        self.max_delay = self.get_init_attr('max_delay',None)
+        self.have_trace = self.get_init_attr('have_trace', False)
+
+        if self.max_delay is not None:
+            self.spike_history = neurons.get_neuron_vec_buffer(self.max_delay)
+            if self.have_trace:
+                self.trace_history = neurons.get_neuron_vec_buffer(self.max_delay)
+
+        neurons.axon = self
+
+    def get_spike(self, neurons, delay=None):
+        if self.max_delay  is not None:
+            return self.spike_history[delay]
+        else:
+            return neurons.spikes
+
+    def get_spike_trace(self, neuorns, delay=None):
+        if self.max_delay  is not None:
+            return self.trace_history[delay]
+        else:
+            return neurons.trace
+    
+    def forward(self, neurons):
+        if self.max_delay:
+            self.spike_history.buffer_roll(neurons.spike)
+            if have_trace:
+                self.trace_history.buffer_roll(neurons.trace)
+                # TODO should trace decay as it propagate throught the axon 
+
+class NeuronDendrite(Behavior): # TODO seperation
+    """
+    Sums the different kind of dendrite entering the neurons.
+
+    Args:
+        Behavior (_type_): _description_
+    """
+    def set_variables(self, neurons):
+        self.apical_provocativeness = self.get_init_attr('apical_provocativeness', None)
+        self.distal_provocativeness = self.get_init_attr('distal_provocativeness', None)
+        self.I_tau = self.get_init_attr('I_tau', None)
+
+        neurons.I = neurons.get_neuron_vec()
+        neurons.apical_input = neurons.get_neuron_vec(0) if self.apical_provocativeness is not None else 0
+        neurons.distal_input = neurons.get_neuron_vec(0) if self.distal_provocativeness is not None else 0
+        neurons.proximal_input = neurons.get_neuron_vec(0)
+    
+    def _calc_ratio(self, neurons, provocativeness):
+        provocative_limite = neurons.v_rest + provocativeness * (neurons.threshold - neurons.v_rest)
+        dv = torch.clip(provocative_limite - neurons.v, min=0)
+        return dv
+
+    def forward(self, neurons):
+        if self.I_tau is not None:
+            neurons.I -= neurons.I / self.I_tau
+        
+        neurons.I += neurons.proximal_input
+
+        non_priming = neurons.get_neuron_vec(0.0)
+        if self.apical_provocativeness is not None:
+            non_priming += torch.Tanh(neurons.apical_input) * self._calc_ratio(neurons, self.apical_provocativeness)
+        if self.distal_provocativeness is not None:
+            non_priming += torch.Tanh(neurons.distal_input) * self._calc_ratio(neurons, self.distal_provocativeness)
+        
+        neurons.I += non_priming/neurons.R # TODO what to do ? (* tau)
 
 
-class KWTA(Behaviour):
+        neurons.apical_input = 0
+        neurons.distal_input = 0
+        neurons.proximal_input = 0
+
+
+class Fire(Behavior):
+    """
+    Asks neurons to Fire.
+    """
+    def forward(self, neurons):
+        neurons.Fire(neurons)
+
+class KWTA(Behavior):
     """
     KWTA behavior of spiking neurons:
 
-    if v >= threshold then v = v_reset and all other neurons are inhibited.
+    if v >= threshold then v = v_reset and all other spiked neurons are inhibited.
+
+    Note: Population should be built by NeuronDimension.
+    and firing behavior should be added too.
+
+    Args:
+        k (int): number of winners.
+        dimension (int, optional): K-WTA on specific dimension. defaults to None.
     """
 
-    def __calc_inhibited(self, neurons, winners_masked):
-        """
-        Calculates the inhibition rate for each neuron.
-        """
-        max_sub_threshold = neurons.v[neurons.v < neurons.threshold].max()
-        val = neurons.threshold - max_sub_threshold
-        sup_threshold = winners_masked[
-            (~winners_masked.mask) & (winners_masked >= neurons.threshold)
-        ]
-        return (
-            val * (sup_threshold - sup_threshold.min()) / sup_threshold.ptp()
-            - max_sub_threshold
-        )
-
     def set_variables(self, neurons):
-        self.k = self.get_init_attr("k", 10)
+        self.k = self.get_init_attr("k", None)
+        self.dimension = self.get_init_attr('dimension', None)
+        self.shape = (neurons.depth, neurons.height, neurons.width)
 
-    def new_iteration(self, neurons):
-        will_spike = neurons.v * (neurons.v >= neurons.threshold)
+    def forward(self, neurons):
+        will_spike = (neurons.v >= neurons.threshold)
 
-        if will_spike.sum() <= self.k:
+        will_spike_v = (will_spike * (neurons.v - neurons.threshold))
+
+        if self.dimension:
+            will_spike_v = will_spike_v.reshape(self.shape)
+            will_spike = will_spike.reshape(self.shape)
+        else:
+            self.dimension = 0
+        
+        if (will_spike.sum(axis=self.dimension) <= self.k).all():
             return
 
-        kw = np.argpartition(will_spike, -self.k)[-self.k :]
-        winners_masked = np.ma.array(neurons.v, mask=False)
-        winners_masked.mask[kw] = True
-        winners_masked[
-            (~winners_masked.mask) & (winners_masked >= neurons.threshold)
-        ] = self.__calc_inhibited(neurons, winners_masked)
+        k_values, k_winners_indices = torch.topk(will_spike_v, self.k+1, dim=self.dimension, sorted=False)
+        min_values = k_values.min(dim = 0).values
+        winners = will_spike_v > min_values.expand(will_spike_v.size())
+        ignored = will_spike * (~winners)
 
-
-class SpikeTrace(Behaviour):
-    def set_variables(self, neurons):
-        self.set_init_attrs_as_variables(neurons)
-        self.add_tag("trace")
-        t = neurons.afferent_synapses.max_delay
-        neurons.traces = neurons.get_neuron_vec_buffer(t)
-
-    def new_iteration(self, neurons):
-        dx = -neurons.traces / neurons.tau_s + neurons.spikes
-        x = neurons.traces[:, 0] + dx
-        neurons.buffer_roll(neurons.traces, x)
-
-
-class SpikeHistory(Behaviour):
-    def set_variables(self, neurons):
-        self.add_tag("history")
-        t = neurons.afferent_synapses.max_delay
-        neurons.spike_history = neurons.get_neuron_vec_buffer(t)
-
-    def new_iteration(self, neurons):
-        neurons.buffer_roll(neurons.spike_history, neurons.spikes)
+        neurons.v[ignored.reshape((-1,))] = neurons.v_reset

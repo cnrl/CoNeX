@@ -2,10 +2,10 @@
 Network-wide neuromodulators.
 """
 
-from PymoNNto import Behaviour
+from pymonntorch import Behavior
 
 
-class Dopamine(Behaviour):
+class Dopamine(Behavior):
     """
     Compute extracellular dopamine concentration.
 
@@ -14,6 +14,7 @@ class Dopamine(Behaviour):
 
     Args:
         tau_dopamine (float): Dopamine decay time constant.
+        initial_dopamine_concentration (float, optional): Initial dopamine concentration
     """
 
     def set_variables(self, network):
@@ -24,11 +25,11 @@ class Dopamine(Behaviour):
             network (Network): Network object.
         """
         self.add_tag("Dopamine")
-        self.set_init_attrs_as_variables(network)
 
-        network.dopamine_concentration = network.reward
+        network.tau_dopamine = self.get_init_attr("tau_dopamine", 0.0)
+        network.dopamine_concentration = self.get_init_attr("initial_dopamine_concentration", network.reward) 
 
-    def new_iteration(self, network):
+    def forward(self, network):
         """
         Compute extracellular dopamine concentration at each time step by:
 
