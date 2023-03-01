@@ -48,6 +48,7 @@ class SimpleDendriticInput(Behavior):
     def forward(self, synapse):
         synapse.dst.__dict__[self.connection_type] += self.current_coef * self.current_type * self.calculate_input(synapse)
 
+
 class Conv2dDendriteInput(SimpleDendriticInput):
     """
     Weight shape = (out_channel, in_channel, kernel_height, kernel_width)
@@ -61,9 +62,9 @@ class Conv2dDendriteInput(SimpleDendriticInput):
         synapse.padding = self.get_init_attr('padding', 0)
 
     def calculate_input(self, synapse):
-        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay)
+        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay).float()
         spikes = spikes.reshape(synapse.src_shape)
-        I = F.conv2d(input = spikes.float(), weight = synapse.weights, stride = synapse.stride, padding = synapse.padding)
+        I = F.conv2d(input = spikes, weight = synapse.weights, stride = synapse.stride, padding = synapse.padding)
         return I.reshape((-1,))
 
 
