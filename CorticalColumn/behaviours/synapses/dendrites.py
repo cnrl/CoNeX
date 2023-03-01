@@ -10,6 +10,8 @@ import torch.nn.functional as F
 # TODO lower than threshold nonPriming
 # TODO Priming inhibtory neurons???? by inhibitory neurons
 # TODO Conv2d NonPriming
+# TODO current delay 
+
 
 class SimpleDendriticInput(Behavior):
     """
@@ -47,26 +49,34 @@ class SimpleDendriticInput(Behavior):
         synapse.dst.__dict__[self.connection_type] += self.current_coef * self.current_type * self.calculate_input(synapse)
 
 class Conv2dDendriteInput(SimpleDendriticInput):
+    """
+    Weight shape = (out_channel, in_channel, kernel_height, kernel_width)
+    """
+
+
     def set_variables(self, synapse):
         super().set_variables(synapse)
         
         synapse.stride = self.get_init_attr('stride', 1)
+        synapse.padding = self.get_init_attr('padding', 0)
 
     def calculate_input(self, synapse):
         spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay)
         spikes = spikes.reshape(synapse.src_shape)
-        return F.conv2d(input = spikes.float(), weight = synapse.weights, stride = synapse.stride)
+        I = F.conv2d(input = spikes.float(), weight = synapse.weights, stride = synapse.stride, padding = synapse.padding)
+        return I.reshape((-1,))
 
-class Local2dDendriteInput(SimpleDendriticInput):
 
-    # weight shape (o_n, p_h, p_w, p_c, w_h, w_w)
-    # weight shape (out channel, 
-    #               result_height * result_weight,
-    #               inpit_channel * kernel_height * kernel_weight)
+class Local2dDendriteInput(Conv2dDendriteInput):
+    """
+    Weight shape = (out_channel, out_size, connection_size)
+                    out_size = out_height * out_width, 
+                    connection_size = input_channel * connection_height * connection_width
+    """
 
     def calculate_input(self, synapse):
-        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay) # to.float()
+        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay).float()
         spikes = spikes.reshape(synapse.src_shape)
-        spikes = spikes.unfold(kernel_size=synapse.weights.size()[-2:], stride = synapse.stride).transpose(1,2)
+        spikes = F.unfold(spikes, kernel_size=synapse.kernel_shape[-2:], stride = synapse.stride, padding=synapse.padding).T
         I = (spikes * synapse.weights).sum(axis=-1) 
         return I.reshape((-1,))
