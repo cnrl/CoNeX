@@ -23,7 +23,7 @@ class SpikeTrace(Behavior):
 
     def forward(self, neurons):
         neurons.trace -= neurons.trace / self.tau_s
-        neurons.trace += neurons.spike 
+        neurons.trace += neurons.spikes
 
 class NeuronAxon(Behavior):
     """
@@ -37,7 +37,7 @@ class NeuronAxon(Behavior):
     """
     def set_variables(self, neurons):
         self.max_delay = self.get_init_attr('max_delay',None)
-        self.have_trace = self.get_init_attr('have_trace', False)
+        self.have_trace = self.get_init_attr('have_trace', hasattr(neurons, 'trace'))
 
         if self.max_delay is not None:
             self.spike_history = neurons.get_neuron_vec_buffer(self.max_delay)
@@ -56,14 +56,14 @@ class NeuronAxon(Behavior):
         if self.max_delay  is not None:
             return self.trace_history[delay]
         else:
-            return neurons.trace
+            return neuorns.trace
     
     def forward(self, neurons):
         if self.max_delay:
             self.spike_history.buffer_roll(neurons.spike)
             if have_trace:
                 self.trace_history.buffer_roll(neurons.trace)
-                # TODO should trace decay as it propagate throught the axon 
+                # TODO should trace decay as it propagate throught the axon? 
 
 class NeuronDendrite(Behavior): # TODO seperation
     """

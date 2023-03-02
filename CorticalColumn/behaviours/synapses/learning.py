@@ -32,7 +32,7 @@ class SimpleSTDP(Behavior):
         src_spike, dst_spike, src_spike_trace, dst_spike_trace = self.get_spike_and_trace(synapse)
 
         dw_plus = torch.outer(dst_spike_trace, src_spike) * self.a_plus
-        dw_minus = torch.outer(src_spike_trace, dst_spike) * self.a_minus
+        dw_minus = torch.outer(dst_spike, src_spike_trace) * self.a_minus
 
         synapse.weights += dw_plus - dw_minus
 
@@ -44,49 +44,49 @@ class Conv2dSTDP(SimpleSTDP):
     def forward(self, synapse):
         src_spike, dst_spike, src_spike_trace, dst_spike_trace = self.get_spike_and_trace(synapse)
 
-        src_spike = src_spike.type(float).reshape(synapse.src_shape)
-        src_spike = src_spike.unfold(kernel_size=synapse.weights.size()[-2:], stride = synapse.stride)
+        src_spike = src_spike.reshape(synapse.src_shape).to(torch.float32)
+        src_spike = F.unfold(src_spike, kernel_size=synapse.weights.size()[-2:], stride = synapse.stride)
         src_spike = src_spike.expand(synapse.dst_shape[0], *src_spike.shape)
 
         dst_spike_trace = dst_spike_trace.reshape((synapse.dst_shape[0], -1, 1))
-        
+
         dw_minus = torch.bmm(src_spike, dst_spike_trace).reshape(synapse.weights.shape)
         
         src_spike_trace = src_spike_trace.reshape(synapse.src_shape)
-        src_spike_trace = src_spike_trace.unfold(kernel_size=synapse.weights.size()[-2:], stride = synapse.stride)
+        src_spike_trace = F.unfold(src_spike_trace, kernel_size=synapse.weights.size()[-2:], stride = synapse.stride)
         src_spike_trace = src_spike_trace.expand(synapse.dst_shape[0], *src_spike_trace.shape)
 
-        dst_spike = dst_spike.type(float).reshape((synapse.dst_shape[0], -1, 1))
+        dst_spike = dst_spike.reshape((synapse.dst_shape[0], -1, 1)).to(torch.float32)
         
         dw_plus = torch.bmm(src_spike_trace, dst_spike).reshape(synapse.weights.shape)
 
-        synapse.weights += (dw_plus * self.a_plus - dw_minus * slef.a_minus) / self.weight_divisor
+        synapse.weights += (dw_plus * self.a_plus - dw_minus * self.a_minus) / self.weight_divisor
 
 class Local2dSTDP(SimpleSTDP):
     def forward(self, synapse):
         src_spike, dst_spike, src_spike_trace, dst_spike_trace = self.get_spike_and_trace(synapse)
 
-        src_spike = src_spike.type(float).reshape(synapse.src_shape)
-        src_spike = src_spike.unfold(kernel_size=synapse.weight_shape, stride = synapse.stride)
+        src_spike = src_spike.reshape(synapse.src_shape).to(torch.float32)
+        src_spike = F.unfold(src_spike, kernel_size=synapse.kernel_shape[-2:], stride = synapse.stride)
         src_spike = src_spike.transpose(0, 1)
         src_spike = src_spike.expand(synapse.dst_shape[0], *src_spike.shape)
 
         dst_spike_trace = dst_spike_trace.reshape((synapse.dst_shape[0], -1, 1))
-        dst_spike_trace = dst_spike_trace.expand(synapse.weight.shape)
+        dst_spike_trace = dst_spike_trace.expand(synapse.weights.shape)
 
         dw_minus = dst_spike_trace * src_spike
         
         src_spike_trace = src_spike_trace.reshape(synapse.src_shape)
-        src_spike_trace = src_spike_trace.unfold(kernel_size=synapse.weight_shape, stride = synapse.stride)
+        src_spike_trace = F.unfold(src_spike_trace, kernel_size=synapse.kernel_shape[-2:], stride = synapse.stride)
         src_spike_trace = src_spike_trace.transpose(0, 1)
         src_spike_trace = src_spike_trace.expand(synapse.dst_shape[0], *src_spike_trace.shape)
 
-        dst_spike = dst_spike.type(float).reshape((synapse.dst_shape[0], -1, 1))
-        dst_spike = dst_spike.expand(synapse.weight.shape)
+        dst_spike = dst_spike.reshape((synapse.dst_shape[0], -1, 1)).to(torch.float32)
+        dst_spike = dst_spike.expand(synapse.weights.shape)
 
         dw_plus = dst_spike * src_spike_trace
 
-        synapse.weights += (dw_plus * self.a_plus - dw_minus * slef.a_minus)
+        synapse.weights += (dw_plus * self.a_plus - dw_minus * self.a_minus)
 
 """
 class STDP_behaviour(Behaviour):

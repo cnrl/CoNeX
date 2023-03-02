@@ -28,7 +28,7 @@ class LIF(Behavior):
         R (float): the resistance of the membrane potential.
         threshold (float): the threshold of neurons to initiate spike.
         v_reset (float): immediate membrane potential after a spike.
-        v_rest (flaot): neuron membrane potential in absent of input. 
+        v_rest (float): neuron membrane potential in absent of input. 
     """
 
     def set_variables(self, neurons):
@@ -100,7 +100,7 @@ class ELIF(LIF):
         R (float): the resistance of the membrane potential.
         threshold (float): the threshold of neurons to initiate spike.
         v_reset (float): immediate membrane potential after a spike.
-        v_rest (flaot): neuron membrane potential in absent of input. 
+        v_rest (float): neuron membrane potential in absent of input. 
         delta (float): the constant defining the sharpness of exponential curve.
         theta_rh (float): The boosting threshold. (rheobase)
     """
@@ -141,12 +141,12 @@ class AELIF(ELIF):
         R (float): the resistance of the membrane potential.
         threshold (float): the threshold of neurons to initiate spike.
         v_reset (float): immediate membrane potential after a spike.
-        v_rest (flaot): neuron membrane potential in absent of input.
+        v_rest (float): neuron membrane potential in absent of input.
         delta (float): the constant defining the sharpness of exponential curve.
         theta_rh (float): The boosting threshold.
         alpha (float): subthreshold adaptation parameter.
         beta (float): spike-triggered adaptation parameter.
-        w_tau (flaot): time constant of adaptation decay.
+        w_tau (float): time constant of adaptation decay.
     """
 
     def set_variables(self, neurons):

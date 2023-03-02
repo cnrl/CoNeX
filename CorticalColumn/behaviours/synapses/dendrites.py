@@ -62,7 +62,7 @@ class Conv2dDendriteInput(SimpleDendriticInput):
         synapse.padding = self.get_init_attr('padding', 0)
 
     def calculate_input(self, synapse):
-        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay).float()
+        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay).to(torch.float32)
         spikes = spikes.reshape(synapse.src_shape)
         I = F.conv2d(input = spikes, weight = synapse.weights, stride = synapse.stride, padding = synapse.padding)
         return I.reshape((-1,))
@@ -76,7 +76,7 @@ class Local2dDendriteInput(Conv2dDendriteInput):
     """
 
     def calculate_input(self, synapse):
-        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay).float()
+        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay).to(torch.float32)
         spikes = spikes.reshape(synapse.src_shape)
         spikes = F.unfold(spikes, kernel_size=synapse.kernel_shape[-2:], stride = synapse.stride, padding=synapse.padding).T
         I = (spikes * synapse.weights).sum(axis=-1) 
