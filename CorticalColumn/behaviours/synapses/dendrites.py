@@ -19,7 +19,10 @@ class SimpleDendriticInput(Behavior):
     of pre-synaptic neurons and sets a coefficient, accordingly.
 
     Note: weights must be intialize by others behaviors.
-          Also, Axon paradigm should be added to synapse beforehand.
+          Also, Axon paradigm should be added to the neurons.
+          Connection type (Proximal, Distal, Apical) should be specified by the tag 
+          of the synapse. and Dendrite behavior of the neurons group should access the 
+          `I` of each synapse to apply them.
 
     Args:
         current_coef (float): scaller coefficient that multiplys weights
@@ -34,19 +37,19 @@ class SimpleDendriticInput(Behavior):
         """
         synapse.add_tag(self.__class__.__name__)
         self.current_coef = self.get_init_attr('current_coef', 1)
-        self.connection_type = self.get_init_attr('connection_type', 'proximal_input')
 
-        self.add_tag(self.connection_type)
         self.current_type = (
         -1 if ("GABA" in synapse.src.tags) or ("inh" in synapse.src.tags) else 1
         )
+
+        synapse.I = synapse.dst.get_neuron_vec(0)
 
     def calculate_input(self, synapse):
         spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay)
         return torch.sum(synapse.weights[:, spikes], axis=1)
     
     def forward(self, synapse):
-        synapse.dst.__dict__[self.connection_type] += self.current_coef * self.current_type * self.calculate_input(synapse)
+        synapse.I = self.current_coef * self.current_type * self.calculate_input(synapse)
 
 
 class Conv2dDendriteInput(SimpleDendriticInput):
