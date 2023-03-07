@@ -76,6 +76,7 @@ class WeightInitializer(Behavior):
         init_mode = self.get_init_attr("mode", None)
         synapse.weights = self.get_init_attr('weights', None)
         synapse.weight_shape = self.get_init_attr('weight_shape', None)
+        synapse.kernel_shape = self.get_init_attr('kernel_shape', None)
 
         if init_mode is not None and synapse.weights is None:
             if synapse.weight_shape is None:
