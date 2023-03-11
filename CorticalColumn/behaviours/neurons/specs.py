@@ -61,7 +61,7 @@ class NeuronAxon(Behavior):
     def forward(self, neurons):
         if self.max_delay:
             neurons.buffer_roll(mat=self.spike_history, new=neurons.spike)
-            if have_trace:
+            if self.have_trace:
                 neurons.buffer_roll(mat=self.trace_history, new=neurons.trace)
                 # TODO should trace decay as it propagate throught the axon? 
 
