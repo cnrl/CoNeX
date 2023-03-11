@@ -112,4 +112,4 @@ class WeightClip(Behavior):
         Args:
             synapses (SynapseGroup): The synapses whose weight should be bound.
         """
-        synapse.weights = torch.clip(synapses.weights, self.w_min, self.w_max)
+        synapses.weights = torch.clip(synapses.weights, self.w_min, self.w_max)
