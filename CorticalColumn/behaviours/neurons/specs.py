@@ -8,6 +8,14 @@ import torch
 # TODO inhibition of KWTA, how should it be???
 # TODO adaptive neuorns will KWTA, What behaviour should I expect???
 
+class InherentNoise(Behavior):
+    def set_variables(self, neurons):
+        self.noise_function = self.get_init_attr('noise_function', torch.randn)
+
+    def forward(self, neurons):
+        self.v += self.noise_function(neurons.size)
+
+
 class SpikeTrace(Behavior):
     """
     calculates the spike trace.
