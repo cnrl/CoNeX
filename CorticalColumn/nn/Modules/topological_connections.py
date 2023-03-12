@@ -5,7 +5,7 @@ Structured SynapseGroup connection schemes.
 
 import numpy as np
 import scipy.sparse as sp
-from PymoNNto import SynapseGroup
+from pymonntorch import SynapseGroup
 
 from CorticalColumn.behaviours.synapses.specs import DelayInitializer, WeightInitializer
 

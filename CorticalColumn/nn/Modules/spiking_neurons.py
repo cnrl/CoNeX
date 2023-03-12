@@ -2,7 +2,7 @@
 Structure of spiking neural populations.
 """
 
-from PymoNNto import NeuronGroup
+from pymonntorch import NeuronGroup
 
 from CorticalColumn.behaviours import Fire
 
