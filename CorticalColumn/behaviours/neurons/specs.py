@@ -47,23 +47,30 @@ class NeuronAxon(Behavior):
         neurons.axon = self
 
     def get_spike(self, neurons, delay=None):
-        if self.max_delay is not None and delay is not None:
-            return self.spike_history[delay]
+        if self.max_delay is not None:
+            if delay is not None:
+                return self.spike_history[delay]
+            else:
+                return self.spike_history[0]
         else:
             return neurons.spikes
 
     def get_spike_trace(self, neuorns, delay=None):
-        if self.max_delay is not None and delay is not None:
-            return self.trace_history[delay]
+        if self.max_delay is not None:
+            if delay is not None:
+                return self.trace_history[delay]
+            else:
+                return self.trace_history[0]
         else:
             return neuorns.trace
     
     def forward(self, neurons):
         if self.max_delay:
-            neurons.buffer_roll(mat=self.spike_history, new=neurons.spike)
+            self.spike_history = neurons.buffer_roll(mat=self.spike_history, new=neurons.spikes)
             if self.have_trace:
-                neurons.buffer_roll(mat=self.trace_history, new=neurons.trace)
+                self.trace_history = neurons.buffer_roll(mat=self.trace_history, new=neurons.trace)
                 # TODO should trace decay as it propagate throught the axon? 
+                
 
 class NeuronDendrite(Behavior): # TODO seperation
     """
@@ -106,20 +113,29 @@ class NeuronDendrite(Behavior): # TODO seperation
         return dv
 
     def _add_proximal(self, neurons, synapse):
-        if self.proximal_max_delay is not None and synapse.delay is not None:
-            neurons.proximal_input[synapse.delay] += synapse.I
+        if self.proximal_max_delay is not None:
+            if synapse.dst_delay is not None:
+                neurons.proximal_input[synapse.dst_delay] += synapse.I
+            else:
+                neurons.proximal_input[0] += synapse.I
         else:
             neurons.proximal_input += synapse.I
     
     def _add_apical(self, neurons, synapse):
-        if self.apical_max_delay is not None and synapse.delay is not None:
-            neurons.apical_input[synapse.delay] += synapse.I
+        if self.apical_max_delay is not None:
+            if synapse.dst_delay is not None:
+                neurons.apical_input[synapse.ds_tdelay] += synapse.I
+            else:
+                neurons.apical_input[0] += synapse.I
         else:
             neurons.apical_input += synapse.I
 
     def _add_distal(self, neurons, synapse):
-        if self.distal_max_delay is not None and synapse.delay is not None:
-            neurons.distal_input[synapse.delay] += synapse.I
+        if self.distal_max_delay is not None:
+            if synapse.dst_delay is not None:
+                neurons.distal_input[synapse.dst_delay] += synapse.I
+            else:
+                neurons.distal_input[0] += synapse.I
         else:
             neurons.distal_input += synapse.I
 
@@ -147,15 +163,15 @@ class NeuronDendrite(Behavior): # TODO seperation
         neurons.I += non_priming/neurons.R # TODO what to do ? (* tau)
 
         if self.apical_max_delay is not None:
-            neurons.buffer_roll(mat=neurons.apical_input, new=0, counter=True)
+            neurons.apical_input = neurons.buffer_roll(mat=neurons.apical_input, new=0, counter=True)
         elif neurons.apical_input != 0:
             neurons.apical_input.zero_()
         if self.distal_max_delay is not None:
-            neurons.buffer_roll(mat=neurons.distal_input, new=0, counter=True)
+            neurons.distal_input = neurons.buffer_roll(mat=neurons.distal_input, new=0, counter=True)
         elif neurons.distal_input != 0:
             neurons.distal_input.zero_()
         if self.proximal_max_delay is not None:
-            neurons.buffer_roll(mat=neurons.proximal_input, new=0, counter=True)
+            neurons.proximal_input = neurons.buffer_roll(mat=neurons.proximal_input, new=0, counter=True)
         else:
             neurons.proximal_input.zero_()
 
