@@ -22,6 +22,8 @@ class Layer:
         inh_exc_config=None,
         inh_inh_config=None,
     ):
+        self.network = net
+        
         self.exc_pop = self._create_neural_population(net, exc_pop_config)
         if self.exc_pop and "exc" not in self.exc_pop.tags:
                 self.exc_pop.add_tag("exc")
