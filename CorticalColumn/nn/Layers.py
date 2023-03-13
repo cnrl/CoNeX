@@ -37,28 +37,20 @@ class Layer:
             self.exc_exc_syn = self._create_synaptic_connection(
                 self.exc_pop, self.exc_pop, net, exc_exc_config
             )
-            if self.exc_exc_syn:
-                self.exc_exc_syn.add_tag("Proximal")
         
         if self.inh_pop:
             self.inh_inh_syn = self._create_synaptic_connection(
                 self.inh_pop, self.inh_pop, net, inh_inh_config
             )
-            if self.inh_inh_syn:
-                self.inh_inh_syn.add_tag("Proximal")
         
         if self.inh_pop and self.exc_pop:
             self.exc_inh_syn = self._create_synaptic_connection(
                 self.exc_pop, self.inh_pop, net, exc_inh_config
             )
-            if self.exc_inh_syn:
-                self.exc_inh_syn.add_tag("Proximal")
             
             self.inh_exc_syn = self._create_synaptic_connection(
                 self.inh_pop, self.exc_pop, net, inh_exc_config
             )
-            if self.inh_exc_syn:
-                self.inh_exc_syn.add_tag("Proximal")
 
             if self.inh_exc_syn is None and self.exc_inh_syn is None:
                 raise RuntimeError(f"No connection between Excitatory and Inhibitory populations in {self.__class__.__name__}")
@@ -70,22 +62,19 @@ class Layer:
                 return SpikingNeuronGroup(net=net, **config)
             else:
                 return NeuronGroup(net=net, **config)
-        elif isinstance(config, NeuronGroup):
-            return config
         else:
-            warnings.warn(f"No proper excitatory population is defined in {cls.__name__}.")
+            warnings.warn(f"No proper neural population is defined in {cls.__name__}.")
             return None
         
     @classmethod
     def _create_synaptic_connection(cls, src, dst, net, config):
         if isinstance(config, dict):
             if not config.get("user_defined", False):
-                return StructuredSynapseGroup(src, dst, net, config)
+                syn = StructuredSynapseGroup(src, dst, net, config)
             else:
-                return SynapseGroup(src, dst, net, config)
+                syn = SynapseGroup(src, dst, net, config)
+            syn.add_tag("Proximal")
+            return syn
         else:
             warnings.warn(f"No synaptic connection from {src} to {dst} in {cls.__name__}")
             return None
-
-    def forward(self, input):
-        pass
