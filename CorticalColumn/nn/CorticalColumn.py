@@ -2,7 +2,7 @@ import warnings
 from CorticalColumn.nn.Layers import Layer
 from CorticalColumn.nn.Modules.topological_connections import StructuredSynapseGroup
 
-from pymonntorch import SynapseGroup
+from pymonntorch import SynapseGroup, NeuronGroup
 
 # TODO: handle multi-scale
 
@@ -94,17 +94,47 @@ class CorticalColumn:
             return None
 
     @classmethod
-    def _add_synaptic_connection(cls, src, dst, config):  # TODO
+    def _add_synaptic_connection(cls, src, dst, config):
+        if src is None or dst is None:
+            return {}
+        
         net = src.network
-        if isinstance(config, dict):
-            if not config.get("user_defined", False):
-                syn_type = StructuredSynapseGroup
+
+        if not isinstance(config, dict):
+            raise ValueError("Synaptic connection config must be a dictionary.")
+        
+        synapses = {}
+        for key in config:
+            if isinstance(config[key], dict):
+                if isinstance(src, NeuronGroup):
+                    src_pop = src
+                else:
+                    src_pop = getattr(src, config[key]["src"])
+
+                if isinstance(dst, NeuronGroup):
+                    dst_pop = dst
+                else:
+                    dst_pop = getattr(dst, config[key]["dst"])
+
+                if not config[key].get("user_defined", False):
+                    synapses[key] = StructuredSynapseGroup(
+                        src=src_pop,
+                        dst=dst_pop,
+                        net=net,
+                        **config[key]
+                    )
+                else:
+                    synapses[key] = SynapseGroup(
+                        src=src_pop,
+                        dst=dst_pop,
+                        net=net,
+                        **config[key]
+                    )
+            elif isinstance(config[key], SynapseGroup) and config[key].network == net:
+                    synapses[key] = config[key]
             else:
-                syn_type = SynapseGroup
-        else:
-            warnings.warn(f"No synaptic connection from {src} to {dst} in {cls.__name__}")
-            return None
-        return syn_type(src, dst, net, config)
+                warnings.warn(f"Ignoring connection {key} from {src} to {dst}...")
+        return synapses
 
     def add_layer(self, layer, name):
         if name not in ["L2_3", "L4", "L5", "L6"]:
