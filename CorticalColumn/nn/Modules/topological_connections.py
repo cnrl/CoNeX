@@ -5,10 +5,16 @@ Structured SynapseGroup connection schemes.
 from CorticalColumn.behaviours.synapses import learning, dendrites
 from pymonntorch import SynapseGroup
 
-from CorticalColumn.behaviours.synapses.specs import DelayInitializer, SynapseInit, WeightClip, WeightInitializer
+from CorticalColumn.behaviours.synapses.specs import (
+    DelayInitializer,
+    SynapseInit,
+    WeightClip,
+    WeightInitializer,
+)
 
 # TODO: define delay range
 # TODO: should we add (read) structure and learning rule to (from) tags?
+
 
 class StructuredSynapseGroup(SynapseGroup):
     def __init__(
@@ -35,12 +41,11 @@ class StructuredSynapseGroup(SynapseGroup):
             tag = f"StructuredSynapseGroup_{len(net.synapseGroups) + 1}"
 
         behavior = {
-            12 : SynapseInit(),
-            13 : WeightInitializer(mode=weight_init_mode, **weight_init_params),
-            14 : DelayInitializer(mode=delay_init_mode, **delay_params),
-
-            51 : WeightNormalization(norm=weight_norm),
-            52 : WeightClip(w_min=w_min, w_max=w_max),
+            12: SynapseInit(),
+            13: WeightInitializer(mode=weight_init_mode, **weight_init_params),
+            14: DelayInitializer(mode=delay_init_mode, **delay_params),
+            51: WeightNormalization(norm=weight_norm),
+            52: WeightClip(w_min=w_min, w_max=w_max),
         }
 
         learning_rule = structure + learning_rule
