@@ -36,10 +36,10 @@ class CorticalColumn:
         self.representation_layer = representation_layer
         self.motor_layer = motor_layer
 
-        self.L2_3 = self._create_layer(net, L2_3_config)
-        self.L4 = self._create_layer(net, L4_config)
-        self.L5 = self._create_layer(net, L5_config)
-        self.L6 = self._create_layer(net, L6_config)
+        self.L2_3 = self._create_layer(net, L2_3_config, "L2_3")
+        self.L4 = self._create_layer(net, L4_config, "L4")
+        self.L5 = self._create_layer(net, L5_config, "L5")
+        self.L6 = self._create_layer(net, L6_config, "L6")
 
         if self.L6 is None and self.L4 is None:
             raise RuntimeError("At least one of L4 and L6 must be defined in a cortical column.")
@@ -86,10 +86,12 @@ class CorticalColumn:
             self.L5, self.motor_layer, L5_motor_syn_config
         )
 
+        self.network.columns.append(self)
+
     @classmethod
-    def _create_layer(cls, net, config):
+    def _create_layer(cls, net, config, name):
         if config:
-            return Layer(net, **config)
+            return Layer(name, net, **config)
         else:
             return None
 
@@ -105,6 +107,7 @@ class CorticalColumn:
         
         synapses = {}
         for key in config:
+            tag = src.tags[0]+" => "+dst.tags[0]+" : "+key
             if isinstance(config[key], dict):
                 if isinstance(src, NeuronGroup):
                     src_pop = src
@@ -130,17 +133,14 @@ class CorticalColumn:
                         net=net,
                         **config[key]
                     )
+                
+                synapses[key].tags.insert(0, tag)
+                synapses[key].add_tag("Distal")
             elif isinstance(config[key], SynapseGroup) and config[key].network == net:
-                    synapses[key] = config[key]
-            else:
-                warnings.warn(f"Ignoring connection {key} from {src} to {dst}...")
-        return synapses
+                synapses[key] = config[key]
 
-    def add_layer(self, layer, name):
-        if name not in ["L2_3", "L4", "L5", "L6"]:
-            raise AttributeError("Invalid cortical layer name:", name)
-        if not isinstance(layer, Layer):
-            raise ValueError("Argument layer must be of type CCSNN.nn.Layer.")
-        if hasattr(self, name):
-            warnings.warn(f"{name} is being redefined...")
-        setattr(self, name, layer)
+                synapses[key].tags.insert(0, tag)
+                synapses[key].add_tag("Distal")
+            else:
+                warnings.warn(f"Ignoring connection {key} from {src.tags[0]} to {dst.tags[0]}...")
+        return synapses
