@@ -8,14 +8,15 @@ Implementation of Cortical layers.
 import warnings
 from CorticalColumn.nn.Modules.spiking_neurons import SpikingNeuronGroup
 from CorticalColumn.nn.Modules.topological_connections import StructuredSynapseGroup
-from pymonntorch import NeuronGroup, SynapseGroup
+from pymonntorch import NeuronGroup, SynapseGroup, TaggableObject
 
 
-class Layer:
+class Layer(TaggableObject):
     def __init__(
         self,
-        name,
+        tag,
         net,
+        cortical_column,
         exc_pop_config=None,
         inh_pop_config=None,
         exc_exc_config=None,
@@ -23,8 +24,9 @@ class Layer:
         inh_exc_config=None,
         inh_inh_config=None,
     ):
-        self.tags = [name]
+        super().__init__(cortical_column.tags[0]+tag, device=net.device)
         self.network = net
+        self.cortical_column = cortical_column
         
         self.exc_pop = self._create_neural_population(net, exc_pop_config, self.tags[0]+"exc")
         if self.exc_pop and "exc" not in self.exc_pop.tags:
@@ -60,21 +62,21 @@ class Layer:
                 raise RuntimeError(f"No connection between Excitatory and Inhibitory populations in {self.tags[0]}")
             
     @staticmethod
-    def _create_neural_population(net, config, name):
+    def _create_neural_population(net, config, tag):
         if  isinstance(config, dict):
             if not config.get("user_defined", False):
                 if config.get("tag", None):
-                    config["tag"] = name
+                    config["tag"] = tag
                 else:
                     if isinstance(config["tag"], str):
-                        config["tag"] = name+","+config["tag"]
+                        config["tag"] = tag+","+config["tag"]
                     else:
-                        config["tag"].insert(0, name)
+                        config["tag"].insert(0, tag)
                 return SpikingNeuronGroup(net=net, **config)
             else:
                 return NeuronGroup(net=net, **config)
         else:
-            warnings.warn(f"No proper neural population is defined in {name}.")
+            warnings.warn(f"No proper neural population is defined in {tag}.")
             return None
         
     @staticmethod

@@ -12,3 +12,11 @@ class Neocortex(Network):
         super().__init__(tag="Neocortex", behavior=behavior, device=device)
         self.dt = dt
         self.columns = []
+        self.inter_column_synapses = []
+
+    def initialize(self, info=True, storage_manager=None):
+        for syn in self.SynapseGroups:
+            if hasattr(syn, "Apical"):
+                self.inter_column_synapses.append(syn)
+
+        super().initialize(info=info, storage_manager=storage_manager)

@@ -2,11 +2,11 @@ import warnings
 from CorticalColumn.nn.Layers import Layer
 from CorticalColumn.nn.Modules.topological_connections import StructuredSynapseGroup
 
-from pymonntorch import SynapseGroup, NeuronGroup
+from pymonntorch import SynapseGroup, NeuronGroup, TaggableObject
 
 # TODO: handle multi-scale
 
-class CorticalColumn:
+class CorticalColumn(TaggableObject):
     def __init__(
         self,
         net,
@@ -29,6 +29,7 @@ class CorticalColumn:
         L2_3_representation_syn_config=None,
         L5_motor_syn_config=None,
     ):
+        super().__init__("CorticalColumn"+len(net.cortical_column), device=net.device)
         self.network = net
 
         self.sensory_layer = sensory_layer
@@ -88,10 +89,9 @@ class CorticalColumn:
 
         self.network.columns.append(self)
 
-    @classmethod
-    def _create_layer(cls, net, config, name):
+    def _create_layer(self, net, config, name):
         if config:
-            return Layer(name, net, **config)
+            return Layer(name, net, self, **config)
         else:
             return None
 
@@ -135,7 +135,13 @@ class CorticalColumn:
                     )
                 
                 synapses[key].tags.insert(0, tag)
-                synapses[key].add_tag("Distal")
+                try:
+                    if src_pop.cortical_column == dst_pop.cortical_column:
+                        synapses[key].add_tag("Distal")
+                    else:
+                        synapses[key].add_tag("Apical")
+                except AttributeError:
+                    synapses[key].add_tag("Distal")
             elif isinstance(config[key], SynapseGroup) and config[key].network == net:
                 synapses[key] = config[key]
 
@@ -143,4 +149,42 @@ class CorticalColumn:
                 synapses[key].add_tag("Distal")
             else:
                 warnings.warn(f"Ignoring connection {key} from {src.tags[0]} to {dst.tags[0]}...")
+        return synapses
+    
+    def connect(
+            self,
+            cortical_column,
+            L2_3_L2_3_config=None,
+            L2_3_L4_config=None,
+            L5_L5_config=None,
+            L5_L6_config=None,
+    ):
+        synapses = {}
+        tag = self.tags[0]+"_"+"L2_3 => "+cortical_column.tags[0]+"_L2_3"
+        synapses[tag] = self._add_synaptic_connection(
+            self.L2_3, cortical_column.L2_3, L2_3_L2_3_config
+        )
+        all_empty = synapses[tag] == {}
+
+        tag = self.tags[0]+"_"+"L2_3 => "+cortical_column.tags[0]+"_L4"
+        synapses[tag] = self._add_synaptic_connection(
+            self.L2_3, cortical_column.L4, L2_3_L4_config
+        )
+        all_empty *= synapses[tag] == {}
+
+        tag = self.tags[0]+"_"+"L5 => "+cortical_column.tags[0]+"_L5"
+        synapses[tag] = self._add_synaptic_connection(
+            self.L5, cortical_column.L5, L5_L5_config
+        )
+        all_empty *= synapses[tag] == {}
+
+        tag = self.tags[0]+"_"+"L5 => "+cortical_column.tags[0]+"_L6"
+        synapses[tag] = self._add_synaptic_connection(
+            self.L5, cortical_column.L6, L5_L6_config
+        )
+        all_empty *= synapses[tag] == {}
+
+        if all_empty:
+            raise RuntimeError(f"No synaptic connections formed between {self.tags[0]}, {cortical_column.tags[0]}")
+        
         return synapses
