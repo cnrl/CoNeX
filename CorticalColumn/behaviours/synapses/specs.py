@@ -14,8 +14,8 @@ class SynapseInit(Behavior):
         synapse.src_shape = (synapse.src.depth, synapse.src.height, synapse.src.width)
         synapse.dst_shape = (synapse.dst.depth, synapse.dst.height, synapse.dst.width)
 
-        synapse.src_delay = None
-        synapse.dst_delay = None
+        synapse.src_delay = 0
+        synapse.dst_delay = 0
 
 
 class DelayInitializer(Behavior):
