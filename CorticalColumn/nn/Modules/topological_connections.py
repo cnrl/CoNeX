@@ -12,6 +12,8 @@ from CorticalColumn.behaviours.synapses.specs import (
     WeightInitializer,
 )
 
+from CorticalColumn.nn.timestamps import SYNAPSE_TIMESTAMPS
+
 # TODO: define delay range
 # TODO: should we add (read) structure and learning rule to (from) tags?
 
@@ -41,17 +43,17 @@ class StructuredSynapseGroup(SynapseGroup):
             tag = f"StructuredSynapseGroup_{len(net.synapseGroups) + 1}"
 
         behavior = {
-            12: SynapseInit(),
-            13: WeightInitializer(mode=weight_init_mode, **weight_init_params),
-            14: DelayInitializer(mode=delay_init_mode, **delay_params),
-            51: WeightNormalization(norm=weight_norm),
-            52: WeightClip(w_min=w_min, w_max=w_max),
+            SYNAPSE_TIMESTAMPS['Init']: SynapseInit(),
+            SYNAPSE_TIMESTAMPS['WeightInit']: WeightInitializer(mode=weight_init_mode, **weight_init_params),
+            SYNAPSE_TIMESTAMPS['SrcDelayInit']: DelayInitializer(mode=delay_init_mode, **delay_params),
+            SYNAPSE_TIMESTAMPS['WeightNormalization']: WeightNormalization(norm=weight_norm),
+            SYNAPSE_TIMESTAMPS['WeightClip']: WeightClip(w_min=w_min, w_max=w_max),
         }
 
         learning_rule = structure + learning_rule
-        behavior[50] = getattr(learning, learning_rule)(**learning_params)
+        behavior[SYNAPSE_TIMESTAMPS['LearningRule']] = getattr(learning, learning_rule)(**learning_params)
 
         structure += "DendriteInput"
-        behavior[27] = getattr(dendrites, structure)(**structure_params)
+        behavior[SYNAPSE_TIMESTAMPS['DendriteInput']] = getattr(dendrites, structure)(**structure_params)
 
         super().__init__(src, dst, net, tag, behavior)

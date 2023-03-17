@@ -1,5 +1,5 @@
 import warnings
-from CorticalColumn.nn.Layers import Layer
+from CorticalColumn.nn.Structure.Layers import Layer
 from CorticalColumn.nn.Modules.topological_connections import StructuredSynapseGroup
 
 from pymonntorch import SynapseGroup, NeuronGroup, TaggableObject

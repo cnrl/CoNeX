@@ -12,6 +12,9 @@ from CorticalColumn.behaviours.neurons.specs import (
     NeuronDendrite,
     SpikeTrace,
 )
+
+from CorticalColumn.nn.timestamps import NEURON_TIMESTAMPS
+
 from pymonntorch import NeuronGroup
 
 import torch
@@ -37,18 +40,18 @@ class SpikingNeuronGroup(NeuronGroup):
             tag = "SpikingNeuronGroup_" + str(len(net.NeuronGroups) + 1)
 
         behavior = {
-            31: NeuronDendrite(**dendrite_params),
-            32: neuron_type(**neuron_params),
-            34: KWTA(k=kwta, dimension=kwta_dim),
-            35: Fire(),
-            38: NeuronAxon(max_delay=max_delay),
+            NEURON_TIMESTAMPS['NeuronDendrite']: NeuronDendrite(**dendrite_params),
+            NEURON_TIMESTAMPS['NeuronDynamic']: neuron_type(**neuron_params),
+            NEURON_TIMESTAMPS['KWTA']: KWTA(k=kwta, dimension=kwta_dim),
+            NEURON_TIMESTAMPS['Fire']: Fire(),
+            NEURON_TIMESTAMPS['NeuronAxon']: NeuronAxon(max_delay=max_delay),
         }
 
         if tau_trace:
-            behavior[37] = SpikeTrace(tau_s=tau_trace)
+            behavior[NEURON_TIMESTAMPS['Trace']] = SpikeTrace(tau_s=tau_trace)
 
         if noise_function:
-            behavior[33] = InherentNoise(noise_function)
+            behavior[NEURON_TIMESTAMPS['DirectNoise']] = InherentNoise(noise_function)
 
         super().__init__(size, behavior, net, tag, color)
 
