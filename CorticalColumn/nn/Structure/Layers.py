@@ -21,7 +21,7 @@ class Layer(TaggableObject):
         inh_exc_config=None,
         inh_inh_config=None,
     ):
-        super().__init__(cortical_column.tags[0] + tag, device=net.device)
+        super().__init__(f'{cortical_column.tags[0]}_{tag}', device=net.device)
         self.network = net
         self.cortical_column = cortical_column
 

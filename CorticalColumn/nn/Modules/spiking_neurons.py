@@ -16,7 +16,6 @@ from CorticalColumn.behaviours.neurons.specs import (
 from CorticalColumn.nn.timestamps import NEURON_TIMESTAMPS
 
 from pymonntorch import NeuronGroup
-
 import torch
 
 
@@ -26,7 +25,7 @@ class SpikingNeuronGroup(NeuronGroup):
         size,
         net,
         neuron_type=LIF,
-        kwta=1,
+        kwta=None,
         kwta_dim=None,
         tau_trace=None,
         max_delay=1,
@@ -42,10 +41,12 @@ class SpikingNeuronGroup(NeuronGroup):
         behavior = {
             NEURON_TIMESTAMPS['NeuronDendrite']: NeuronDendrite(**dendrite_params),
             NEURON_TIMESTAMPS['NeuronDynamic']: neuron_type(**neuron_params),
-            NEURON_TIMESTAMPS['KWTA']: KWTA(k=kwta, dimension=kwta_dim),
             NEURON_TIMESTAMPS['Fire']: Fire(),
             NEURON_TIMESTAMPS['NeuronAxon']: NeuronAxon(max_delay=max_delay),
         }
+
+        if kwta is not None:
+            behavior[NEURON_TIMESTAMPS['KWTA']] = KWTA(k=kwta, dimension=kwta_dim)
 
         if tau_trace:
             behavior[NEURON_TIMESTAMPS['Trace']] = SpikeTrace(tau_s=tau_trace)
@@ -55,6 +56,8 @@ class SpikingNeuronGroup(NeuronGroup):
 
         super().__init__(size, behavior, net, tag, color)
 
+
+"""
         if not hasattr(self, "v"):
             if hasattr(self, "v_rest"):
                 warnings.warn(
@@ -72,3 +75,4 @@ class SpikingNeuronGroup(NeuronGroup):
                 if isinstance(self.init_s, torch.Tensor):
                     self.spikes = self.init_s
             self.spikes = self.get_neuron_vec(mode="zeros()")
+"""

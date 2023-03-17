@@ -104,6 +104,7 @@ class WeightClip(Behavior):
         self.w_min = self.get_init_attr('w_min', 0)
         self.w_max = self.get_init_attr('w_max', 1)
 
+        assert self.w_min >= 0 and self.w_max < self.w_min, 'Invalid Interval for Weight Clip' 
 
     def forward(self, synapses):
         """
