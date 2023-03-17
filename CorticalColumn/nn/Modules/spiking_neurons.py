@@ -29,7 +29,7 @@ class SpikingNeuronGroup(NeuronGroup):
         kwta=1,
         kwta_dim=None,
         tau_trace=None,
-        max_delay=None,
+        max_delay=1,
         noise_function=None,
         tag=None,
         color=None,
