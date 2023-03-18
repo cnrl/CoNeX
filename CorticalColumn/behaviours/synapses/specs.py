@@ -85,6 +85,26 @@ class WeightInitializer(Behavior):
                 synapse.weights = synapse._get_mat(mode=init_mode, dim=synapse.weight_shape)
 
 
+class WeightNormalization(Behavior):
+    """
+    This Behavior normalize weights in order to assure each destinatin neuron has
+    sum of its weight equal to ``norm``. Supporting `Simple`, `Local2d`, 'Conv2d'.
+
+    Args:
+        norm (int): Desired sum of weights for each neuron.
+    """
+    def set_variables(self, syanpse):
+        self.norm = self.get_init_attr('norm', 1)
+        self.dims = [x for x in range(1, len(syanpse.weights.shape))]
+        if len(syanpse.weights.shape) == 2:
+            self.dims = [2]
+
+    def forward(self, synapse):
+        weights_sum = synapse.weights.sum(dim=self.dims, keepdim=True)
+        weights_sum[weights_sum == 0] = 1
+        synapse.weights *= self.norm / weights_sum
+
+
 class WeightClip(Behavior):
     """
     Clip the synaptic weights in a range.

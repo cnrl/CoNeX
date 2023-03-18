@@ -102,7 +102,7 @@ class NeuronDendrite(Behavior): # TODO seperation
         neurons.proximal_input[synapse.dst_delay] += synapse.I
     
     def _add_apical(self, neurons, synapse):
-        neurons.apical_input[synapse.ds_tdelay] += synapse.I
+        neurons.apical_input[synapse.dst_tdelay] += synapse.I
 
     def _add_distal(self, neurons, synapse):
         neurons.distal_input[synapse.dst_delay] += synapse.I
