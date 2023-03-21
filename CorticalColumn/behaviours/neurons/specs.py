@@ -45,6 +45,9 @@ class NeuronAxon(Behavior):
     """
     def set_variables(self, neurons):
         self.max_delay = self.get_init_attr('max_delay', 1)
+        self.proximal_min_delay = self.get_init_attr('proximal_min_delay', 0)
+        self.apical_min_delay = self.get_init_attr('apical_min_delay', 0)
+        self.distal_min_delay = self.get_init_attr('distal_min_delay', 0)
         self.have_trace = self.get_init_attr('have_trace', hasattr(neurons, 'trace'))
 
         self.spike_history = neurons.get_neuron_vec_buffer(self.max_delay, dtype=torch.bool)
@@ -52,6 +55,14 @@ class NeuronAxon(Behavior):
             self.trace_history = neurons.get_neuron_vec_buffer(self.max_delay)
 
         neurons.axon = self
+
+    def update_min_delay(self, neurons):
+        if proximal_synapses :=  neurons.efferent_synapses.get('Proximal', []):
+            self.proximal_min_delay = torch.cat([synapse.src_delay[0] for synapse in proximal_synapses]).min()
+        if distal_synapses :=  neurons.efferent_synapses.get('Distal', []): 
+            self.distal_min_delay = torch.cat([synapse.src_delay[0] for synapse in distal_synapses]).min()
+        if apical_synapses :=  neurons.efferent_synapses.get('Apical', []):
+            self.apical_min_delay = torch.cat([synapse.src_delay[0] for synapse in apical_synapses]).min()
 
     def get_spike(self, neurons, delay=0):
         return self.spike_history[delay]
@@ -79,6 +90,9 @@ class NeuronDendrite(Behavior): # TODO seperation
         self.proximal_max_delay = self.get_init_attr('Proximal_max_delay', 1)
         self.apical_max_delay = self.get_init_attr('Apical_max_delay', 1)
         self.distal_max_delay = self.get_init_attr('Distal_max_delay', 1)
+        self.proximal_min_delay = self.get_init_attr('proximal_min_delay', 0)
+        self.apical_min_delay = self.get_init_attr('apical_min_delay', 0)
+        self.distal_min_delay = self.get_init_attr('distal_min_delay', 0)
         self.I_tau = self.get_init_attr('I_tau', None)
 
         neurons.I = neurons.get_neuron_vec()
@@ -92,7 +106,15 @@ class NeuronDendrite(Behavior): # TODO seperation
             neurons.distal_input = neurons.get_neuron_vec_buffer(self.distal_max_delay)
             
         neurons.proximal_input = neurons.get_neuron_vec_buffer(self.proximal_max_delay)
-    
+
+    def update_min_delay(self, neurons):
+        if proximal_synapses :=  neurons.afferent_synapses.get('Proximal', []):
+            self.proximal_min_delay = torch.cat([synapse.dst_delay[0] for synapse in proximal_synapses]).min()
+        if distal_synapses :=  neurons.afferent_synapses.get('Distal', []):
+            self.distal_min_delay = torch.cat([synapse.dst_delay[0] for synapse in distal_synapses]).min()
+        if apical_synapses :=  neurons.afferent_synapses.get('Apical', []):
+            self.apical_min_delay = torch.cat([synapse.dst_delay[0] for synapse in apical_synapses]).min()
+
     def _calc_ratio(self, neurons, provocativeness):
         provocative_limite = neurons.v_rest + provocativeness * (neurons.threshold - neurons.v_rest)
         dv = torch.clip(provocative_limite - neurons.v, min=0)

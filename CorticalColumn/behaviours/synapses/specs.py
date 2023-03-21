@@ -10,12 +10,26 @@ import torch
 
 
 class SynapseInit(Behavior):
+    """
+    This Behavior makes initial variable required for multiple behavior to use.
+    WARNING: ``src_delay`` and ``dst_delay`` have equal delay for all their neurons.
+    And should be initialized by other behaviors.
+    """
+
     def set_variables(self, synapse):
         synapse.src_shape = (synapse.src.depth, synapse.src.height, synapse.src.width)
         synapse.dst_shape = (synapse.dst.depth, synapse.dst.height, synapse.dst.width)
 
-        synapse.src_delay = 0
-        synapse.dst_delay = 0
+        # TODO maybe this should be done with a NeuronInit Behavior?
+        if not hasattr(synapse.src, 'index_vector'):
+            synapse.src.index_vector = torch.arange(0, synapse.src.size).to(synapse.network.device)
+        if not hasattr(synapse.dst, 'index_vector'):
+            synapse.dst.index_vector = torch.arange(0, synapse.dst.size).to(synapse.network.device)
+
+        synapse.src_delay = (torch.tensor(0).expand(synapse.src.size).to(synapse.network.device),
+                             synapse.src.index_vector)
+        synapse.dst_delay = (torch.tensor(0).expand(synapse.dst.size).to(synapse.network.device),
+                             synapse.dst.index_vector)
 
 
 class DelayInitializer(Behavior):
