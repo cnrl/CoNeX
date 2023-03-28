@@ -30,8 +30,7 @@ class SpikeTrace(Behavior):
         neurons.trace = neurons.get_neuron_vec(0.0)
 
     def forward(self, neurons):
-        neurons.trace -= neurons.trace / self.tau_s
-        neurons.trace += neurons.spikes
+        neurons.trace += neurons.spikes - neurons.trace / self.tau_s
 
 class NeuronAxon(Behavior):
     """
@@ -108,11 +107,11 @@ class NeuronDendrite(Behavior): # TODO seperation
         neurons.proximal_input = neurons.get_neuron_vec_buffer(self.proximal_max_delay)
 
     def update_min_delay(self, neurons):
-        if proximal_synapses :=  neurons.afferent_synapses.get('Proximal', []):
+        if proximal_synapses := neurons.afferent_synapses.get('Proximal', []):
             self.proximal_min_delay = torch.cat([synapse.dst_delay[0] for synapse in proximal_synapses]).min()
-        if distal_synapses :=  neurons.afferent_synapses.get('Distal', []):
+        if distal_synapses := neurons.afferent_synapses.get('Distal', []):
             self.distal_min_delay = torch.cat([synapse.dst_delay[0] for synapse in distal_synapses]).min()
-        if apical_synapses :=  neurons.afferent_synapses.get('Apical', []):
+        if apical_synapses := neurons.afferent_synapses.get('Apical', []):
             self.apical_min_delay = torch.cat([synapse.dst_delay[0] for synapse in apical_synapses]).min()
 
     def _calc_ratio(self, neurons, provocativeness):
@@ -186,11 +185,10 @@ class KWTA(Behavior):
         self.shape = (neurons.depth, neurons.height, neurons.width)
 
     def forward(self, neurons):
-        will_spike = (neurons.v >= neurons.threshold)
+        will_spike = neurons.v >= neurons.threshold
+        will_spike_v = will_spike * (neurons.v - neurons.threshold)
 
-        will_spike_v = (will_spike * (neurons.v - neurons.threshold))
-
-        if self.dimension:
+        if self.dimension is not None:
             will_spike_v = will_spike_v.reshape(self.shape)
             will_spike = will_spike.reshape(self.shape)
         else:
@@ -199,9 +197,9 @@ class KWTA(Behavior):
         if (will_spike.sum(axis=self.dimension) <= self.k).all():
             return
 
-        k_values, k_winners_indices = torch.topk(will_spike_v, self.k+1, dim=self.dimension, sorted=False)
+        k_values, k_winners_indices = torch.topk(will_spike_v, self.k, dim=self.dimension, sorted=False)
         min_values = k_values.min(dim = 0).values
-        winners = will_spike_v > min_values.expand(will_spike_v.size())
+        winners = will_spike_v >= min_values.expand(will_spike_v.size())
         ignored = will_spike * (~winners)
 
         neurons.v[ignored.reshape((-1,))] = neurons.v_reset

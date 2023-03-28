@@ -72,7 +72,7 @@ class DelayInitializer(Behavior):
             delays += offset
         
         delays = delays.to(torch.long)
-        synapse.__dict__[f'{attribute}_delay'] = (delays, torch.arange(0, delays.size(0)).to(delays.device))
+        synapse.__dict__[f'{attribute}_delay'] = (delays, neurons.index_vector)
 
 
 class WeightInitializer(Behavior):

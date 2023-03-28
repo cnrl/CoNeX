@@ -11,7 +11,7 @@ import torch.nn.functional as F
 # TODO Priming inhibtory neurons???? by inhibitory neurons
 # TODO Conv2d NonPriming
 # TODO current delay 
-
+# TODO pymonntorch should add ``network.default_float_type``
 
 class SimpleDendriticInput(Behavior):
     """
@@ -42,6 +42,8 @@ class SimpleDendriticInput(Behavior):
         -1 if ("GABA" in synapse.src.tags) or ("inh" in synapse.src.tags) else 1
         )
 
+        self.float_type = torch.float32 if not hasattr(synapse.network, 'default_float_type') else synapse.network.default_float_type
+
         synapse.I = synapse.dst.get_neuron_vec(0)
 
     def calculate_input(self, synapse):
@@ -57,7 +59,6 @@ class Conv2dDendriteInput(SimpleDendriticInput):
     Weight shape = (out_channel, in_channel, kernel_height, kernel_width)
     """
 
-
     def set_variables(self, synapse):
         super().set_variables(synapse)
         
@@ -65,7 +66,7 @@ class Conv2dDendriteInput(SimpleDendriticInput):
         synapse.padding = self.get_init_attr('padding', 0)
 
     def calculate_input(self, synapse):
-        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay).to(torch.float32)
+        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay).to(self.float_type)
         spikes = spikes.reshape(synapse.src_shape)
 
         I = F.conv2d(input = spikes, weight = synapse.weights, stride = synapse.stride, padding = synapse.padding)
@@ -86,7 +87,7 @@ class Local2dDendriteInput(Conv2dDendriteInput):
     """
 
     def calculate_input(self, synapse):
-        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay).to(torch.float32)
+        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay).to(self.float_type)
         spikes = spikes.reshape(synapse.src_shape)
         spikes = F.unfold(spikes, kernel_size=synapse.kernel_shape[-2:], stride = synapse.stride, padding=synapse.padding).T
         I = (spikes * synapse.weights).sum(axis=-1) 

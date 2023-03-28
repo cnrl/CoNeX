@@ -50,6 +50,7 @@ class LIF(Behavior):
         neurons.spikes = self.get_init_attr('init_s', neurons.v >= neurons.threshold)
 
         neurons.Fire = self.Fire
+        self.dt = neurons.network.dt
 
     def _RIu(self, neurons):
         """
@@ -61,10 +62,9 @@ class LIF(Behavior):
         """
         Leakage dynamic
         """
-        return -1 * (neurons.v - neurons.v_rest)
+        return neurons.v_rest - neurons.v
 
-    @classmethod
-    def Fire(cls, neurons):
+    def Fire(self, neurons):
         """
         Basic firing behavior of spiking neurons:
 
@@ -81,7 +81,7 @@ class LIF(Behavior):
         Args:
             neurons (NeuronGroup): the neural population.
         """
-        neurons.v += (self._Fu(neurons) + self._RIu(neurons)) * neurons.network.dt / neurons.tau
+        neurons.v += (self._Fu(neurons) + self._RIu(neurons)) * self.dt / neurons.tau
 
 
 class ELIF(LIF):
@@ -168,10 +168,9 @@ class AELIF(ELIF):
         """
         Part of neuron dynamic for voltage-dependent input resistance and internal currents.
         """
-        return -1 * (neurons.R * neurons.omega) + super()._RIu(neurons)
+        return super()._RIu(neurons) - neurons.R * neurons.omega
 
-    @classmethod
-    def domega_dt(cls, neurons):
+    def domega_dt(self, neurons):
         """
         Single step adaptation dynamics of AELIF neurons.
 
@@ -180,10 +179,9 @@ class AELIF(ELIF):
         """
         spike_adaptation = neurons.beta * neurons.w_tau * neurons.spikes
         sub_thresh_adaptation = neurons.alpha * (neurons.v - neurons.v_rest)
-        return (sub_thresh_adaptation - neurons.omega + spike_adaptation) * neurons.network.dt / neurons.w_tau
+        return (sub_thresh_adaptation - neurons.omega + spike_adaptation) * self.dt / neurons.w_tau
 
-    @classmethod
-    def Fire(cls, neurons):
+    def Fire(self, neurons):
         """
         Basic firing behavior of spiking neurons:
 
@@ -192,4 +190,4 @@ class AELIF(ELIF):
         and it do the adaptation.
         """
         super().Fire(neurons)
-        neurons.omega += cls.domega_dt(neurons)
+        neurons.omega += self.domega_dt(neurons)
