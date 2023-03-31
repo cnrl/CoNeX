@@ -70,7 +70,7 @@ class Layer(TaggableObject):
     def _create_neural_population(net, config, tag):
         if isinstance(config, dict):
             if not config.get("user_defined", False):
-                if config.get("tag", None):
+                if config.get("tag", None) is None:
                     config["tag"] = tag
                 else:
                     if isinstance(config["tag"], str):

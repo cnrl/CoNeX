@@ -5,11 +5,12 @@ Structured SynapseGroup connection schemes.
 from CorticalColumn.behaviours.synapses import learning, dendrites
 from pymonntorch import SynapseGroup
 
-from CorticalColumn.behaviours.synapses.specs import (
+from CorticalColumn.behaviours.synapses import (
     DelayInitializer,
     SynapseInit,
     WeightClip,
     WeightInitializer,
+    WeightNormalization,
 )
 
 from CorticalColumn.nn.timestamps import SYNAPSE_TIMESTAMPS

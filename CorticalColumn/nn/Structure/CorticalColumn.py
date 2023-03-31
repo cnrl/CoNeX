@@ -30,7 +30,7 @@ class CorticalColumn(TaggableObject):
         L2_3_representation_syn_config=None,
         L5_motor_syn_config=None,
     ):
-        super().__init__("CorticalColumn" + len(net.cortical_column), device=net.device)
+        super().__init__(f"CorticalColumn{len(net.columns)}", device=net.device)
         self.network = net
 
         self.sensory_layer = sensory_layer
@@ -158,10 +158,10 @@ class CorticalColumn(TaggableObject):
     def connect(
         self,
         cortical_column,
-        L2_3_L2_3_config=None,
-        L2_3_L4_config=None,
-        L5_L5_config=None,
-        L5_L6_config=None,
+        L2_3_L2_3_config={},
+        L2_3_L4_config={},
+        L5_L5_config={},
+        L5_L6_config={},
     ):
         synapses = {}
         tag = self.tags[0] + "_" + "L2_3 => " + cortical_column.tags[0] + "_L2_3"

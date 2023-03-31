@@ -2,9 +2,8 @@
 Structure of spiking neural populations.
 """
 
-import warnings
 from CorticalColumn.behaviours.neurons.lif_neurons import LIF
-from CorticalColumn.behaviours.neurons.specs import (
+from CorticalColumn.behaviours.neurons import (
     KWTA,
     Fire,
     InherentNoise,
@@ -16,7 +15,6 @@ from CorticalColumn.behaviours.neurons.specs import (
 from CorticalColumn.nn.timestamps import NEURON_TIMESTAMPS
 
 from pymonntorch import NeuronGroup
-import torch
 
 
 class SpikingNeuronGroup(NeuronGroup):
@@ -31,7 +29,7 @@ class SpikingNeuronGroup(NeuronGroup):
         max_delay=1,
         noise_function=None,
         tag=None,
-        color=None,
+        # color=None,
         dendrite_params={},
         neuron_params={},
     ):
@@ -54,7 +52,7 @@ class SpikingNeuronGroup(NeuronGroup):
         if noise_function:
             behavior[NEURON_TIMESTAMPS['DirectNoise']] = InherentNoise(noise_function)
 
-        super().__init__(size, behavior, net, tag, color)
+        super().__init__(size, behavior, net, tag)
 
 
 """
