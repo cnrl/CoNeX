@@ -8,6 +8,38 @@ from pymonntorch import SynapseGroup, NeuronGroup, TaggableObject
 
 
 class CorticalColumn(TaggableObject):
+    """
+    Base class to define a single cortical column.
+
+    Note: 1) All layer configurations are designed for SpikingNeuronGroup. To define a NeuronGroup with your behaviors of favor,
+            add "user_defined" key to your config dict with value `True` and specify the parameters of the NeuronGroup (excluding
+            the network) as key-values in the config dict.
+
+          2) In the layer connections config dicts, the key is the name of synapse between the populations in the corresponding layers
+            and the values are the synaptic config dicts.
+
+    Args:
+        net (Neocortex): The cortical network the column belongs to.
+        sensory_layer (NeuronGroup): The neural population representing the sensory input.
+        location_layer (NeuronGroup): If not None, specifies the neural population representing the location signal input.
+        representation_layer (NeuronGroup): If not None, indicates the neural population representing the output representation.
+        motor_layer (NeuronGroup): If not None, indicates the neural population representing motor output.
+        L2_3_config (dict): If not None, adds L2/3 with the specified configurations to the column.
+        L4_config (dict): If not None, adds L4 with the specified configurations to the column.
+        L5_config (dict): If not None, adds L5 with the specified configurations to the column.
+        L6_config (dict): If not None, adds L6 with the specified configurations to the column.
+        sensory_L4_syn_config (dict): If not None, adds the synaptic connections from sensory layer to L4 with the specified configurations.
+        sensory_L6_syn_config (dict): If not None, adds the synaptic connections from sensory layer to L6 with the specified configurations.
+        location_L6_syn_config (dict): If not None, adds the synaptic connections from location layer to L6 with the specified configurations.
+        L6_L4_syn_config (dict): If not None, adds the synaptic connections from L6 to L4 with the specified configurations.
+        L4_L2_3_syn_config (dict): If not None, adds the synaptic connections from L4 to L2/3 with the specified configurations.
+        L2_3_L5_syn_config (dict): If not None, adds the synaptic connections from L2/3 to L5 with the specified configurations.
+        L5_L2_3_syn_config (dict): If not None, adds the synaptic connections from L5 to L2/3 with the specified configurations.
+        L5_L6_syn_config (dict): If not None, adds the synaptic connections from L5 to L6 with the specified configurations.
+        L2_3_representation_syn_config (dict): If not None, adds the synaptic connections from L2/3 to representation layer with the specified configurations.
+        L5_motor_syn_config (dict): If not None, adds the synaptic connections from L5 to motor layer with the specified configurations.
+    """
+
     def __init__(
         self,
         net,
@@ -163,6 +195,19 @@ class CorticalColumn(TaggableObject):
         L5_L5_config={},
         L5_L6_config={},
     ):
+        """
+        Makes connections between current cortical column and another one.
+
+        Note: In the config dicts, the key is the name of synapse between the populations in the corresponding layers
+                and the values are the synaptic config dicts.
+
+        Args:
+            cortical_column (CorticalColumn): The column to connect to.
+            L2_3_L2_3_config (dict): Adds the synaptic connections from L2/3 of current column to L2/3 of the other with the specified configurations.
+            L2_3_L4_config (dict): Adds the synaptic connections from L2/3 of current column to L4 of the other with the specified configurations.
+            L5_L5_config (dict): Adds the synaptic connections from L5 of current column to L5 of the other with the specified configurations.
+            L6_L6_config (dict): Adds the synaptic connections from L6 of current column to L6 of the other with the specified configurations.
+        """
         synapses = {}
         tag = self.tags[0] + "_" + "L2_3 => " + cortical_column.tags[0] + "_L2_3"
         synapses[tag] = self._add_synaptic_connection(

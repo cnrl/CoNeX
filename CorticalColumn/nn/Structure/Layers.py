@@ -9,6 +9,28 @@ from pymonntorch import NeuronGroup, SynapseGroup, TaggableObject
 
 
 class Layer(TaggableObject):
+    """
+    Base class to create a cortical layer.
+
+    Note: 1) All config dicts are designed for SpikingNeuronGroup/StructuredSynapseGroup. To define a NeuronGroup/SynapseGroup
+            with your behaviors of favor, add "user_defined" key to your config dict with value `True` and specify the parameters of
+            the NeuronGroup/SynapseGroup (excluding the network) as key-values in the config dict.
+
+          2) The "size" key is mandatory for a neural population config dict.
+
+    Args:
+        tag (str): The name of the layer. Valid values are:
+                    "L2_3", "L4", "L5", "L6".
+        net (Neocortex): The cortical network the layer belongs to.
+        cortical_column (CorticalColumn): The cortical column the layer belongs to.
+        exc_pop_config (dict): If not None, defines an excitatory population in the layer with the given config.
+        inh_pop_config (dict): If not None, defines an inhibitory population in the layer with the given config.
+        exc_exc_config (dict): If not None, defines an exc -> exc synaptic connection within the layer with the given config.
+        exc_inh_config (dict): If not None, defines an exc -> inh synaptic connection within the layer with the given config.
+        inh_exc_config (dict): If not None, defines an inh -> exc synaptic connection within the layer with the given config.
+        inh_inh_config (dict): If not None, defines an inh -> inh synaptic connection within the layer with the given config.
+    """
+
     def __init__(
         self,
         tag,
@@ -21,7 +43,7 @@ class Layer(TaggableObject):
         inh_exc_config=None,
         inh_inh_config=None,
     ):
-        super().__init__(f'{cortical_column.tags[0]}_{tag}', device=net.device)
+        super().__init__(f"{cortical_column.tags[0]}_{tag}", device=net.device)
         self.network = net
         self.cortical_column = cortical_column
 
