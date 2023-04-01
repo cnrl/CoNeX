@@ -1,7 +1,7 @@
-from CorticalColumn.behaviours.network.timestep import TimeStep
+from CCSNN.behaviours.network.timestep import TimeStep
 from pymonntorch import Network
 
-from CorticalColumn.nn.timestamps import NETWORK_TIMESTAMPS
+from CCSNN.nn.timestamps import NETWORK_TIMESTAMPS
 
 
 class Neocortex(Network):

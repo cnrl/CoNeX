@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
 setup(
-    name="CorticalColumn",
+    name="CCSNN",
     packages=find_packages(),
 )

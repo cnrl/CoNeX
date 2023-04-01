@@ -2,9 +2,9 @@
 Structure of spiking neural populations.
 """
 
-from CorticalColumn.behaviours.neurons.neuron_types.lif_neurons import LIF
-from CorticalColumn.behaviours.neurons import neuron_types
-from CorticalColumn.behaviours.neurons import (
+from CCSNN.behaviours.neurons.neuron_types.lif_neurons import LIF
+from CCSNN.behaviours.neurons import neuron_types
+from CCSNN.behaviours.neurons import (
     KWTA,
     Fire,
     InherentNoise,
@@ -13,7 +13,7 @@ from CorticalColumn.behaviours.neurons import (
     SpikeTrace,
 )
 
-from CorticalColumn.nn.timestamps import NEURON_TIMESTAMPS
+from CCSNN.nn.timestamps import NEURON_TIMESTAMPS
 
 from pymonntorch import NeuronGroup
 
