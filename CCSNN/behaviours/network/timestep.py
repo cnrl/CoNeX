@@ -17,4 +17,4 @@ class TimeStep(Behavior):
         Args:
             network (Network): Network object.
         """
-        network.dt = self.get_init_attr('dt', 1)
+        network.dt = self.get_init_attr("dt", 1)
