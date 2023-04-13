@@ -10,7 +10,6 @@ import torch.nn.functional as F
 # TODO lower than threshold nonPriming
 # TODO Priming inhibitory neurons???? by inhibitory neurons
 # TODO Conv2d NonPriming
-# TODO current delay
 # TODO pymonntorch should add ``network.default_float_type``
 
 

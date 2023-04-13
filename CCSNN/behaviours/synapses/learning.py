@@ -84,7 +84,9 @@ class Conv2dSTDP(SimpleSTDP):
 
         src_spike = src_spike.reshape(synapse.src_shape).to(self.float_type)
         src_spike = F.unfold(
-            src_spike, kernel_size=synapse.weights.size()[-2:], stride=synapse.stride
+            src_spike, kernel_size=synapse.weights.size()[-2:],
+            stride=synapse.stride,
+            padding=synapse.padding,
         )
         src_spike = src_spike.expand(synapse.dst_shape[0], *src_spike.shape)
 
@@ -97,6 +99,7 @@ class Conv2dSTDP(SimpleSTDP):
             src_spike_trace,
             kernel_size=synapse.weights.size()[-2:],
             stride=synapse.stride,
+            padding=synapse.padding,
         )
         src_spike_trace = src_spike_trace.expand(
             synapse.dst_shape[0], *src_spike_trace.shape
@@ -124,7 +127,9 @@ class Local2dSTDP(SimpleSTDP):
 
         src_spike = src_spike.reshape(synapse.src_shape).to(self.float_type)
         src_spike = F.unfold(
-            src_spike, kernel_size=synapse.kernel_shape[-2:], stride=synapse.stride
+            src_spike, kernel_size=synapse.kernel_shape[-2:],
+            stride=synapse.stride,
+            padding=synapse.padding,
         )
         src_spike = src_spike.transpose(0, 1)
         src_spike = src_spike.expand(synapse.dst_shape[0], *src_spike.shape)
@@ -139,6 +144,7 @@ class Local2dSTDP(SimpleSTDP):
             src_spike_trace,
             kernel_size=synapse.kernel_shape[-2:],
             stride=synapse.stride,
+            padding=synapse.padding,
         )
         src_spike_trace = src_spike_trace.transpose(0, 1)
         src_spike_trace = src_spike_trace.expand(

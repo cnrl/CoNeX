@@ -45,7 +45,8 @@ class SpikeTrace(Behavior):
         """
         Calculates the spike trace of each neuron by adding current spike and decaying the trace so far.
         """
-        neurons.trace += neurons.spikes - neurons.trace / self.tau_s
+        neurons.trace += neurons.spikes 
+        neurons.trace -= neurons.trace / self.tau_s
 
 
 class NeuronAxon(Behavior):
@@ -80,22 +81,22 @@ class NeuronAxon(Behavior):
     def update_min_delay(self, neurons):
         if proximal_synapses := neurons.efferent_synapses.get("Proximal", []):
             self.proximal_min_delay = torch.cat(
-                [synapse.src_delay[0] for synapse in proximal_synapses]
+                [synapse.src_delay for synapse in proximal_synapses]
             ).min()
         if distal_synapses := neurons.efferent_synapses.get("Distal", []):
             self.distal_min_delay = torch.cat(
-                [synapse.src_delay[0] for synapse in distal_synapses]
+                [synapse.src_delay for synapse in distal_synapses]
             ).min()
         if apical_synapses := neurons.efferent_synapses.get("Apical", []):
             self.apical_min_delay = torch.cat(
-                [synapse.src_delay[0] for synapse in apical_synapses]
+                [synapse.src_delay for synapse in apical_synapses]
             ).min()
 
-    def get_spike(self, neurons, delay=0):
-        return self.spike_history[delay]
+    def get_spike(self, neurons, delay):
+        return self.spike_history.gather(0, delay.unsqueeze(0)).squeeze(0)
 
-    def get_spike_trace(self, neurons, delay=0):
-        return self.trace_history[delay]
+    def get_spike_trace(self, neurons, delay):
+        return self.trace_history.gather(0, delay.unsqueeze(0)).squeeze(0)
 
     def forward(self, neurons):
         self.spike_history = neurons.buffer_roll(
@@ -162,15 +163,15 @@ class NeuronDendrite(Behavior):  # TODO separation
     def update_min_delay(self, neurons):
         if proximal_synapses := neurons.afferent_synapses.get("Proximal", []):
             self.proximal_min_delay = torch.cat(
-                [synapse.dst_delay[0] for synapse in proximal_synapses]
+                [synapse.dst_delay for synapse in proximal_synapses]
             ).min()
         if distal_synapses := neurons.afferent_synapses.get("Distal", []):
             self.distal_min_delay = torch.cat(
-                [synapse.dst_delay[0] for synapse in distal_synapses]
+                [synapse.dst_delay for synapse in distal_synapses]
             ).min()
         if apical_synapses := neurons.afferent_synapses.get("Apical", []):
             self.apical_min_delay = torch.cat(
-                [synapse.dst_delay[0] for synapse in apical_synapses]
+                [synapse.dst_delay for synapse in apical_synapses]
             ).min()
 
     def _calc_ratio(self, neurons, provocativeness):
@@ -181,13 +182,13 @@ class NeuronDendrite(Behavior):  # TODO separation
         return dv
 
     def _add_proximal(self, neurons, synapse):
-        neurons.proximal_input[synapse.dst_delay] += synapse.I
+        neurons.proximal_input.scatter_(0, synapse.dst_delay.unsqueeze(0), synapse.I.unsqueeze(0))
 
     def _add_apical(self, neurons, synapse):
-        neurons.apical_input[synapse.dst_delay] += synapse.I
+        neurons.apical_input.scatter_(0, synapse.dst_delay.unsqueeze(0), synapse.I.unsqueeze(0))
 
     def _add_distal(self, neurons, synapse):
-        neurons.distal_input[synapse.dst_delay] += synapse.I
+        neurons.distal_input.scatter_(0, synapse.dst_delay.unsqueeze(0), synapse.I.unsqueeze(0))
 
     def forward(self, neurons):
         if self.I_tau is not None:
