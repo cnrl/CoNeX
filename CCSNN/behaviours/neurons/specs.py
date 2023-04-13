@@ -182,13 +182,13 @@ class NeuronDendrite(Behavior):  # TODO separation
         return dv
 
     def _add_proximal(self, neurons, synapse):
-        neurons.proximal_input.scatter_(0, synapse.dst_delay.unsqueeze(0), synapse.I.unsqueeze(0))
+        neurons.proximal_input.scatter_add_(0, synapse.dst_delay.unsqueeze(0), synapse.I.unsqueeze(0))
 
     def _add_apical(self, neurons, synapse):
-        neurons.apical_input.scatter_(0, synapse.dst_delay.unsqueeze(0), synapse.I.unsqueeze(0))
+        neurons.apical_input.scatter_add_(0, synapse.dst_delay.unsqueeze(0), synapse.I.unsqueeze(0))
 
     def _add_distal(self, neurons, synapse):
-        neurons.distal_input.scatter_(0, synapse.dst_delay.unsqueeze(0), synapse.I.unsqueeze(0))
+        neurons.distal_input.scatter_add_(0, synapse.dst_delay.unsqueeze(0), synapse.I.unsqueeze(0))
 
     def forward(self, neurons):
         if self.I_tau is not None:
