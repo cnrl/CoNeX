@@ -5,7 +5,6 @@ the dynamics can be represented by:
 tau*dv/dt = F(u) + RI(u).
 """
 
-# TODO initialization
 # TODO multi-adaptation paradigm
 
 from pymonntorch import Behavior
@@ -48,10 +47,10 @@ class LIF(Behavior):
         neurons.v_rest = self.get_init_attr("v_rest", None)
 
         neurons.v = self.get_init_attr("init_v", neurons.get_neuron_vec())
-        neurons.spikes = self.get_init_attr("init_s", neurons.v >= neurons.threshold)
+        neurons.spikes = self.get_init_attr(
+            "init_s", neurons.v >= neurons.threshold)
 
         neurons.Fire = self.Fire
-        self.dt = neurons.network.dt
 
     def _RIu(self, neurons):
         """
@@ -81,7 +80,8 @@ class LIF(Behavior):
         Args:
             neurons (NeuronGroup): the neural population.
         """
-        neurons.v += (self._Fu(neurons) + self._RIu(neurons)) * self.dt / neurons.tau
+        neurons.v += (self._Fu(neurons) + self._RIu(neurons)) * \
+            neurons.network.dt / neurons.tau
 
 
 class ELIF(LIF):
@@ -183,7 +183,7 @@ class AELIF(ELIF):
         sub_thresh_adaptation = neurons.alpha * (neurons.v - neurons.v_rest)
         return (
             (sub_thresh_adaptation - neurons.omega + spike_adaptation)
-            * self.dt
+            * neurons.network.dt
             / neurons.w_tau
         )
 

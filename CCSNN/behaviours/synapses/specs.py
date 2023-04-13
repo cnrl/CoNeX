@@ -5,40 +5,25 @@ Synapse-related behaviors.
 from pymonntorch import Behavior
 import torch
 
-# TODO stupid indexing for delay.
-# TODO dendrite Delay is wrong.
-
 
 class SynapseInit(Behavior):
     """
     This Behavior makes initial variable required for multiple behavior to use.
 
-    **WARNING:** ``src_delay`` and ``dst_delay`` have equal delay for all their neurons.
+    **WARNING:** ``src_delay`` and ``dst_delay`` have equal delay for all of their neurons.
     And should be initialized by other behaviors.
     """
 
     def set_variables(self, synapse):
-        synapse.src_shape = (synapse.src.depth, synapse.src.height, synapse.src.width)
-        synapse.dst_shape = (synapse.dst.depth, synapse.dst.height, synapse.dst.width)
+        synapse.src_shape = (
+            synapse.src.depth, synapse.src.height, synapse.src.width)
+        synapse.dst_shape = (
+            synapse.dst.depth, synapse.dst.height, synapse.dst.width)
 
-        # TODO maybe this should be done with a NeuronInit Behavior?
-        if not hasattr(synapse.src, "index_vector"):
-            synapse.src.index_vector = torch.arange(0, synapse.src.size).to(
-                synapse.network.device
-            )
-        if not hasattr(synapse.dst, "index_vector"):
-            synapse.dst.index_vector = torch.arange(0, synapse.dst.size).to(
-                synapse.network.device
-            )
-
-        synapse.src_delay = (
-            torch.tensor(0).expand(synapse.src.size).to(synapse.network.device),
-            synapse.src.index_vector,
-        )
-        synapse.dst_delay = (
-            torch.tensor(0).expand(synapse.dst.size).to(synapse.network.device),
-            synapse.dst.index_vector,
-        )
+        synapse.src_delay = torch.tensor(
+            0, device=synapse.network.device).expand(synapse.src.size)
+        synapse.dst_delay = torch.tensor(
+            0, device=synapse.network.device).expand(synapse.dst.size)
 
 
 class DelayInitializer(Behavior):
@@ -81,8 +66,7 @@ class DelayInitializer(Behavior):
             delays *= scale
             delays += offset
 
-        delays = delays.to(torch.long)
-        synapse.__dict__[f"{attribute}_delay"] = (delays, neurons.index_vector)
+        synapse.__dict__[f"{attribute}_delay"] = delays.to(torch.long)
 
 
 class WeightInitializer(Behavior):
