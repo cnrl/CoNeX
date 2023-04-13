@@ -9,7 +9,6 @@ import torch.nn.functional as F
 # TODO not priming neurons with over threshold potential.
 # TODO lower than threshold nonPriming
 # TODO Priming inhibitory neurons???? by inhibitory neurons
-# TODO Conv2d NonPriming
 # TODO pymonntorch should add ``network.default_float_type``
 
 
@@ -48,7 +47,6 @@ class SimpleDendriticInput(Behavior):
             else synapse.network.default_float_type
         )
 
-        # trunk-ignore(flake8/E741)
         synapse.I = synapse.dst.get_neuron_vec(0)
 
     def calculate_input(self, synapse):
@@ -56,9 +54,9 @@ class SimpleDendriticInput(Behavior):
         return torch.sum(synapse.weights[:, spikes], axis=1)
 
     def forward(self, synapse):
-        # trunk-ignore(flake8/E741)
         synapse.I = (
-            self.current_coef * self.current_type * self.calculate_input(synapse)
+            self.current_coef * self.current_type *
+            self.calculate_input(synapse)
         )
 
 
@@ -83,9 +81,8 @@ class Conv2dDendriteInput(SimpleDendriticInput):
         spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay).to(
             self.float_type
         )
-        spikes = spikes.reshape(synapse.src_shape)
+        spikes = spikes.view(synapse.src_shape)
 
-        # trunk-ignore(flake8/E741)
         I = F.conv2d(
             input=spikes,
             weight=synapse.weights,
@@ -98,7 +95,7 @@ class Conv2dDendriteInput(SimpleDendriticInput):
         # unfold_spikes = F.unfold(input=spikes, kernel_size=synapse.weights.shape[-2:], stride = synapse.stride, padding = synapse.padding)
         # I = (unfold_spikes.T.matmul(synapse.weights.view(synapse.weights.size(0), -1).T)).T
 
-        return I.reshape((-1,))
+        return I.view((-1,))
 
 
 class Local2dDendriteInput(Conv2dDendriteInput):
@@ -114,13 +111,13 @@ class Local2dDendriteInput(Conv2dDendriteInput):
         spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay).to(
             self.float_type
         )
-        spikes = spikes.reshape(synapse.src_shape)
+        spikes = spikes.view(synapse.src_shape)
         spikes = F.unfold(
             spikes,
             kernel_size=synapse.kernel_shape[-2:],
             stride=synapse.stride,
             padding=synapse.padding,
         ).T
-        # trunk-ignore(flake8/E741)
+
         I = (spikes * synapse.weights).sum(axis=-1)
-        return I.reshape((-1,))
+        return I.view((-1,))

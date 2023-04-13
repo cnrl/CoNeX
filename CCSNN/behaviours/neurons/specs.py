@@ -5,9 +5,6 @@ General specifications needed for spiking neurons.
 from pymonntorch import Behavior
 import torch
 
-# TODO inhibition of KWTA, how should it be???
-# TODO adaptive neurons will KWTA, What behaviour should I expect???
-
 
 class InherentNoise(Behavior):
     """
@@ -45,8 +42,8 @@ class SpikeTrace(Behavior):
         """
         Calculates the spike trace of each neuron by adding current spike and decaying the trace so far.
         """
-        neurons.trace += neurons.spikes 
-        neurons.trace -= neurons.trace / self.tau_s
+        neurons.trace += neurons.spikes
+        neurons.trace -= (neurons.trace / self.tau_s) * neurons.network.dt
 
 
 class NeuronAxon(Behavior):
@@ -68,7 +65,8 @@ class NeuronAxon(Behavior):
         self.proximal_min_delay = self.get_init_attr("proximal_min_delay", 0)
         self.distal_min_delay = self.get_init_attr("distal_min_delay", 0)
         self.apical_min_delay = self.get_init_attr("apical_min_delay", 0)
-        self.have_trace = self.get_init_attr("have_trace", hasattr(neurons, "trace"))
+        self.have_trace = self.get_init_attr(
+            "have_trace", hasattr(neurons, "trace"))
 
         self.spike_history = neurons.get_neuron_vec_buffer(
             self.max_delay, dtype=torch.bool
@@ -109,7 +107,7 @@ class NeuronAxon(Behavior):
             # TODO should trace decay as it propagate through the axon?
 
 
-class NeuronDendrite(Behavior):  # TODO separation
+class NeuronDendrite(Behavior):
     """
     Sums the different kind of dendrite entering the neurons.
 
@@ -125,8 +123,10 @@ class NeuronDendrite(Behavior):  # TODO separation
     """
 
     def set_variables(self, neurons):
-        self.apical_provocativeness = self.get_init_attr("apical_provocativeness", None)
-        self.distal_provocativeness = self.get_init_attr("distal_provocativeness", None)
+        self.apical_provocativeness = self.get_init_attr(
+            "apical_provocativeness", None)
+        self.distal_provocativeness = self.get_init_attr(
+            "distal_provocativeness", None)
         self.proximal_max_delay = self.get_init_attr("Proximal_max_delay", 1)
         self.distal_max_delay = self.get_init_attr("Distal_max_delay", 1)
         self.apical_max_delay = self.get_init_attr(
@@ -139,26 +139,30 @@ class NeuronDendrite(Behavior):  # TODO separation
             )
         self.distal_min_delay = self.get_init_attr("distal_min_delay", 0)
         if self.distal_min_delay >= self.distal_max_delay:
-            raise ValueError("distal_min_delay should be smaller than distal_max_delay")
+            raise ValueError(
+                "distal_min_delay should be smaller than distal_max_delay")
         self.apical_min_delay = self.get_init_attr(
             "apical_min_delay", self.distal_min_delay + 1
         )
         if self.apical_min_delay >= self.apical_max_delay:
-            raise ValueError("apical_min_delay should be smaller than apical_max_delay")
+            raise ValueError(
+                "apical_min_delay should be smaller than apical_max_delay")
         self.I_tau = self.get_init_attr("I_tau", None)
 
-        # trunk-ignore(flake8/E741)
         neurons.I = neurons.get_neuron_vec()
 
         neurons.apical_input = [0]
         if self.apical_provocativeness is not None:
-            neurons.apical_input = neurons.get_neuron_vec_buffer(self.apical_max_delay)
+            neurons.apical_input = neurons.get_neuron_vec_buffer(
+                self.apical_max_delay)
 
         neurons.distal_input = [0]
         if self.distal_provocativeness is not None:
-            neurons.distal_input = neurons.get_neuron_vec_buffer(self.distal_max_delay)
+            neurons.distal_input = neurons.get_neuron_vec_buffer(
+                self.distal_max_delay)
 
-        neurons.proximal_input = neurons.get_neuron_vec_buffer(self.proximal_max_delay)
+        neurons.proximal_input = neurons.get_neuron_vec_buffer(
+            self.proximal_max_delay)
 
     def update_min_delay(self, neurons):
         if proximal_synapses := neurons.afferent_synapses.get("Proximal", []):
@@ -182,17 +186,19 @@ class NeuronDendrite(Behavior):  # TODO separation
         return dv
 
     def _add_proximal(self, neurons, synapse):
-        neurons.proximal_input.scatter_add_(0, synapse.dst_delay.unsqueeze(0), synapse.I.unsqueeze(0))
+        neurons.proximal_input.scatter_add_(
+            0, synapse.dst_delay.unsqueeze(0), synapse.I.unsqueeze(0))
 
     def _add_apical(self, neurons, synapse):
-        neurons.apical_input.scatter_add_(0, synapse.dst_delay.unsqueeze(0), synapse.I.unsqueeze(0))
+        neurons.apical_input.scatter_add_(
+            0, synapse.dst_delay.unsqueeze(0), synapse.I.unsqueeze(0))
 
     def _add_distal(self, neurons, synapse):
-        neurons.distal_input.scatter_add_(0, synapse.dst_delay.unsqueeze(0), synapse.I.unsqueeze(0))
+        neurons.distal_input.scatter_add_(
+            0, synapse.dst_delay.unsqueeze(0), synapse.I.unsqueeze(0))
 
     def forward(self, neurons):
         if self.I_tau is not None:
-            # trunk-ignore(flake8/E741)
             neurons.I -= neurons.I / self.I_tau
 
         for synapse in neurons.afferent_synapses.get("Proximal", []):
@@ -202,7 +208,6 @@ class NeuronDendrite(Behavior):  # TODO separation
         for synapse in neurons.afferent_synapses.get("Apical", []):
             self._add_apical(neurons, synapse)
 
-        # trunk-ignore(flake8/E741)
         neurons.I += neurons.proximal_input[0]
         apical_input = neurons.apical_input[0]
         distal_input = neurons.distal_input[0]
@@ -224,7 +229,6 @@ class NeuronDendrite(Behavior):  # TODO separation
             else 0
         )
 
-        # trunk-ignore(flake8/E741)
         neurons.I += (
             non_priming_apical + non_priming_distal
         ) / neurons.R  # TODO what to do ? (* tau)
@@ -278,8 +282,8 @@ class KWTA(Behavior):
 
         dim = 0
         if self.dimension is not None:
-            will_spike_v = will_spike_v.reshape(self.shape)
-            will_spike = will_spike.reshape(self.shape)
+            will_spike_v = will_spike_v.view(self.shape)
+            will_spike = will_spike.view(self.shape)
             dim = self.dimension
 
         if (will_spike.sum(axis=dim) <= self.k).all():
@@ -292,4 +296,4 @@ class KWTA(Behavior):
         winners = will_spike_v >= min_values.expand(will_spike_v.size())
         ignored = will_spike * (~winners)
 
-        neurons.v[ignored.reshape((-1,))] = neurons.v_reset
+        neurons.v[ignored.view((-1,))] = neurons.v_reset

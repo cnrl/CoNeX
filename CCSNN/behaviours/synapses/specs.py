@@ -15,11 +15,16 @@ class SynapseInit(Behavior):
     """
 
     def set_variables(self, synapse):
-        synapse.src_shape = (synapse.src.depth, synapse.src.height, synapse.src.width)
-        synapse.dst_shape = (synapse.dst.depth, synapse.dst.height, synapse.dst.width)
+        synapse.src_shape = (
+            synapse.src.depth, synapse.src.height, synapse.src.width)
+        synapse.dst_shape = (
+            synapse.dst.depth, synapse.dst.height, synapse.dst.width)
 
-        synapse.src_delay = torch.tensor(0, device=synapse.network.device).expand(synapse.src.size)
-        synapse.dst_delay = torch.tensor(0, device=synapse.network.device).expand(synapse.dst.size)
+        synapse.src_delay = torch.tensor(
+            0, device=synapse.network.device).expand(synapse.src.size)
+        synapse.dst_delay = torch.tensor(
+            0, device=synapse.network.device).expand(synapse.dst.size)
+
 
 class DelayInitializer(Behavior):
     """

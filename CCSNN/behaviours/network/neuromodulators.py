@@ -41,6 +41,7 @@ class Dopamine(Behavior):
             network (Network): Network object.
         """
         dd_dt = (
-            -(network.dopamine_concentration / network.tau_dopamine) + network.reward
+            -(network.dopamine_concentration /
+              network.tau_dopamine) + network.reward
         )
         network.dopamine_concentration += dd_dt
