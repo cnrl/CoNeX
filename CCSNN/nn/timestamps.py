@@ -22,7 +22,7 @@ SYNAPSE_TIMESTAMPS = {
     "WeightInit": 13,
     "SrcDelayInit": 14,
     "DstDelayInit": 15,
-    "DendriteInput": 27,
+    "DendriticInput": 27,
     "LearningRule": 50,
     "WeightNormalization": 51,
     "WeightClip": 52,

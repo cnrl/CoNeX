@@ -43,7 +43,7 @@ class StructuredSynapseGroup(SynapseGroup):
         tag (str): The tag(s) of the synapses.
         delay_init_params (dict): Parameters (other than `mode`) for `DelayInitializer`.
         weight_init_params (dict): Parameters for `WeightInitializer`.
-        structure_params (dict): Parameters for the defined DendriteInput structure.
+        structure_params (dict): Parameters for the defined DendriticInput structure.
         learning_params (dict): Parameters for the defined learning rule.
     """
 
@@ -53,7 +53,7 @@ class StructuredSynapseGroup(SynapseGroup):
         dst,
         net,
         structure="Simple",
-        learning_rule="STDP",
+        learning_rule=None,
         src_delay_init_mode=None,
         dst_delay_init_mode=None,
         w_min=0.0,
@@ -68,7 +68,7 @@ class StructuredSynapseGroup(SynapseGroup):
         assert net is not None, "net cannot be None."
 
         if tag is None:
-            tag = f"StructuredSynapseGroup_{len(net.synapseGroups) + 1}"
+            tag = f"StructuredSynapseGroup_{len(net.SynapseGroups) + 1}"
 
         behavior = {
             SYNAPSE_TIMESTAMPS["Init"]: SynapseInit(),
@@ -93,10 +93,10 @@ class StructuredSynapseGroup(SynapseGroup):
 
         if learning_rule is not None and isinstance(learning_rule, str):
             learning_rule = getattr(learning, structure + learning_rule)
-        behavior[SYNAPSE_TIMESTAMPS["LearningRule"]] = learning_rule(**learning_params)
+            behavior[SYNAPSE_TIMESTAMPS["LearningRule"]] = learning_rule(**learning_params)
 
-        structure += "DendriteInput"
-        behavior[SYNAPSE_TIMESTAMPS["DendriteInput"]] = getattr(dendrites, structure)(
+        structure += "DendriticInput"
+        behavior[SYNAPSE_TIMESTAMPS["DendriticInput"]] = getattr(dendrites, structure)(
             **structure_params
         )
 

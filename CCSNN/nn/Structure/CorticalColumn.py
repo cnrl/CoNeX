@@ -152,12 +152,12 @@ class CorticalColumn(TaggableObject):
                 if isinstance(src, NeuronGroup):
                     src_pop = src
                 else:
-                    src_pop = getattr(src, config[key]["src"])
+                    src_pop = getattr(src, config[key].pop("src_pop"))
 
                 if isinstance(dst, NeuronGroup):
                     dst_pop = dst
                 else:
-                    dst_pop = getattr(dst, config[key]["dst"])
+                    dst_pop = getattr(dst, config[key].pop("dst_pop"))
 
                 if not config[key].get("user_defined", False):
                     synapses[key] = StructuredSynapseGroup(

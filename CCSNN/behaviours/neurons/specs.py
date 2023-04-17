@@ -214,7 +214,7 @@ class NeuronDendrite(Behavior):
 
         non_priming_apical = (
             (
-                torch.Tanh(apical_input)
+                torch.tanh(apical_input)
                 * self._calc_ratio(neurons, self.apical_provocativeness)
             )
             if self.apical_provocativeness is not None
@@ -222,7 +222,7 @@ class NeuronDendrite(Behavior):
         )
         non_priming_distal = (
             (
-                torch.Tanh(distal_input)
+                torch.tanh(distal_input)
                 * self._calc_ratio(neurons, self.distal_provocativeness)
             )
             if self.distal_provocativeness is not None

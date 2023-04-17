@@ -21,9 +21,9 @@ class SynapseInit(Behavior):
             synapse.dst.depth, synapse.dst.height, synapse.dst.width)
 
         synapse.src_delay = torch.tensor(
-            0, device=synapse.network.device).expand(synapse.src.size)
+            0, device=synapse.device).expand(synapse.src.size)
         synapse.dst_delay = torch.tensor(
-            0, device=synapse.network.device).expand(synapse.dst.size)
+            0, device=synapse.device).expand(synapse.dst.size)
 
 
 class DelayInitializer(Behavior):
@@ -66,7 +66,7 @@ class DelayInitializer(Behavior):
             delays *= scale
             delays += offset
 
-        synapse.__dict__[f"{attribute}_delay"] = delays.to(torch.long)
+        setattr(synapse, f"{attribute}_delay", delays.to(torch.long))
 
 
 class WeightInitializer(Behavior):
@@ -140,7 +140,7 @@ class WeightClip(Behavior):
         self.w_max = self.get_init_attr("w_max", 1)
 
         assert (
-            self.w_min >= 0 and self.w_max < self.w_min
+            0 <= self.w_min < self.w_max
         ), "Invalid Interval for Weight Clip"
 
     def forward(self, synapses):

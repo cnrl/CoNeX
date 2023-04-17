@@ -60,7 +60,7 @@ class SimpleDendriticInput(Behavior):
         )
 
 
-class Conv2dDendriteInput(SimpleDendriticInput):
+class Conv2dDendriticInput(SimpleDendriticInput):
     """
     2D convolutional dendrite behavior.
 
@@ -98,7 +98,7 @@ class Conv2dDendriteInput(SimpleDendriticInput):
         return I.view((-1,))
 
 
-class Local2dDendriteInput(Conv2dDendriteInput):
+class Local2dDendriticInput(Conv2dDendriticInput):
     """
     2D local dendrite behavior.
 
