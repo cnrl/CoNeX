@@ -110,14 +110,14 @@ class Neocortex(Network):
         # Now you can simulate your network using net.simulate_iterations(...)
     """
 
-    def __init__(self, dt=1, reward=None, neuromodulators=[], device="cpu"):
+    def __init__(self, dt=1, reward=None, neuromodulators=[], settings={}):
         behavior = {NETWORK_TIMESTAMPS["TimeStep"]: TimeStep(dt=dt)}
         if reward:
             behavior[NETWORK_TIMESTAMPS["Reward"]] = reward
         for i, neuromodulator in enumerate(neuromodulators):
             behavior[NETWORK_TIMESTAMPS["NeuroModulator"] + i] = neuromodulator
 
-        super().__init__(tag="Neocortex", behavior=behavior, device=device)
+        super().__init__(tag="Neocortex", behavior=behavior, settings=settings)
         self.dt = dt
         self.columns = []
         self.inter_column_synapses = []

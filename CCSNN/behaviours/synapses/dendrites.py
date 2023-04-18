@@ -9,7 +9,6 @@ import torch.nn.functional as F
 # TODO not priming neurons with over threshold potential.
 # TODO lower than threshold nonPriming
 # TODO Priming inhibitory neurons???? by inhibitory neurons
-# TODO pymonntorch should add ``network.default_float_type``
 
 
 class SimpleDendriticInput(Behavior):
@@ -41,10 +40,10 @@ class SimpleDendriticInput(Behavior):
             -1 if ("GABA" in synapse.src.tags) or ("inh" in synapse.src.tags) else 1
         )
 
-        self.float_type = (
+        self.def_dtype = (
             torch.float32
-            if not hasattr(synapse.network, "default_float_type")
-            else synapse.network.default_float_type
+            if not hasattr(synapse.network, "def_dtype")
+            else synapse.network.def_dtype
         )
 
         synapse.I = synapse.dst.get_neuron_vec(0)
@@ -79,7 +78,7 @@ class Conv2dDendriticInput(SimpleDendriticInput):
 
     def calculate_input(self, synapse):
         spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay).to(
-            self.float_type
+            self.def_dtype
         )
         spikes = spikes.view(synapse.src_shape)
 
@@ -109,7 +108,7 @@ class Local2dDendriticInput(Conv2dDendriticInput):
 
     def calculate_input(self, synapse):
         spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay).to(
-            self.float_type
+            self.def_dtype
         )
         spikes = spikes.view(synapse.src_shape)
         spikes = F.unfold(

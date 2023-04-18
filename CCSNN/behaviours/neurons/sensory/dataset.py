@@ -17,7 +17,7 @@ class SpikeNdDataset(Behavior):
         self.loop = self.get_init_attr('loop', True)
 
         self.data_generator = self._get_data()
-
+        self.device = neurons.device
         neurons.spikes = neurons.get_neuron_vec(dtype=torch.bool)
 
     def _get_data(self):

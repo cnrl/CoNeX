@@ -10,6 +10,8 @@ from torchvision import transforms
 from torchvision.datasets import MNIST
 from torch.utils.data import DataLoader
 
+import torch
+
 # parameters
 POISSON_TIME = 30
 POISSON_RATIO = 5/30
@@ -17,6 +19,8 @@ MNIST_ROOT = "~/Temp/MNIST/"
 SENSORY_SIZE_HEIGHT = 28
 SENSORY_SIZE_WIDTH = 28  # MNIST's image size
 SENSORY_TRACE_TAU_S = 2.7
+DEVICE = 'cuda'
+DTYPE = torch.float16
 
 from configs.l2_3 import*
 from configs.l4 import*
@@ -45,7 +49,7 @@ dl = DataLoader(dataset, batch_size=16)
 #############################
 # initializing neocortex
 #############################
-net = Neocortex()
+net = Neocortex(settings={"device": DEVICE, "dtype": DTYPE})
 #############################
 
 
