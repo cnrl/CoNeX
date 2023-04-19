@@ -10,11 +10,11 @@ class TimeStep(Behavior):
         dt (float): Initial iteration timestep. Default is 1
     """
 
-    def set_variables(self, network):
+    def initialize(self, network):
         """
         Initialize network's timestep with `dt`.
 
         Args:
             network (Network): Network object.
         """
-        network.dt = self.get_init_attr("dt", 1)
+        network.dt = self.parameter("dt", 1)

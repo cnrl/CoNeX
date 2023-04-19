@@ -133,5 +133,5 @@ class Neocortex(Network):
         for syn in self.SynapseGroups:
             if hasattr(syn, "Apical"):
                 self.inter_column_synapses.append(syn)
-
+        
         super().initialize(info=info, storage_manager=storage_manager)

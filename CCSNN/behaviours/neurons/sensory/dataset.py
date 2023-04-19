@@ -11,14 +11,14 @@ class SpikeNdDataset(Behavior):
     This behavior ease loading dataset as spikes for `NeuronGroup`. suitable for images
     """
 
-    def set_variables(self, neurons):
-        self.dataloader = self.get_init_attr('dataloader', None, required=True)
-        self.dimension = self.get_init_attr('N', 2)
-        self.loop = self.get_init_attr('loop', True)
+    def initialize(self, neurons):
+        self.dataloader = self.parameter('dataloader', None, required=True)
+        self.dimension = self.parameter('N', 2)
+        self.loop = self.parameter('loop', True)
 
         self.data_generator = self._get_data()
         self.device = neurons.device
-        neurons.spikes = neurons.get_neuron_vec(dtype=torch.bool)
+        neurons.spikes = neurons.vector(dtype=torch.bool)
 
     def _get_data(self):
         while self.loop:

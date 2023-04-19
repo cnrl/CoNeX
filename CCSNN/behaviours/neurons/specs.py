@@ -14,8 +14,8 @@ class InherentNoise(Behavior):
         noise_function (function): random function that generates the noise. The default is `torch.randn`.
     """
 
-    def set_variables(self, neurons):
-        self.noise_function = self.get_init_attr("noise_function", torch.randn)
+    def initialize(self, neurons):
+        self.noise_function = self.parameter("noise_function", torch.randn)
 
     def forward(self, neurons):
         neurons.v += self.noise_function(neurons.size)
@@ -31,12 +31,12 @@ class SpikeTrace(Behavior):
         tau_s (float): decay term for spike trace. The default is None.
     """
 
-    def set_variables(self, neurons):
+    def initialize(self, neurons):
         """
         Sets the trace attribute for the neural population.
         """
-        self.tau_s = self.get_init_attr("tau_s", None)
-        neurons.trace = neurons.get_neuron_vec(0.0)
+        self.tau_s = self.parameter("tau_s", None)
+        neurons.trace = neurons.vector(0.0)
 
     def forward(self, neurons):
         """
@@ -60,19 +60,19 @@ class NeuronAxon(Behavior):
         have_trace (boolean): wether to calculate trace or not. default False.
     """
 
-    def set_variables(self, neurons):
-        self.max_delay = self.get_init_attr("max_delay", 1)
-        self.proximal_min_delay = self.get_init_attr("proximal_min_delay", 0)
-        self.distal_min_delay = self.get_init_attr("distal_min_delay", 0)
-        self.apical_min_delay = self.get_init_attr("apical_min_delay", 0)
-        self.have_trace = self.get_init_attr(
+    def initialize(self, neurons):
+        self.max_delay = self.parameter("max_delay", 1)
+        self.proximal_min_delay = self.parameter("proximal_min_delay", 0)
+        self.distal_min_delay = self.parameter("distal_min_delay", 0)
+        self.apical_min_delay = self.parameter("apical_min_delay", 0)
+        self.have_trace = self.parameter(
             "have_trace", hasattr(neurons, "trace"))
 
-        self.spike_history = neurons.get_neuron_vec_buffer(
+        self.spike_history = neurons.vector_buffer(
             self.max_delay, dtype=torch.bool
         )
         if self.have_trace:
-            self.trace_history = neurons.get_neuron_vec_buffer(self.max_delay)
+            self.trace_history = neurons.vector_buffer(self.max_delay)
 
         neurons.axon = self
 
@@ -122,46 +122,46 @@ class NeuronDendrite(Behavior):
         apical_min_delay (int): minimum delay of apical dendrites. The default is `distal_min_delay + 1`.
     """
 
-    def set_variables(self, neurons):
-        self.apical_provocativeness = self.get_init_attr(
+    def initialize(self, neurons):
+        self.apical_provocativeness = self.parameter(
             "apical_provocativeness", None)
-        self.distal_provocativeness = self.get_init_attr(
+        self.distal_provocativeness = self.parameter(
             "distal_provocativeness", None)
-        self.proximal_max_delay = self.get_init_attr("Proximal_max_delay", 1)
-        self.distal_max_delay = self.get_init_attr("Distal_max_delay", 1)
-        self.apical_max_delay = self.get_init_attr(
+        self.proximal_max_delay = self.parameter("Proximal_max_delay", 1)
+        self.distal_max_delay = self.parameter("Distal_max_delay", 1)
+        self.apical_max_delay = self.parameter(
             "Apical_max_delay", self.distal_max_delay + 1
         )
-        self.proximal_min_delay = self.get_init_attr("proximal_min_delay", 0)
+        self.proximal_min_delay = self.parameter("proximal_min_delay", 0)
         if self.proximal_min_delay >= self.proximal_max_delay:
             raise ValueError(
                 "proximal_min_delay should be smaller than proximal_max_delay"
             )
-        self.distal_min_delay = self.get_init_attr("distal_min_delay", 0)
+        self.distal_min_delay = self.parameter("distal_min_delay", 0)
         if self.distal_min_delay >= self.distal_max_delay:
             raise ValueError(
                 "distal_min_delay should be smaller than distal_max_delay")
-        self.apical_min_delay = self.get_init_attr(
+        self.apical_min_delay = self.parameter(
             "apical_min_delay", self.distal_min_delay + 1
         )
         if self.apical_min_delay >= self.apical_max_delay:
             raise ValueError(
                 "apical_min_delay should be smaller than apical_max_delay")
-        self.I_tau = self.get_init_attr("I_tau", None)
+        self.I_tau = self.parameter("I_tau", None)
 
-        neurons.I = neurons.get_neuron_vec()
+        neurons.I = neurons.vector()
 
         neurons.apical_input = [0]
         if self.apical_provocativeness is not None:
-            neurons.apical_input = neurons.get_neuron_vec_buffer(
+            neurons.apical_input = neurons.vector_buffer(
                 self.apical_max_delay)
 
         neurons.distal_input = [0]
         if self.distal_provocativeness is not None:
-            neurons.distal_input = neurons.get_neuron_vec_buffer(
+            neurons.distal_input = neurons.vector_buffer(
                 self.distal_max_delay)
 
-        neurons.proximal_input = neurons.get_neuron_vec_buffer(
+        neurons.proximal_input = neurons.vector_buffer(
             self.proximal_max_delay)
 
     def update_min_delay(self, neurons):
@@ -254,7 +254,7 @@ class Fire(Behavior):
     """
 
     def forward(self, neurons):
-        neurons.Fire(neurons)
+        neurons.spiking_neuron.Fire(neurons)
 
 
 class KWTA(Behavior):
@@ -271,9 +271,9 @@ class KWTA(Behavior):
         dimension (int, optional): K-WTA on specific dimension. defaults to None.
     """
 
-    def set_variables(self, neurons):
-        self.k = self.get_init_attr("k", None)
-        self.dimension = self.get_init_attr("dimension", None)
+    def initialize(self, neurons):
+        self.k = self.parameter("k", None)
+        self.dimension = self.parameter("dimension", None)
         self.shape = (neurons.depth, neurons.height, neurons.width)
 
     def forward(self, neurons):

@@ -16,11 +16,11 @@ class Reward(Behavior):
         initial_reward (float): Initial reward value. Default is 0.0.
     """
 
-    def set_variables(self, network):
+    def initialize(self, network):
         """
         Initialize network's reward with `initial_reward`.
 
         Args:
             network (Network): Network object.
         """
-        network.reward = self.get_init_attr("initial_reward", 0.0, network)
+        network.reward = self.parameter("initial_reward", 0.0, network)

@@ -19,9 +19,9 @@ class SimpleSTDP(Behavior):
         a_minus (float): Coefficient for the negative weight change. The default is None.
     """
 
-    def set_variables(self, synapse):
-        self.a_plus = self.get_init_attr("a_plus", None)
-        self.a_minus = self.get_init_attr("a_minus", None)
+    def initialize(self, synapse):
+        self.a_plus = self.parameter("a_plus", None)
+        self.a_minus = self.parameter("a_minus", None)
 
         self.def_dtype = (
             torch.float32
@@ -70,8 +70,8 @@ class Conv2dSTDP(SimpleSTDP):
         a_minus (float): Coefficient for the negative weight change. The default is None.
     """
 
-    def set_variables(self, synapse):
-        super().set_variables(synapse)
+    def initialize(self, synapse):
+        super().initialize(synapse)
         self.weight_divisor = synapse.dst_shape[2] * synapse.dst_shape[1]
 
     def compute_dw(self, synapse):
@@ -176,10 +176,10 @@ class SimpleRSTDP(SimpleSTDP):
         init_c_mode (int): Initialization mode for the eligibility trace. The default is 0.
     """
 
-    def set_variables(self, synapse):
-        super().set_variables(synapse)
-        self.tau_c = self.get_init_attr("tau_c", None)
-        mode = self.get_init_attr("init_c_mode", 0)
+    def initialize(self, synapse):
+        super().initialize(synapse)
+        self.tau_c = self.parameter("tau_c", None)
+        mode = self.parameter("init_c_mode", 0)
         synapse.c = synapse._get_mat(mode=mode, dim=synapse.weights.shape)
 
     def forward(self, synapse):

@@ -26,7 +26,7 @@ class SimpleDendriticInput(Behavior):
         current_coef (float): scalar coefficient that multiplies weights.
     """
 
-    def set_variables(self, synapse):
+    def initialize(self, synapse):
         """
         Sets the current_coef to -1 if the pre-synaptic neurons are inhibitory.
 
@@ -34,7 +34,7 @@ class SimpleDendriticInput(Behavior):
             synapse (SynapseGroup): Synapses on which the dendrites are defined.
         """
         synapse.add_tag(self.__class__.__name__)
-        self.current_coef = self.get_init_attr("current_coef", 1)
+        self.current_coef = self.parameter("current_coef", 1)
 
         self.current_type = (
             -1 if ("GABA" in synapse.src.tags) or ("inh" in synapse.src.tags) else 1
@@ -46,7 +46,7 @@ class SimpleDendriticInput(Behavior):
             else synapse.network.def_dtype
         )
 
-        synapse.I = synapse.dst.get_neuron_vec(0)
+        synapse.I = synapse.dst.vector(0)
 
     def calculate_input(self, synapse):
         spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay)
@@ -70,11 +70,11 @@ class Conv2dDendriticInput(SimpleDendriticInput):
         padding (int): padding added to both sides of the input. The default is 0.
     """
 
-    def set_variables(self, synapse):
-        super().set_variables(synapse)
+    def initialize(self, synapse):
+        super().initialize(synapse)
 
-        synapse.stride = self.get_init_attr("stride", 1)
-        synapse.padding = self.get_init_attr("padding", 0)
+        synapse.stride = self.parameter("stride", 1)
+        synapse.padding = self.parameter("padding", 0)
 
     def calculate_input(self, synapse):
         spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay).to(
