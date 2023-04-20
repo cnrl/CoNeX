@@ -14,16 +14,16 @@ class SynapseInit(Behavior):
     And should be initialized by other behaviors.
     """
 
-    def set_variables(self, synapse):
+    def initialize(self, synapse):
         synapse.src_shape = (
             synapse.src.depth, synapse.src.height, synapse.src.width)
         synapse.dst_shape = (
             synapse.dst.depth, synapse.dst.height, synapse.dst.width)
 
         synapse.src_delay = torch.tensor(
-            0, device=synapse.network.device).expand(synapse.src.size)
+            0, device=synapse.device).expand(synapse.src.size)
         synapse.dst_delay = torch.tensor(
-            0, device=synapse.network.device).expand(synapse.dst.size)
+            0, device=synapse.device).expand(synapse.dst.size)
 
 
 class DelayInitializer(Behavior):
@@ -42,18 +42,18 @@ class DelayInitializer(Behavior):
         destination (boolean): True for destination neurons. defaults to False.
     """
 
-    def set_variables(self, synapse):
+    def initialize(self, synapse):
         """
         Makes index for the Synapse delay.
 
         Args:
             synapses (SynapseGroup): The synapses whose weight should be bound.
         """
-        init_mode = self.get_init_attr("mode", None)
-        delays = self.get_init_attr("delays", None)
-        scale = self.get_init_attr("scale", 1)
-        offset = self.get_init_attr("offset", 0)
-        isDestination = self.get_init_attr("destination", False)
+        init_mode = self.parameter("mode", None)
+        delays = self.parameter("delays", None)
+        scale = self.parameter("scale", 1)
+        offset = self.parameter("offset", 0)
+        isDestination = self.parameter("destination", False)
 
         neurons = synapse.src
         attribute = "src"
@@ -62,11 +62,11 @@ class DelayInitializer(Behavior):
             attribute = "dst"
 
         if init_mode is not None and delays is None:
-            delays = neurons.get_neuron_vec(mode=init_mode)
+            delays = neurons.vector(mode=init_mode)
             delays *= scale
             delays += offset
 
-        synapse.__dict__[f"{attribute}_delay"] = delays.to(torch.long)
+        setattr(synapse, f"{attribute}_delay", delays.to(torch.long))
 
 
 class WeightInitializer(Behavior):
@@ -84,15 +84,15 @@ class WeightInitializer(Behavior):
         kernel_shape (tuple): Optional parameter to specify the shape of the kernel.
     """
 
-    def set_variables(self, synapse):
-        init_mode = self.get_init_attr("mode", None)
-        synapse.weights = self.get_init_attr("weights", None)
-        synapse.weight_shape = self.get_init_attr("weight_shape", None)
-        synapse.kernel_shape = self.get_init_attr("kernel_shape", None)
+    def initialize(self, synapse):
+        init_mode = self.parameter("mode", None)
+        synapse.weights = self.parameter("weights", None)
+        synapse.weight_shape = self.parameter("weight_shape", None)
+        synapse.kernel_shape = self.parameter("kernel_shape", None)
 
         if init_mode is not None and synapse.weights is None:
             if synapse.weight_shape is None:
-                synapse.weights = synapse.get_synapse_mat(mode=init_mode)
+                synapse.weights = synapse.matrix(mode=init_mode)
             else:
                 synapse.weights = synapse._get_mat(
                     mode=init_mode, dim=synapse.weight_shape
@@ -108,8 +108,8 @@ class WeightNormalization(Behavior):
         norm (int): Desired sum of weights for each neuron.
     """
 
-    def set_variables(self, synapse):
-        self.norm = self.get_init_attr("norm", 1)
+    def initialize(self, synapse):
+        self.norm = self.parameter("norm", 1)
         self.dims = [x for x in range(1, len(synapse.weights.shape))]
         if len(synapse.weights.shape) == 2:
             self.dims = [2]
@@ -129,18 +129,18 @@ class WeightClip(Behavior):
         w_max (float): maximum weight constraint.
     """
 
-    def set_variables(self, synapse):
+    def initialize(self, synapse):
         """
         Set weight constraint attributes to the synapses.
 
         Args:
             synapses (SynapseGroup): The synapses whose weight should be bound.
         """
-        self.w_min = self.get_init_attr("w_min", 0)
-        self.w_max = self.get_init_attr("w_max", 1)
+        self.w_min = self.parameter("w_min", 0)
+        self.w_max = self.parameter("w_max", 1)
 
         assert (
-            self.w_min >= 0 and self.w_max < self.w_min
+            0 <= self.w_min < self.w_max
         ), "Invalid Interval for Weight Clip"
 
     def forward(self, synapses):

@@ -9,7 +9,6 @@ import torch.nn.functional as F
 # TODO not priming neurons with over threshold potential.
 # TODO lower than threshold nonPriming
 # TODO Priming inhibitory neurons???? by inhibitory neurons
-# TODO pymonntorch should add ``network.default_float_type``
 
 
 class SimpleDendriticInput(Behavior):
@@ -27,7 +26,7 @@ class SimpleDendriticInput(Behavior):
         current_coef (float): scalar coefficient that multiplies weights.
     """
 
-    def set_variables(self, synapse):
+    def initialize(self, synapse):
         """
         Sets the current_coef to -1 if the pre-synaptic neurons are inhibitory.
 
@@ -35,19 +34,19 @@ class SimpleDendriticInput(Behavior):
             synapse (SynapseGroup): Synapses on which the dendrites are defined.
         """
         synapse.add_tag(self.__class__.__name__)
-        self.current_coef = self.get_init_attr("current_coef", 1)
+        self.current_coef = self.parameter("current_coef", 1)
 
         self.current_type = (
             -1 if ("GABA" in synapse.src.tags) or ("inh" in synapse.src.tags) else 1
         )
 
-        self.float_type = (
+        self.def_dtype = (
             torch.float32
-            if not hasattr(synapse.network, "default_float_type")
-            else synapse.network.default_float_type
+            if not hasattr(synapse.network, "def_dtype")
+            else synapse.network.def_dtype
         )
 
-        synapse.I = synapse.dst.get_neuron_vec(0)
+        synapse.I = synapse.dst.vector(0)
 
     def calculate_input(self, synapse):
         spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay)
@@ -60,7 +59,7 @@ class SimpleDendriticInput(Behavior):
         )
 
 
-class Conv2dDendriteInput(SimpleDendriticInput):
+class Conv2dDendriticInput(SimpleDendriticInput):
     """
     2D convolutional dendrite behavior.
 
@@ -71,15 +70,15 @@ class Conv2dDendriteInput(SimpleDendriticInput):
         padding (int): padding added to both sides of the input. The default is 0.
     """
 
-    def set_variables(self, synapse):
-        super().set_variables(synapse)
+    def initialize(self, synapse):
+        super().initialize(synapse)
 
-        synapse.stride = self.get_init_attr("stride", 1)
-        synapse.padding = self.get_init_attr("padding", 0)
+        synapse.stride = self.parameter("stride", 1)
+        synapse.padding = self.parameter("padding", 0)
 
     def calculate_input(self, synapse):
         spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay).to(
-            self.float_type
+            self.def_dtype
         )
         spikes = spikes.view(synapse.src_shape)
 
@@ -98,7 +97,7 @@ class Conv2dDendriteInput(SimpleDendriticInput):
         return I.view((-1,))
 
 
-class Local2dDendriteInput(Conv2dDendriteInput):
+class Local2dDendriticInput(Conv2dDendriticInput):
     """
     2D local dendrite behavior.
 
@@ -109,7 +108,7 @@ class Local2dDendriteInput(Conv2dDendriteInput):
 
     def calculate_input(self, synapse):
         spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay).to(
-            self.float_type
+            self.def_dtype
         )
         spikes = spikes.view(synapse.src_shape)
         spikes = F.unfold(

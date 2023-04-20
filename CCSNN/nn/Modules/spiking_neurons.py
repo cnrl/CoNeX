@@ -82,7 +82,7 @@ class SpikingNeuronGroup(NeuronGroup):
                 warnings.warn(
                     "Spiking neuron behavior lacks attribute v. Adding the attribute..."
                 )
-                self.v = self.v_rest * self.get_neuron_vec(mode="ones()")
+                self.v = self.v_rest * self.vector(mode="ones()")
             else:
                 raise AttributeError("Spiking neuron lacks attribute v.")
 
@@ -93,5 +93,5 @@ class SpikingNeuronGroup(NeuronGroup):
             if hasattr(self, "init_s"):
                 if isinstance(self.init_s, torch.Tensor):
                     self.spikes = self.init_s
-            self.spikes = self.get_neuron_vec(mode="zeros()")
+            self.spikes = self.vector(mode="zeros()")
 """

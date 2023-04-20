@@ -31,7 +31,7 @@ class LIF(Behavior):
         v_rest (float): neuron membrane potential in absent of input.
     """
 
-    def set_variables(self, neurons):
+    def initialize(self, neurons):
         """
         Set neuron attributes. and adds Fire function as attribute to population.
 
@@ -40,17 +40,17 @@ class LIF(Behavior):
         """
         self.add_tag(self.__class__.__name__)
 
-        neurons.R = self.get_init_attr("R", None)
-        neurons.tau = self.get_init_attr("tau", None)
-        neurons.threshold = self.get_init_attr("threshold", None)
-        neurons.v_reset = self.get_init_attr("v_reset", None)
-        neurons.v_rest = self.get_init_attr("v_rest", None)
+        neurons.R = self.parameter("R", None)
+        neurons.tau = self.parameter("tau", None)
+        neurons.threshold = self.parameter("threshold", None)
+        neurons.v_reset = self.parameter("v_reset", None)
+        neurons.v_rest = self.parameter("v_rest", None)
 
-        neurons.v = self.get_init_attr("init_v", neurons.get_neuron_vec())
-        neurons.spikes = self.get_init_attr(
+        neurons.v = self.parameter("init_v", neurons.vector())
+        neurons.spikes = self.parameter(
             "init_s", neurons.v >= neurons.threshold)
 
-        neurons.Fire = self.Fire
+        neurons.spiking_neuron = self
 
     def _RIu(self, neurons):
         """
@@ -105,17 +105,17 @@ class ELIF(LIF):
         theta_rh (float): The boosting threshold. (rheobase)
     """
 
-    def set_variables(self, neurons):
+    def initialize(self, neurons):
         """
         Set neuron attributes.
 
         Args:
             neurons (NeuronGroup): the neural population.
         """
-        super().set_variables(neurons)
+        super().initialize(neurons)
 
-        neurons.delta = self.get_init_attr("delta", None)
-        neurons.theta_rh = self.get_init_attr("theta_rh", None)
+        neurons.delta = self.parameter("delta", None)
+        neurons.theta_rh = self.parameter("theta_rh", None)
 
     def _Fu(self, neurons):
         """
@@ -151,20 +151,20 @@ class AELIF(ELIF):
         w_tau (float): time constant of adaptation decay.
     """
 
-    def set_variables(self, neurons):
+    def initialize(self, neurons):
         """
         Set neuron attributes.
 
         Args:
             neurons (NeuronGroup): the neural population.
         """
-        super().set_variables(neurons)
+        super().initialize(neurons)
 
-        neurons.alpha = self.get_init_attr("alpha", None)
-        neurons.beta = self.get_init_attr("beta", None)
-        neurons.w_tau = self.get_init_attr("w_tau", None)
+        neurons.alpha = self.parameter("alpha", None)
+        neurons.beta = self.parameter("beta", None)
+        neurons.w_tau = self.parameter("w_tau", None)
 
-        neurons.omega = self.get_init_attr("omega", neurons.get_neuron_vec())
+        neurons.omega = self.parameter("omega", neurons.vector())
 
     def _RIu(self, neurons):
         """

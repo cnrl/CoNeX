@@ -17,7 +17,7 @@ class Dopamine(Behavior):
         initial_dopamine_concentration (float, optional): Initial dopamine concentration
     """
 
-    def set_variables(self, network):
+    def initialize(self, network):
         """
         Set initial dopamine concentration value based on initial reward value.
 
@@ -26,8 +26,8 @@ class Dopamine(Behavior):
         """
         self.add_tag("Dopamine")
 
-        network.tau_dopamine = self.get_init_attr("tau_dopamine", 0.0)
-        network.dopamine_concentration = self.get_init_attr(
+        network.tau_dopamine = self.parameter("tau_dopamine", 0.0)
+        network.dopamine_concentration = self.parameter(
             "initial_dopamine_concentration", network.reward
         )
 

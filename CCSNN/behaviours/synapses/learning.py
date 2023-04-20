@@ -19,14 +19,14 @@ class SimpleSTDP(Behavior):
         a_minus (float): Coefficient for the negative weight change. The default is None.
     """
 
-    def set_variables(self, synapse):
-        self.a_plus = self.get_init_attr("a_plus", None)
-        self.a_minus = self.get_init_attr("a_minus", None)
+    def initialize(self, synapse):
+        self.a_plus = self.parameter("a_plus", None)
+        self.a_minus = self.parameter("a_minus", None)
 
-        self.float_type = (
+        self.def_dtype = (
             torch.float32
-            if not hasattr(synapse.network, "default_float_type")
-            else synapse.network.default_float_type
+            if not hasattr(synapse.network, "def_dtype")
+            else synapse.network.def_dtype
         )
 
     def get_spike_and_trace(self, synapse):
@@ -70,8 +70,8 @@ class Conv2dSTDP(SimpleSTDP):
         a_minus (float): Coefficient for the negative weight change. The default is None.
     """
 
-    def set_variables(self, synapse):
-        super().set_variables(synapse)
+    def initialize(self, synapse):
+        super().initialize(synapse)
         self.weight_divisor = synapse.dst_shape[2] * synapse.dst_shape[1]
 
     def compute_dw(self, synapse):
@@ -82,7 +82,7 @@ class Conv2dSTDP(SimpleSTDP):
             dst_spike_trace,
         ) = self.get_spike_and_trace(synapse)
 
-        src_spike = src_spike.view(synapse.src_shape).to(self.float_type)
+        src_spike = src_spike.view(synapse.src_shape).to(self.def_dtype)
         src_spike = F.unfold(
             src_spike, kernel_size=synapse.weights.size()[-2:],
             stride=synapse.stride,
@@ -107,7 +107,7 @@ class Conv2dSTDP(SimpleSTDP):
         )
 
         dst_spike = dst_spike.view(
-            (synapse.dst_shape[0], -1, 1)).to(self.float_type)
+            (synapse.dst_shape[0], -1, 1)).to(self.def_dtype)
 
         dw_plus = torch.bmm(src_spike_trace, dst_spike).view(
             synapse.weights.shape)
@@ -128,7 +128,7 @@ class Local2dSTDP(SimpleSTDP):
             dst_spike_trace,
         ) = self.get_spike_and_trace(synapse)
 
-        src_spike = src_spike.view(synapse.src_shape).to(self.float_type)
+        src_spike = src_spike.view(synapse.src_shape).to(self.def_dtype)
         src_spike = F.unfold(
             src_spike, kernel_size=synapse.kernel_shape[-2:],
             stride=synapse.stride,
@@ -155,7 +155,7 @@ class Local2dSTDP(SimpleSTDP):
         )
 
         dst_spike = dst_spike.view(
-            (synapse.dst_shape[0], -1, 1)).to(self.float_type)
+            (synapse.dst_shape[0], -1, 1)).to(self.def_dtype)
         dst_spike = dst_spike.expand(synapse.weights.shape)
 
         dw_plus = dst_spike * src_spike_trace
@@ -176,10 +176,10 @@ class SimpleRSTDP(SimpleSTDP):
         init_c_mode (int): Initialization mode for the eligibility trace. The default is 0.
     """
 
-    def set_variables(self, synapse):
-        super().set_variables(synapse)
-        self.tau_c = self.get_init_attr("tau_c", None)
-        mode = self.get_init_attr("init_c_mode", 0)
+    def initialize(self, synapse):
+        super().initialize(synapse)
+        self.tau_c = self.parameter("tau_c", None)
+        mode = self.parameter("init_c_mode", 0)
         synapse.c = synapse._get_mat(mode=mode, dim=synapse.weights.shape)
 
     def forward(self, synapse):

@@ -110,7 +110,7 @@ class Layer(TaggableObject):
     def _create_synaptic_connection(src, dst, net, config):
         if isinstance(config, dict):
             if not config.get("user_defined", False):
-                syn = StructuredSynapseGroup(src, dst, net, config)
+                syn = StructuredSynapseGroup(src, dst, net, **config)
             else:
                 syn = SynapseGroup(src, dst, net, config)
             syn.add_tag("Proximal")
