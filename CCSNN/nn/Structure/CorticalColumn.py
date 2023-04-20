@@ -147,7 +147,9 @@ class CorticalColumn(TaggableObject):
 
         synapses = {}
         for key in config:
-            tag = src.tags[0] + " => " + dst.tags[0] + " : " + key
+            src_tag = src.tags[0] + "_" + config[key].get("src_pop", "___")[:3]
+            dst_tag = dst.tags[0] + "_" + config[key].get("dst_pop", "___")[:3]
+            tag = Layer._create_synaptic_tag(src_tag, dst_tag)
             if isinstance(config[key], dict):
                 if isinstance(src, NeuronGroup):
                     src_pop = src

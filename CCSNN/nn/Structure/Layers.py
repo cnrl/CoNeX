@@ -48,13 +48,13 @@ class Layer(TaggableObject):
         self.cortical_column = cortical_column
 
         self.exc_pop = self._create_neural_population(
-            net, exc_pop_config, self.tags[0] + "exc"
+            net, exc_pop_config, self.tags[0] + "_exc"
         )
         if self.exc_pop and "exc" not in self.exc_pop.tags:
             self.exc_pop.add_tag("exc")
 
         self.inh_pop = self._create_neural_population(
-            net, inh_pop_config, self.tags[0] + "inh"
+            net, inh_pop_config, self.tags[0] + "_inh"
         )
         if self.inh_pop and "exc" not in self.inh_pop.tags:
             self.inh_pop.add_tag("inh")
@@ -111,6 +111,7 @@ class Layer(TaggableObject):
         if isinstance(config, dict):
             if not config.get("user_defined", False):
                 syn = StructuredSynapseGroup(src, dst, net, **config)
+                syn.tags.insert(0, Layer._create_synaptic_tag(src.tags[0], dst.tags[0]))
             else:
                 syn = SynapseGroup(src, dst, net, config)
             syn.add_tag("Proximal")
@@ -120,3 +121,24 @@ class Layer(TaggableObject):
                 f"No synaptic connection from {src.tags[0]} to {dst.tags[0]}."
             )
             return None
+
+    @staticmethod
+    def _create_synaptic_tag(src_tag, dst_tag):
+        src_tag = list(filter(None, src_tag.split("_")))
+        dst_tag = list(filter(None, dst_tag.split("_")))
+
+        if len(src_tag) < 3 or len(dst_tag) < 3:
+            return f"{'_'.join(src_tag)} => {'_'.join(dst_tag)}"
+
+        src_col, src_layer, src_pop = src_tag[0], "_".join(src_tag[1:-1]), src_tag[-1]
+        dst_col, dst_layer, dst_pop = dst_tag[0], "_".join(dst_tag[1:-1]), dst_tag[-1]
+
+        if src_col == dst_col:
+            prefix = src_col
+            if src_layer == dst_layer:
+                prefix = f"{prefix}_{src_layer}"
+                return f"{prefix}: {src_pop} => {dst_pop}"
+            else:
+                return f"{prefix}: {src_layer}_{src_pop} => {dst_layer}_{dst_pop}"
+        else:
+            return f"{src_tag} => {dst_tag}"
