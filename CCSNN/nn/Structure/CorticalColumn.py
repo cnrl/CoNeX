@@ -175,6 +175,7 @@ class CorticalColumn(TaggableObject):
                     )
 
                 synapses[key].tags.insert(0, tag)
+                synapses[key].add_tag(key)
                 try:
                     if src_pop.cortical_column == dst_pop.cortical_column:
                         synapses[key].add_tag("Distal")
@@ -187,6 +188,7 @@ class CorticalColumn(TaggableObject):
 
                 synapses[key].tags.insert(0, tag)
                 synapses[key].add_tag("Distal")
+                synapses[key].add_tag(key)
             else:
                 warnings.warn(
                     f"Ignoring connection {key} from {src.tags[0]} to {dst.tags[0]}..."
