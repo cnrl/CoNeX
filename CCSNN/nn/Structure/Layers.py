@@ -48,13 +48,13 @@ class Layer(TaggableObject):
         self.cortical_column = cortical_column
 
         self.exc_pop = self._create_neural_population(
-            net, exc_pop_config, self.tags[0] + "exc"
+            net, exc_pop_config, self.tags[0] + "_exc"
         )
         if self.exc_pop and "exc" not in self.exc_pop.tags:
             self.exc_pop.add_tag("exc")
 
         self.inh_pop = self._create_neural_population(
-            net, inh_pop_config, self.tags[0] + "inh"
+            net, inh_pop_config, self.tags[0] + "_inh"
         )
         if self.inh_pop and "exc" not in self.inh_pop.tags:
             self.inh_pop.add_tag("inh")
@@ -111,6 +111,7 @@ class Layer(TaggableObject):
         if isinstance(config, dict):
             if not config.get("user_defined", False):
                 syn = StructuredSynapseGroup(src, dst, net, **config)
+                syn.tags.insert(0, f"{src.tags[0]} => {dst.tags[0]}")
             else:
                 syn = SynapseGroup(src, dst, net, config)
             syn.add_tag("Proximal")

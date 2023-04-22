@@ -147,7 +147,13 @@ class CorticalColumn(TaggableObject):
 
         synapses = {}
         for key in config:
-            tag = src.tags[0] + " => " + dst.tags[0] + " : " + key
+            src_tag = src.tags[0]
+            if pop_tag := config[key].get("src_pop"):
+                src_tag = src_tag + "_" + pop_tag[:3]
+            dst_tag = dst.tags[0]
+            if pop_tag := config[key].get("dst_pop"):
+                dst_tag = dst_tag + "_" + pop_tag[:3]
+            tag = f"{src_tag} => {dst_tag}"
             if isinstance(config[key], dict):
                 if isinstance(src, NeuronGroup):
                     src_pop = src
@@ -169,6 +175,7 @@ class CorticalColumn(TaggableObject):
                     )
 
                 synapses[key].tags.insert(0, tag)
+                synapses[key].add_tag(key)
                 try:
                     if src_pop.cortical_column == dst_pop.cortical_column:
                         synapses[key].add_tag("Distal")
@@ -181,6 +188,7 @@ class CorticalColumn(TaggableObject):
 
                 synapses[key].tags.insert(0, tag)
                 synapses[key].add_tag("Distal")
+                synapses[key].add_tag(key)
             else:
                 warnings.warn(
                     f"Ignoring connection {key} from {src.tags[0]} to {dst.tags[0]}..."
