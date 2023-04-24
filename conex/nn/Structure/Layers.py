@@ -3,8 +3,8 @@ Implementation of Cortical layers.
 """
 
 import warnings
-from CCSNN.nn.Modules.spiking_neurons import SpikingNeuronGroup
-from CCSNN.nn.Modules.topological_connections import StructuredSynapseGroup
+from conex.nn.Modules.spiking_neurons import SpikingNeuronGroup
+from conex.nn.Modules.topological_connections import StructuredSynapseGroup
 from pymonntorch import NeuronGroup, SynapseGroup, TaggableObject
 
 

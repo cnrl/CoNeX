@@ -2,10 +2,10 @@
 Structured SynapseGroup connection schemes.
 """
 
-from CCSNN.behaviours.synapses import learning, dendrites
+from conex.behaviours.synapses import learning, dendrites
 from pymonntorch import SynapseGroup
 
-from CCSNN.behaviours.synapses import (
+from conex.behaviours.synapses import (
     DelayInitializer,
     SynapseInit,
     WeightClip,
@@ -13,7 +13,7 @@ from CCSNN.behaviours.synapses import (
     WeightNormalization,
 )
 
-from CCSNN.nn.timestamps import SYNAPSE_TIMESTAMPS
+from conex.nn.timestamps import SYNAPSE_TIMESTAMPS
 
 # TODO: should we add (read) structure and learning rule to (from) tags?
 
