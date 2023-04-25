@@ -1,4 +1,5 @@
 import warnings
+from conex.nn.Modules.io import OutputLayer
 from conex.nn.Structure.Layers import Layer
 from conex.nn.Modules.topological_connections import StructuredSynapseGroup
 
@@ -176,13 +177,18 @@ class CorticalColumn(TaggableObject):
 
                 synapses[key].tags.insert(0, tag)
                 synapses[key].add_tag(key)
-                try:
+                if hasattr(dst_pop, "cortical_column"):
                     if src_pop.cortical_column == dst_pop.cortical_column:
-                        synapses[key].add_tag("Distal")
+                        if "L4" in src_tag and "L2_3" in dst_tag:
+                            synapses[key].add_tag("Proximal")
+                        else:
+                            synapses[key].add_tag("Distal")
                     else:
                         synapses[key].add_tag("Apical")
-                except AttributeError:
-                    synapses[key].add_tag("Distal")
+                elif isinstance(dst_pop, OutputLayer):
+                    synapses[key].add_tag("Proximal")
+                else:
+                    raise ValueError(f"Invalid destination object: {type(dst_pop)}")
             elif isinstance(config[key], SynapseGroup) and config[key].network == net:
                 synapses[key] = config[key]
 
