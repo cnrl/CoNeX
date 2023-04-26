@@ -26,9 +26,14 @@ class InputLayer(TaggableObject):
         tag=None,
         sensory_tag=None,
         location_tag=None,
+        sensory_config={},
+        location_config={}
     ):
         super().__init__(tag=tag, device=net.device)
         self.network = net
+
+        self.sensory_dataloader = sensory_dataloader
+        self.location_dataloader = location_dataloader
 
         if sensory_dataloader is not None:
             self.sensory_neurons = self.__get_ng(
@@ -38,6 +43,7 @@ class InputLayer(TaggableObject):
                 sensory_tag,
                 sensory_trace,
                 sensory_data_dim,
+                sensory_config
             )
             self.sensory_neurons.add_tag("Sensory")
 
@@ -49,6 +55,7 @@ class InputLayer(TaggableObject):
                 location_tag,
                 location_trace,
                 location_data_dim,
+                location_config
             )
             self.location_neurons.add_tag("Location")
 
@@ -57,7 +64,7 @@ class InputLayer(TaggableObject):
     def connect(self, cortical_column, config={}):
         pass
 
-    def __get_ng(self, net, size, dataloader, tag, trace, data_dim):
+    def __get_ng(self, net, size, dataloader, tag, trace, data_dim, config):
         behavior = {
             NEURON_TIMESTAMPS["Fire"]: SpikeNdDataset(
                 dataloader=dataloader, N=data_dim
@@ -68,7 +75,13 @@ class InputLayer(TaggableObject):
         if trace is not None:
             behavior[NEURON_TIMESTAMPS["Trace"]] = SpikeTrace(tau_s=trace)
 
+        behavior.update(config)  # TODO: should be made compatible with new config setup later
+
         return NeuronGroup(size, behavior, net, tag)
+    
+    @property
+    def iteration(self):
+        return self.network.iteration
 
 
 class OutputLayer(TaggableObject):
