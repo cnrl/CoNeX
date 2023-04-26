@@ -3,27 +3,27 @@ This file specifies the timestamp for different behaviors.
 """
 NETWORK_TIMESTAMPS = {
     "TimeStep": 1,
-    "Reward": 20,
-    "NeuroModulator": 21,
+    "Reward": 101,
+    "NeuroModulator": 150,
 }
 
 NEURON_TIMESTAMPS = {
-    "NeuronDendrite": 31,
-    "NeuronDynamic": 32,
-    "DirectNoise": 33,
-    "KWTA": 34,
-    "Fire": 35,
-    "Trace": 37,
-    "NeuronAxon": 38,
+    "NeuronDendrite": 310,
+    "NeuronDynamic": 320,
+    "DirectNoise": 330,
+    "KWTA": 340,
+    "Fire": 350,
+    "Trace": 370,
+    "NeuronAxon": 380,
 }
 
 SYNAPSE_TIMESTAMPS = {
-    "Init": 12,
-    "WeightInit": 13,
-    "SrcDelayInit": 14,
-    "DstDelayInit": 15,
-    "DendriticInput": 27,
-    "LearningRule": 50,
-    "WeightNormalization": 51,
-    "WeightClip": 52,
+    "Init": 101,
+    "WeightInit": 102,
+    "SrcDelayInit": 103,
+    "DstDelayInit": 104,
+    "DendriticInput": 250,
+    "LearningRule": 400,
+    "WeightNormalization": 410,
+    "WeightClip": 420,
 }
