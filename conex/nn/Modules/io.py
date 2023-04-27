@@ -11,6 +11,7 @@ from conex.nn.timestamps import NEURON_TIMESTAMPS
 
 # TODO: Discuss whether location (motor) and sensory (representation) populations need to be defined as (distinct) subclasses of NeuronGroup
 # TODO: Define spike analysis behaviors for output neuron groups
+
 class InputLayer(TaggableObject):
     def __init__(
         self,
