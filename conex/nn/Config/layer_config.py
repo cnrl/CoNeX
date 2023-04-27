@@ -1,8 +1,9 @@
 from typing import Tuple, Union, Callable
+from .base_config import *
 from pymonntorch import *
 
 
-class LayerConfig:
+class LayerConfig(BaseConfig):
     exc_size = 0
     exc_neuron_params = {}
     exc_neuron_type = ""
@@ -14,7 +15,8 @@ class LayerConfig:
     exc_fire = False
     exc_tag = None
     exc_dendrite_params = None
-    exc_user_defined = None
+    exc_user_defined_behaviors_class = None
+    exc_user_defined_behaviors_params = None
 
     inh_size = 0
     inh_neuron_params = {}
@@ -27,7 +29,8 @@ class LayerConfig:
     inh_fire = False
     inh_tag = None
     inh_dendrite_params = None
-    inh_user_defined = None
+    inh_user_defined_behaviors_class = None
+    inh_user_defined_behaviors_params = None
 
     exc_exc_weight_init_params = {}
     exc_exc_structure = "Simple"
@@ -41,7 +44,8 @@ class LayerConfig:
     exc_exc_w_interval = None
     exc_exc_weight_norm = None
     exc_exc_tag = None
-    exc_exc_user_defined = None
+    exc_exc_user_defined_behaviors_class = None
+    exc_exc_user_defined_behaviors_params = None
 
     exc_inh_weight_init_params = {}
     exc_inh_structure = "Simple"
@@ -55,7 +59,8 @@ class LayerConfig:
     exc_inh_w_interval = None
     exc_inh_weight_norm = None
     exc_inh_tag = None
-    exc_inh_user_defined = None
+    exc_inh_user_defined_behaviors_class = None
+    exc_inh_user_defined_behaviors_params = None
 
     inh_exc_weight_init_params = {}
     inh_exc_structure = "Simple"
@@ -69,7 +74,8 @@ class LayerConfig:
     inh_exc_w_interval = None
     inh_exc_weight_norm = None
     inh_exc_tag = None
-    inh_exc_user_defined = None
+    inh_exc_user_defined_behaviors_class = None
+    inh_exc_user_defined_behaviors_params = None
 
     inh_inh_weight_init_params = {}
     inh_inh_structure = "Simple"
@@ -83,7 +89,8 @@ class LayerConfig:
     inh_inh_w_interval = None
     inh_inh_weight_norm = None
     inh_inh_tag = None
-    inh_inh_user_defined = None
+    inh_inh_user_defined_behaviors_class = None
+    inh_inh_user_defined_behaviors_params = None
 
     @classmethod
     def _pop_config(
@@ -99,7 +106,8 @@ class LayerConfig:
         fire: bool = False,
         tag: Union[None, str] = None,
         dendrite_params: Union[None, dict] = None,
-        user_defined: Union[None, dict[int, Behavior]] = None,
+        user_defined_behaviors_class: Union[None, dict[int, type[Behavior]]] = None,
+        user_defined_behaviors_params: Union[None, dict[int, dict]] = None,
     ) -> dict:
         if isinstance(size, int):
             config = {"size": size}
@@ -133,8 +141,15 @@ class LayerConfig:
         if dendrite_params is not None:
             config["dendrite_params"] = dendrite_params
 
-        if user_defined is not None:
-            config["user_defined"] = user_defined
+        if user_defined_behaviors_class is not None:
+            config["user_defined"] = {}
+            for k, v in user_defined_behaviors_class.items():
+                params = (
+                    user_defined_behaviors_params.get(k, {})
+                    if user_defined_behaviors_params is not None
+                    else {}
+                )
+                config["user_defined"][k] = v(**params)
 
         return config
 
@@ -153,7 +168,8 @@ class LayerConfig:
         w_interval: Union[None, Tuple[float, float]] = None,
         weight_norm: Union[None, float] = None,
         tag: Union[None, str] = None,
-        user_defined: Union[None, dict[int, Behavior]] = None,
+        user_defined_behaviors_class: Union[None, dict[int, type[Behavior]]] = None,
+        user_defined_behaviors_params: Union[None, dict[int, dict]] = None,
     ) -> dict:
         config = {
             "weight_init_params": weight_init_params,
@@ -188,8 +204,15 @@ class LayerConfig:
         if tag is not None:
             config["tag"] = tag
 
-        if user_defined is not None:
-            config["user_defined"] = user_defined
+        if user_defined_behaviors_class is not None:
+            config["user_defined"] = {}
+            for k, v in user_defined_behaviors_class.items():
+                params = (
+                    user_defined_behaviors_params.get(k, {})
+                    if user_defined_behaviors_params is not None
+                    else {}
+                )
+                config["user_defined"][k] = v(**params)
 
         return config
 
@@ -209,7 +232,8 @@ class LayerConfig:
                 self.exc_fire,
                 self.exc_tag,
                 self.exc_dendrite_params,
-                self.exc_user_defined,
+                self.exc_user_defined_behaviors_class,
+                self.exc_user_defined_behaviors_params,
             )
 
         if self.inh_size != 0:
@@ -225,7 +249,8 @@ class LayerConfig:
                 self.inh_fire,
                 self.inh_tag,
                 self.inh_dendrite_params,
-                self.inh_user_defined,
+                self.inh_user_defined_behaviors_class,
+                self.inh_user_defined_behaviors_params,
             )
 
         if self.exc_exc_weight_init_params:
@@ -242,7 +267,8 @@ class LayerConfig:
                 self.exc_exc_w_interval,
                 self.exc_exc_weight_norm,
                 self.exc_exc_tag,
-                self.exc_exc_user_defined,
+                self.exc_exc_user_defined_behaviors_class,
+                self.exc_exc_user_defined_behaviors_params,
             )
 
         if self.exc_inh_weight_init_params:
@@ -259,7 +285,8 @@ class LayerConfig:
                 self.exc_inh_w_interval,
                 self.exc_inh_weight_norm,
                 self.exc_inh_tag,
-                self.exc_inh_user_defined,
+                self.exc_inh_user_defined_behaviors_class,
+                self.exc_inh_user_defined_behaviors_params,
             )
 
         if self.inh_exc_weight_init_params:
@@ -276,7 +303,8 @@ class LayerConfig:
                 self.inh_exc_w_interval,
                 self.inh_exc_weight_norm,
                 self.inh_exc_tag,
-                self.inh_exc_user_defined,
+                self.inh_exc_user_defined_behaviors_class,
+                self.inh_exc_user_defined_behaviors_params,
             )
 
         if self.inh_inh_weight_init_params:
@@ -293,12 +321,8 @@ class LayerConfig:
                 self.inh_inh_w_interval,
                 self.inh_inh_weight_norm,
                 self.inh_inh_tag,
-                self.inh_inh_user_defined,
+                self.inh_inh_user_defined_behaviors_class,
+                self.inh_inh_user_defined_behaviors_params,
             )
 
         return config
-
-    def update_make(self, **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-        return self.make()

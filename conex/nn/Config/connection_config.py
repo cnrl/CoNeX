@@ -1,8 +1,9 @@
 from typing import Tuple, Union, Callable
+from .base_config import *
 from pymonntorch import *
 
 
-class ConnectionConfig:
+class ConnectionConfig(BaseConfig):
     exc_exc_weight_init_params = {}
     exc_exc_structure = "Simple"
     exc_exc_structure_params = {}
@@ -15,7 +16,8 @@ class ConnectionConfig:
     exc_exc_w_interval = None
     exc_exc_weight_norm = None
     exc_exc_tag = None
-    exc_exc_user_defined = None
+    exc_exc_user_defined_behaviors_class = None
+    exc_exc_user_defined_behaviors_params = None
     exc_exc_src_pop = None
     exc_exc_dst_pop = None
 
@@ -31,7 +33,8 @@ class ConnectionConfig:
     exc_inh_w_interval = None
     exc_inh_weight_norm = None
     exc_inh_tag = None
-    exc_inh_user_defined = None
+    exc_inh_user_defined_behaviors_class = None
+    exc_inh_user_defined_behaviors_params = None
     exc_inh_src_pop = None
     exc_inh_dst_pop = None
 
@@ -47,7 +50,8 @@ class ConnectionConfig:
     inh_exc_w_interval = None
     inh_exc_weight_norm = None
     inh_exc_tag = None
-    inh_exc_user_defined = None
+    inh_exc_user_defined_behaviors_class = None
+    inh_exc_user_defined_behaviors_params = None
     inh_exc_src_pop = None
     inh_exc_dst_pop = None
 
@@ -63,7 +67,8 @@ class ConnectionConfig:
     inh_inh_w_interval = None
     inh_inh_weight_norm = None
     inh_inh_tag = None
-    inh_inh_user_defined = None
+    inh_inh_user_defined_behaviors_class = None
+    inh_inh_user_defined_behaviors_params = None
     inh_inh_src_pop = None
     inh_inh_dst_pop = None
 
@@ -82,7 +87,8 @@ class ConnectionConfig:
         w_interval: Union[None, Tuple[float, float]] = None,
         weight_norm: Union[None, float] = None,
         tag: Union[None, str] = None,
-        user_defined: Union[None, dict[int, Behavior]] = None,
+        user_defined_behaviors_class: Union[None, dict[int, type[Behavior]]] = None,
+        user_defined_behaviors_params: Union[None, dict[int, dict]] = None,
         src_pop: Union[None, str] = None,
         dst_pop: Union[None, str] = None,
     ) -> dict:
@@ -119,8 +125,15 @@ class ConnectionConfig:
         if tag is not None:
             config["tag"] = tag
 
-        if user_defined is not None:
-            config["user_defined"] = user_defined
+        if user_defined_behaviors_class is not None:
+            config["user_defined"] = {}
+            for k, v in user_defined_behaviors_class.items():
+                params = (
+                    user_defined_behaviors_params.get(k, {})
+                    if user_defined_behaviors_params is not None
+                    else {}
+                )
+                config["user_defined"][k] = v(**params)
 
         if src_pop is not None:
             config["src_pop"] = src_pop
@@ -147,7 +160,8 @@ class ConnectionConfig:
                 self.exc_exc_w_interval,
                 self.exc_exc_weight_norm,
                 self.exc_exc_tag,
-                self.exc_exc_user_defined,
+                self.exc_exc_user_defined_behaviors_class,
+                self.exc_exc_user_defined_behaviors_params,
                 self.exc_exc_src_pop,
                 self.exc_exc_dst_pop,
             )
@@ -166,7 +180,8 @@ class ConnectionConfig:
                 self.exc_inh_w_interval,
                 self.exc_inh_weight_norm,
                 self.exc_inh_tag,
-                self.exc_inh_user_defined,
+                self.exc_inh_user_defined_behaviors_class,
+                self.exc_inh_user_defined_behaviors_params,
                 self.exc_inh_src_pop,
                 self.exc_inh_dst_pop,
             )
@@ -185,7 +200,8 @@ class ConnectionConfig:
                 self.inh_exc_w_interval,
                 self.inh_exc_weight_norm,
                 self.inh_exc_tag,
-                self.inh_exc_user_defined,
+                self.inh_exc_user_defined_behaviors_class,
+                self.inh_exc_user_defined_behaviors_params,
                 self.inh_exc_src_pop,
                 self.inh_exc_dst_pop,
             )
@@ -204,14 +220,10 @@ class ConnectionConfig:
                 self.inh_inh_w_interval,
                 self.inh_inh_weight_norm,
                 self.inh_inh_tag,
-                self.inh_inh_user_defined,
+                self.inh_inh_user_defined_behaviors_class,
+                self.inh_inh_user_defined_behaviors_params,
                 self.inh_inh_src_pop,
                 self.inh_inh_dst_pop,
             )
 
         return config
-
-    def update_make(self, **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-        return self.make()
