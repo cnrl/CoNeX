@@ -8,6 +8,7 @@ from pymonntorch import SynapseGroup, NeuronGroup, TaggableObject
 # TODO: handle multi-scale
 # TODO: str.removesuffix needs python 3.9
 
+
 class CorticalColumn(TaggableObject):
     """
     Base class to define a single cortical column.
@@ -171,7 +172,7 @@ class CorticalColumn(TaggableObject):
                 )
         return synapses
 
-    def connect(
+    def connect_column(
         self,
         cortical_column,
         L2_3_L2_3_config=None,
@@ -229,3 +230,29 @@ class CorticalColumn(TaggableObject):
             )
 
         return synapses
+
+    def connect_outlayer(
+        self, other, L2_3_representation_syn_config=None, L5_motor_syn_config=None
+    ):
+        synapses = {}
+        if L2_3_representation_syn_config:
+            if hasattr(other, "representation_pop"):
+                synapses["L2_3_representation_synapse"] = self._add_synaptic_connection(
+                    self.L2_3, other.representation_pop, L2_3_representation_syn_config
+                )
+
+        if L5_motor_syn_config:
+            if hasattr(other, "motor_pop"):
+                synapses["L5_motor_synapse"] = self._add_synaptic_connection(
+                    self.L5, other.motor_pop, L5_motor_syn_config
+                )
+
+        return synapses
+
+    def connect(self, other, **kwargs):
+        if isinstance(other, CorticalColumn):
+            return self.connect_column(other, **kwargs)
+        elif isinstance(other, OutputLayer):
+            return self.connect_outlayer(other, **kwargs)
+        else:
+            raise RuntimeError(f"Not supported object{other} to connect.")
