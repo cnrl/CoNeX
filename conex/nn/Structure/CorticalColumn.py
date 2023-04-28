@@ -255,4 +255,4 @@ class CorticalColumn(TaggableObject):
         elif isinstance(other, OutputLayer):
             return self.connect_outlayer(other, **kwargs)
         else:
-            raise RuntimeError(f"Not supported object{other} to connect.")
+            raise RuntimeError(f"Not supported object {other} to connect.")

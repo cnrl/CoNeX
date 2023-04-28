@@ -47,7 +47,7 @@ class SpikingNeuronGroup(NeuronGroup):
         tau_trace=None,
         max_delay=None,
         noise_function=None,
-        fire=False,
+        fire=True,
         tag=None,
         dendrite_params=None,
         user_defined=None,
