@@ -17,8 +17,10 @@ class poisson(torch.nn.Module):
     def __call__(self, img):
         random_probability = torch.rand(size=(self.timesteps, *img.shape))
         intensity = img.unsqueeze(dim=0).expand(self.timesteps, *img.shape)
-        spike_probaility = intensity * self.ratio
-        return spike_probaility >= random_probability
+        spike_probability = intensity * self.ratio
+        return spike_probability >= random_probability
+
+
 
 
 class latency_to_intensity(torch.nn.Module):

@@ -11,7 +11,7 @@ class Neocortex(Network):
     Args:
         dt (float): The timestep. Default is 1.
         reward (Reward): If not None, enables reinforcement learning with a reward function defined by an instance of Reward class.
-        neuromodulators (list): List of Neuromodulators used in the network.
+        neuro_modulators (list): List of Neuromodulators used in the network.
         device (str): Device on which the network and its components are located. The default is "cpu".
 
     Usage:
@@ -110,14 +110,17 @@ class Neocortex(Network):
         # Now you can simulate your network using net.simulate_iterations(...)
     """
 
-    def __init__(self, dt=1, reward=None, neuromodulators=[], settings={}):
+    def __init__(self, dt=1, reward=None, neuro_modulators=None, settings=None):
         behavior = {NETWORK_TIMESTAMPS["TimeStep"]: TimeStep(dt=dt)}
         if reward:
             behavior[NETWORK_TIMESTAMPS["Reward"]] = reward
-        for i, neuromodulator in enumerate(neuromodulators):
-            behavior[NETWORK_TIMESTAMPS["NeuroModulator"] + i] = neuromodulator
 
-        super().__init__(tag="Neocortex", behavior=behavior, settings=settings)
+        if neuro_modulators is not None:
+            for i, neuro_modulator in enumerate(neuro_modulators):
+                behavior[NETWORK_TIMESTAMPS["NeuroModulator"] + i] = neuro_modulator
+
+        # TODO: default setting need to be handled via the pymontorch!
+        super().__init__(tag="Neocortex", behavior=behavior, settings=settings or {})
         self.dt = dt
         self.columns = []
         self.inter_column_synapses = []

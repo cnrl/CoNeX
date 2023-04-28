@@ -76,9 +76,9 @@ class ConnectionConfig(BaseConfig):
     def _syn_config(
         cls,
         weight_init_params: dict,
-        structure: Union[str, Behavior],
+        structure: Union[str, type[Behavior]],
         structure_params: dict,
-        learning_rule: Union[None, str, Behavior] = None,
+        learning_rule: Union[None, str, type[Behavior]] = None,
         learning_params: Union[None, dict] = None,
         src_delay_init_mode: Union[None, float, str] = None,
         src_delay_init_params: Union[None, dict] = None,
