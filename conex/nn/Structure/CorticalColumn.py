@@ -6,7 +6,7 @@ from conex.nn.Modules.topological_connections import StructuredSynapseGroup
 from pymonntorch import SynapseGroup, NeuronGroup, TaggableObject
 
 # TODO: handle multi-scale
-
+# TODO: str.removesuffix needs python 3.9
 
 class CorticalColumn(TaggableObject):
     """
@@ -122,10 +122,10 @@ class CorticalColumn(TaggableObject):
         for key in config:
             src_tag = src.tags[0]
             if pop_tag := config[key].get("src_pop"):
-                src_tag = src_tag + "_" + pop_tag[:3]
+                src_tag = src_tag + "_" + pop_tag.removesuffix("_pop")
             dst_tag = dst.tags[0]
             if pop_tag := config[key].get("dst_pop"):
-                dst_tag = dst_tag + "_" + pop_tag[:3]
+                dst_tag = dst_tag + "_" + pop_tag.removesuffix("_pop")
             tag = f"{src_tag} => {dst_tag}"
 
             if isinstance(config[key], dict):

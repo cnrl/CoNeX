@@ -37,7 +37,7 @@ class InputLayer(TaggableObject):
         self.location_dataloader = location_dataloader
 
         if sensory_dataloader is not None:
-            self.sensory_neurons = self.__get_ng(
+            self.sensory_pop = self.__get_ng(
                 net,
                 sensory_size,
                 sensory_dataloader,
@@ -46,10 +46,10 @@ class InputLayer(TaggableObject):
                 sensory_data_dim,
                 sensory_config
             )
-            self.sensory_neurons.add_tag("Sensory")
+            self.sensory_pop.add_tag("Sensory")
 
         if location_dataloader is not None:
-            self.location_neurons = self.__get_ng(
+            self.location_pop = self.__get_ng(
                 net,
                 location_size,
                 location_dataloader,
@@ -58,7 +58,7 @@ class InputLayer(TaggableObject):
                 location_data_dim,
                 location_config
             )
-            self.location_neurons.add_tag("Location")
+            self.location_pop.add_tag("Location")
 
         self.add_tag(self.__class__.__name__)
 
@@ -100,21 +100,21 @@ class OutputLayer(TaggableObject):
         super().__init__(tag=tag, device=net.device)
         self.network = net
 
-        self.representation_neurons = self.__get_ng(
+        self.representation_pop = self.__get_ng(
             net,
             representation_size,
             representation_tag,
             representation_trace,
         )
-        self.representation_neurons.add_tag("Representation")
+        self.representation_pop.add_tag("Representation")
 
-        self.motor_neurons = self.__get_ng(
+        self.motor_pop = self.__get_ng(
             net,
             motor_size,
             motor_tag,
             motor_trace,
         )
-        self.motor_neurons.add_tag("Motor")
+        self.motor_pop.add_tag("Motor")
 
         self.add_tag(self.__class__.__name__)
 
