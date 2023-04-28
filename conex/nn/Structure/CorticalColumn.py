@@ -236,13 +236,13 @@ class CorticalColumn(TaggableObject):
     ):
         synapses = {}
         if L2_3_representation_syn_config:
-            if hasattr(other, "representation_pop"):
+            if hasattr(other, "representation_pop") and hasattr(self, "L2_3"):
                 synapses["L2_3_representation_synapse"] = self._add_synaptic_connection(
                     self.L2_3, other.representation_pop, L2_3_representation_syn_config
                 )
 
         if L5_motor_syn_config:
-            if hasattr(other, "motor_pop"):
+            if hasattr(other, "motor_pop") and hasattr(self, "L5"):
                 synapses["L5_motor_synapse"] = self._add_synaptic_connection(
                     self.L5, other.motor_pop, L5_motor_syn_config
                 )
