@@ -140,15 +140,15 @@ class CorticalColumn(TaggableObject):
                         for connection in ["Proximal", "Distal", "Apical"]
                     )
                 ):
-                    if hasattr(dst_pop, "cortical_column"):
-                        if src_pop.cortical_column == dst_pop.cortical_column:
+                    if hasattr(dst, "cortical_column"):
+                        if src.cortical_column == dst.cortical_column:
                             if "L4" in src_tag and "L2_3" in dst_tag:
                                 synapses[key].add_tag("Proximal")
                             else:
                                 synapses[key].add_tag("Distal")
                         else:
                             synapses[key].add_tag("Apical")
-                    elif isinstance(dst_pop, OutputLayer):
+                    elif isinstance(dst, OutputLayer):
                         synapses[key].add_tag("Proximal")
                     else:
                         raise ValueError(f"Invalid destination object: {type(dst_pop)}")

@@ -12,7 +12,7 @@ class LayerConfig(BaseConfig):
     exc_tau_trace = None
     exc_max_delay = None
     exc_noise_function = None
-    exc_fire = False
+    exc_fire = True
     exc_tag = None
     exc_dendrite_params = None
     exc_user_defined_behaviors_class = None
@@ -26,7 +26,7 @@ class LayerConfig(BaseConfig):
     inh_tau_trace = None
     inh_max_delay = None
     inh_noise_function = None
-    inh_fire = False
+    inh_fire = True
     inh_tag = None
     inh_dendrite_params = None
     inh_user_defined_behaviors_class = None

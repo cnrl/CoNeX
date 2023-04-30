@@ -18,7 +18,8 @@ class SensorySetter(Behavior):
     def forward(self, neurons):
         neurons.spikes = self.layer.x
 
-class SensorySetter(Behavior):
+
+class LocationSetter(Behavior):
     """
     Gets location from Layer Object and sets as spike for the population.
     """

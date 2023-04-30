@@ -2,11 +2,12 @@
 Module of input and output neuronal populations.
 """
 
-from pymonntorch import NeuronGroup, TaggableObject
+from pymonntorch import NeuronGroup, NetworkObject
 
 from conex.behaviours.neurons.setters import SensorySetter, SensorySetter
 from conex.behaviours.neurons.specs import NeuronAxon, NeuronDendrite, SpikeTrace
 from conex.nn.timestamps import NEURON_TIMESTAMPS, LAYER_TIMESTAMPS
+from conex.behaviours.layer.dataset import SpikeNdDataset
 
 
 # TODO: Discuss whether location (motor) and sensory (representation) populations need to be defined as (distinct) subclasses of NeuronGroup
@@ -34,8 +35,6 @@ class InputLayer(NetworkObject):
         sensory_user_defined=None,
         location_user_defined=None,
     ):
-        self.network = net
-        net.input_layers.append(self)
         behavior = {} if behavior is None else behavior
 
         if LAYER_TIMESTAMPS["InputDataset"] not in behavior:
@@ -47,6 +46,12 @@ class InputLayer(NetworkObject):
                 have_sensory=have_sensory,
                 have_label=have_label,
             )
+
+        super().__init__(tag=tag, network=net, behavior=behavior, device=net.device)
+        self.add_tag(self.__class__.__name__)
+
+        self.network = net
+        net.input_layers.append(self)
 
         if have_sensory:
             self.sensory_pop = self.__get_ng(
@@ -71,9 +76,6 @@ class InputLayer(NetworkObject):
             )
             self.location_pop.add_tag("Location")
             self.location_pop.layer = self
-
-        super().__init__(tag=tag, behavior=behavior, device=net.device)
-        self.add_tag(self.__class__.__name__)
 
     def connect(
         self,
