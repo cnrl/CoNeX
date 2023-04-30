@@ -4,9 +4,9 @@ Module of input and output neuronal populations.
 
 from pymonntorch import NeuronGroup, TaggableObject
 
-from conex.behaviours.neurons.sensory.dataset import SpikeNdDataset
+from conex.behaviours.neurons.setters import SensorySetter, SensorySetter
 from conex.behaviours.neurons.specs import NeuronAxon, NeuronDendrite, SpikeTrace
-from conex.nn.timestamps import NEURON_TIMESTAMPS
+from conex.nn.timestamps import NEURON_TIMESTAMPS, LAYER_TIMESTAMPS
 
 
 # TODO: Discuss whether location (motor) and sensory (representation) populations need to be defined as (distinct) subclasses of NeuronGroup
@@ -17,7 +17,7 @@ class InputLayer(NetworkObject):
     def __init__(
         self,
         net,
-        input_dataloader=None,
+        input_dataloader,
         have_sensory=True,
         have_location=False,
         have_label=True,
@@ -38,13 +38,23 @@ class InputLayer(NetworkObject):
         net.input_layers.append(self)
         behavior = {} if behavior is None else behavior
 
+        if LAYER_TIMESTAMPS["InputDataset"] not in behavior:
+            behavior[LAYER_TIMESTAMPS["InputDataset"]] = SpikeNdDataset(
+                dataloader=input_dataloader,
+                N_sensory=sensory_data_dim,
+                N_location=location_data_dim,
+                have_location=have_location,
+                have_sensory=have_sensory,
+                have_label=have_label,
+            )
+
         if have_sensory:
             self.sensory_pop = self.__get_ng(
                 net,
                 sensory_size,
                 sensory_tag,
                 sensory_trace,
-                sensory_data_dim,
+                SensorySetter,
                 sensory_user_defined,
             )
             self.sensory_pop.add_tag("Sensory")
@@ -56,16 +66,14 @@ class InputLayer(NetworkObject):
                 location_size,
                 location_tag,
                 location_trace,
-                location_data_dim,
+                LocationSetter,
                 location_user_defined,
             )
             self.location_pop.add_tag("Location")
             self.location_pop.layer = self
 
-        
         super().__init__(tag=tag, behavior=behavior, device=net.device)
         self.add_tag(self.__class__.__name__)
-
 
     def connect(
         self,
@@ -102,11 +110,9 @@ class InputLayer(NetworkObject):
 
         return synapses
 
-    def __get_ng(self, net, size, tag, trace, data_dim, user_defined=None):
+    def __get_ng(self, net, size, tag, trace, setter, user_defined=None):
         behavior = {
-            NEURON_TIMESTAMPS["Fire"]: SpikeNdDataset(
-                dataloader=dataloader, N=data_dim
-            ),
+            NEURON_TIMESTAMPS["Fire"]: setter(),
             NEURON_TIMESTAMPS["NeuronAxon"]: NeuronAxon(),
         }
 

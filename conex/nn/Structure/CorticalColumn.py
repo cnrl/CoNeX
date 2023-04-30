@@ -96,21 +96,7 @@ class CorticalColumn(TaggableObject):
 
     @classmethod
     def _add_synaptic_connection(cls, src, dst, config):
-        # TODO fill the docstring
-        """_summary_
-
-        Args:
-            src (Layer or NeuronGroup): _description_
-            dst (Layer or NeuronGroup): _description_
-            config (Dictionary): _description_
-
-        Raises:
-            ValueError: _description_
-            ValueError: _description_
-
-        Returns:
-            _type_: _description_
-        """
+        # src and dst can either be Layer or NeuronGroup
         if src is None or dst is None:
             return {}
 

@@ -13,8 +13,8 @@ class SpikeNdDataset(Behavior):
 
     def initialize(self, neurons):
         self.dataloader = self.parameter("dataloader", None, required=True)
-        self.sensory_dimension = self.parameter("N", 2)
-        self.location_dimension = self.parameter("N", 2)
+        self.sensory_dimension = self.parameter("N_sensory", 2)
+        self.location_dimension = self.parameter("N_location", 2)
         self.have_location = self.parameter("have_location", False)
         self.have_sensory = self.parameter("have_sensory", True)
         self.have_label = self.parameter("have_label", True)
@@ -43,6 +43,10 @@ class SpikeNdDataset(Behavior):
                         (-1, *batch_loc.shape[-self.location_dimension :])
                     )
                     num_instance = batch_loc.size(0)
+                    if batch_x:
+                        assert (
+                            batch_x.size(0) == num_instance
+                        ), "sensory and location should have same number of instances."
 
                 if batch_y:
                     batch_y = batch_y.to(self.device)
