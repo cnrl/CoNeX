@@ -1,4 +1,4 @@
-from conex.behaviours.neurons.neuron_types.lif_neurons import LIF, ELIF
+from conex.behaviors.neurons.neuron_types.lif_neurons import LIF, ELIF
 from conex.nn.Config.layer_config import LayerConfig
 from pymonntorch import *
 

@@ -2,9 +2,9 @@
 Structure of spiking neural populations.
 """
 
-from conex.behaviours.neurons.neuron_types.lif_neurons import LIF
-from conex.behaviours.neurons import neuron_types
-from conex.behaviours.neurons import (
+from conex.behaviors.neurons.neuron_types.lif_neurons import LIF
+from conex.behaviors.neurons import neuron_types
+from conex.behaviors.neurons import (
     KWTA,
     Fire,
     InherentNoise,
