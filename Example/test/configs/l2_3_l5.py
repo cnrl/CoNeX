@@ -1,7 +1,7 @@
-from conex.nn.Config.connection_config import Pop2LayerConnectionConfig
+from conex.nn.Config.connection_config import Layer2LayerConnectionConfig
 
 
-class l2_3_l5(Pop2LayerConnectionConfig):
+class l2_3_l5(Layer2LayerConnectionConfig):
     exc_exc_weight_init_params = {"mode": "uniform"}
     exc_exc_structure = "Simple"
     exc_exc_structure_params = {"current_coef": 3}

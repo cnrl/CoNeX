@@ -229,7 +229,7 @@ class Layer2LayerConnectionConfig(BaseConfig):
         return config
 
 
-class Pop2LayerConnectionConfig(BaseConfig):
+class Input2LayerConnectionConfig(BaseConfig):
     exc_weight_init_params = {}
     exc_structure = "Simple"
     exc_structure_params = {}
