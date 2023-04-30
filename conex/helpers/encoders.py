@@ -1,15 +1,7 @@
 import torch
 
 
-class transform_squeeze(torch.nn.Module):
-    def __init__(self, dim):
-        self.dim = dim
-
-    def __call__(self, image):
-        return image.squeeze(dim=self.dim)
-
-
-class poisson(torch.nn.Module):
+class Poisson(torch.nn.Module):
     def __init__(self, timesteps, ratio):
         self.timesteps = timesteps
         self.ratio = ratio
@@ -23,7 +15,7 @@ class poisson(torch.nn.Module):
 
 
 
-class latency_to_intensity(torch.nn.Module):
+class Intensity2Latency(torch.nn.Module):
     def __init__(self, timesteps, threshold=None, sparsity=None, min_val=0.0, max_val=1.0, lower_trim=True, higher_trim=True):
         self.timesteps = timesteps
         self.threshold = threshold if threshold is not None else min_val

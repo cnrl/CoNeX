@@ -3,7 +3,8 @@ from pymonntorch import *
 from conex import *
 from conex.nn.timestamps import NEURON_TIMESTAMPS
 
-from conex.helpers.encoders import *
+from conex.helpers.encoders import Poisson
+from conex.helpers.transforms import *
 
 from torchvision import transforms
 from torchvision.datasets import MNIST
@@ -36,8 +37,8 @@ from configs.l5_l2_3 import *
 transformation = transforms.Compose(
     [
         transforms.ToTensor(),
-        transform_squeeze(dim=0),
-        poisson(timesteps=POISSON_TIME, ratio=POISSON_RATIO),
+        SqueezeTransform(dim=0),
+        Poisson(timesteps=POISSON_TIME, ratio=POISSON_RATIO),
     ]
 )
 

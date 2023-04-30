@@ -2,10 +2,10 @@
 Structured SynapseGroup connection schemes.
 """
 
-from conex.behaviours.synapses import learning, dendrites
+from conex.behaviors.synapses import learning, dendrites
 from pymonntorch import SynapseGroup
 
-from conex.behaviours.synapses import (
+from conex.behaviors.synapses import (
     DelayInitializer,
     SynapseInit,
     WeightClip,

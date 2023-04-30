@@ -217,7 +217,7 @@ class CorticalColumn(TaggableObject):
 
         return synapses
 
-    def connect_outlayer(
+    def connect2output(
         self, other, L2_3_representation_syn_config=None, L5_motor_syn_config=None
     ):
         synapses = {}
@@ -239,6 +239,6 @@ class CorticalColumn(TaggableObject):
         if isinstance(other, CorticalColumn):
             return self.connect_column(other, **kwargs)
         elif isinstance(other, OutputLayer):
-            return self.connect_outlayer(other, **kwargs)
+            return self.connect2output(other, **kwargs)
         else:
             raise RuntimeError(f"Not supported object {other} to connect.")

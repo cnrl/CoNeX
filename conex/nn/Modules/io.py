@@ -4,13 +4,12 @@ Module of input and output neuronal populations.
 
 from pymonntorch import NeuronGroup, NetworkObject
 
-from conex.behaviours.neurons.setters import SensorySetter, SensorySetter
-from conex.behaviours.neurons.specs import NeuronAxon, NeuronDendrite, SpikeTrace
+from conex.behaviors.neurons.setters import LocationSetter, SensorySetter
+from conex.behaviors.neurons.specs import NeuronAxon, NeuronDendrite, SpikeTrace
 from conex.nn.timestamps import NEURON_TIMESTAMPS, LAYER_TIMESTAMPS
-from conex.behaviours.layer.dataset import SpikeNdDataset
+from conex.behaviors.layer.dataset import SpikeNdDataset
 
 
-# TODO: Discuss whether location (motor) and sensory (representation) populations need to be defined as (distinct) subclasses of NeuronGroup
 # TODO: Define spike analysis behaviors for output neuron groups
 
 
