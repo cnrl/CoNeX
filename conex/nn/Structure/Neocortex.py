@@ -123,6 +123,8 @@ class Neocortex(Network):
         super().__init__(tag="Neocortex", behavior=behavior, settings=settings or {})
         self.dt = dt
         self.columns = []
+        self.input_layers = []
+        self.output_layers = []
         self.inter_column_synapses = []
 
     def initialize(self, info=True, storage_manager=None):

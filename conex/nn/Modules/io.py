@@ -13,12 +13,14 @@ from conex.nn.timestamps import NEURON_TIMESTAMPS
 # TODO: Define spike analysis behaviors for output neuron groups
 
 
-class InputLayer(TaggableObject):
+class InputLayer(NetworkObject):
     def __init__(
         self,
         net,
-        sensory_dataloader=None,
-        location_dataloader=None,
+        input_dataloader=None,
+        have_sensory=True,
+        have_location=False,
+        have_label=True,
         sensory_size=None,
         location_size=None,
         sensory_trace=None,
@@ -26,42 +28,44 @@ class InputLayer(TaggableObject):
         sensory_data_dim=2,
         location_data_dim=2,
         tag=None,
+        behavior=None,
         sensory_tag=None,
         location_tag=None,
-        sensory_config={},
-        location_config={},
+        sensory_user_defined=None,
+        location_user_defined=None,
     ):
-        super().__init__(tag=tag, device=net.device)
         self.network = net
+        net.input_layers.append(self)
+        behavior = {} if behavior is None else behavior
 
-        self.sensory_dataloader = sensory_dataloader
-        self.location_dataloader = location_dataloader
-
-        if sensory_dataloader is not None:
+        if have_sensory:
             self.sensory_pop = self.__get_ng(
                 net,
                 sensory_size,
-                sensory_dataloader,
                 sensory_tag,
                 sensory_trace,
                 sensory_data_dim,
-                sensory_config,
+                sensory_user_defined,
             )
             self.sensory_pop.add_tag("Sensory")
+            self.sensory_pop.layer = self
 
-        if location_dataloader is not None:
+        if have_location:
             self.location_pop = self.__get_ng(
                 net,
                 location_size,
-                location_dataloader,
                 location_tag,
                 location_trace,
                 location_data_dim,
-                location_config,
+                location_user_defined,
             )
             self.location_pop.add_tag("Location")
+            self.location_pop.layer = self
 
+        
+        super().__init__(tag=tag, behavior=behavior, device=net.device)
         self.add_tag(self.__class__.__name__)
+
 
     def connect(
         self,
@@ -98,7 +102,7 @@ class InputLayer(TaggableObject):
 
         return synapses
 
-    def __get_ng(self, net, size, dataloader, tag, trace, data_dim, config):
+    def __get_ng(self, net, size, tag, trace, data_dim, user_defined=None):
         behavior = {
             NEURON_TIMESTAMPS["Fire"]: SpikeNdDataset(
                 dataloader=dataloader, N=data_dim
@@ -109,18 +113,13 @@ class InputLayer(TaggableObject):
         if trace is not None:
             behavior[NEURON_TIMESTAMPS["Trace"]] = SpikeTrace(tau_s=trace)
 
-        behavior.update(
-            config
-        )  # TODO: should be made compatible with new config setup later
+        if user_defined is not None:
+            behavior.update(user_defined)
 
         return NeuronGroup(size, behavior, net, tag)
 
-    @property
-    def iteration(self):
-        return self.network.iteration
 
-
-class OutputLayer(TaggableObject):
+class OutputLayer(NetworkObject):
     def __init__(
         self,
         net,
@@ -128,18 +127,27 @@ class OutputLayer(TaggableObject):
         motor_size=None,
         representation_trace=None,
         motor_trace=None,
+        representation_dendrite_params=None,
+        motor_dendrite_params=None,
         tag=None,
+        behavior=None,
         representation_tag=None,
         motor_tag=None,
+        representation_user_defined=None,
+        motor_user_defined=None,
     ):
-        super().__init__(tag=tag, device=net.device)
+        behavior = {} if behavior is None else behavior
+        super().__init__(tag=tag, behavior=behavior, device=net.device)
         self.network = net
+        net.output_layers.append(self)
 
         self.representation_pop = self.__get_ng(
             net,
             representation_size,
             representation_tag,
             representation_trace,
+            representation_dendrite_params,
+            representation_user_defined,
         )
         self.representation_pop.add_tag("Representation")
 
@@ -148,17 +156,23 @@ class OutputLayer(TaggableObject):
             motor_size,
             motor_tag,
             motor_trace,
+            motor_dendrite_params,
+            motor_user_defined,
         )
         self.motor_pop.add_tag("Motor")
 
         self.add_tag(self.__class__.__name__)
 
-    def __get_ng(self, net, size, tag, trace, **dendrite_params):
+    def __get_ng(self, net, size, tag, trace, dendrite_params, user_defined):
+        dendrite_params = dendrite_params if dendrite_params is not None else {}
         behavior = {
             NEURON_TIMESTAMPS["NeuronDendrite"]: NeuronDendrite(**dendrite_params),
         }
 
         if trace is not None:
             behavior[NEURON_TIMESTAMPS["Trace"]] = SpikeTrace(tau_s=trace)
+
+        if user_defined is not None:
+            behavior.update(user_defined)
 
         return NeuronGroup(size, behavior, net, tag)
