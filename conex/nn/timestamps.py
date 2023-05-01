@@ -27,5 +27,5 @@ SYNAPSE_TIMESTAMPS = {
     "DendriticInput": 250,
     "LearningRule": 420,
     "WeightNormalization": 430,
-    "WeightClip": 4430,
+    "WeightClip": 440,
 }
