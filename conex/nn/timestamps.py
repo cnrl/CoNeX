@@ -12,10 +12,12 @@ NEURON_TIMESTAMPS = {
     "NeuronDynamic": 320,
     "DirectNoise": 330,
     "KWTA": 340,
-    "Fire": 350,
-    "Trace": 370,
-    "NeuronAxon": 380,
+    "Fire": 360,
+    "Trace": 380,
+    "NeuronAxon": 390,
 }
+
+LAYER_TIMESTAMPS = {"InputDataset": 350}
 
 SYNAPSE_TIMESTAMPS = {
     "Init": 101,
@@ -23,7 +25,7 @@ SYNAPSE_TIMESTAMPS = {
     "SrcDelayInit": 103,
     "DstDelayInit": 104,
     "DendriticInput": 250,
-    "LearningRule": 400,
-    "WeightNormalization": 410,
-    "WeightClip": 420,
+    "LearningRule": 420,
+    "WeightNormalization": 430,
+    "WeightClip": 440,
 }

@@ -96,21 +96,7 @@ class CorticalColumn(TaggableObject):
 
     @classmethod
     def _add_synaptic_connection(cls, src, dst, config):
-        # TODO fill the docstring
-        """_summary_
-
-        Args:
-            src (Layer or NeuronGroup): _description_
-            dst (Layer or NeuronGroup): _description_
-            config (Dictionary): _description_
-
-        Raises:
-            ValueError: _description_
-            ValueError: _description_
-
-        Returns:
-            _type_: _description_
-        """
+        # src and dst can either be Layer or NeuronGroup
         if src is None or dst is None:
             return {}
 
@@ -154,15 +140,15 @@ class CorticalColumn(TaggableObject):
                         for connection in ["Proximal", "Distal", "Apical"]
                     )
                 ):
-                    if hasattr(dst_pop, "cortical_column"):
-                        if src_pop.cortical_column == dst_pop.cortical_column:
+                    if hasattr(dst, "cortical_column"):
+                        if src.cortical_column == dst.cortical_column:
                             if "L4" in src_tag and "L2_3" in dst_tag:
                                 synapses[key].add_tag("Proximal")
                             else:
                                 synapses[key].add_tag("Distal")
                         else:
                             synapses[key].add_tag("Apical")
-                    elif isinstance(dst_pop, OutputLayer):
+                    elif isinstance(dst, OutputLayer):
                         synapses[key].add_tag("Proximal")
                     else:
                         raise ValueError(f"Invalid destination object: {type(dst_pop)}")
@@ -231,7 +217,7 @@ class CorticalColumn(TaggableObject):
 
         return synapses
 
-    def connect_outlayer(
+    def connect2output(
         self, other, L2_3_representation_syn_config=None, L5_motor_syn_config=None
     ):
         synapses = {}
@@ -253,6 +239,6 @@ class CorticalColumn(TaggableObject):
         if isinstance(other, CorticalColumn):
             return self.connect_column(other, **kwargs)
         elif isinstance(other, OutputLayer):
-            return self.connect_outlayer(other, **kwargs)
+            return self.connect2output(other, **kwargs)
         else:
             raise RuntimeError(f"Not supported object {other} to connect.")

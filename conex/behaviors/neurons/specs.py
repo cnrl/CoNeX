@@ -200,6 +200,8 @@ class NeuronDendrite(Behavior):
     def forward(self, neurons):
         if self.I_tau is not None:
             neurons.I -= neurons.I / self.I_tau
+        else:
+            neurons.I.fill_(0)
 
         for synapse in neurons.afferent_synapses.get("Proximal", []):
             self._add_proximal(neurons, synapse)
