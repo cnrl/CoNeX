@@ -27,3 +27,6 @@ class BaseConfig:
     def update_make(self, **kwargs):
         self.update(kwargs)
         return self.make()
+
+    def __call__(self, *args, **kwargs):
+        self.make(*args, **kwargs)
