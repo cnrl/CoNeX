@@ -10,5 +10,8 @@ from conex.behaviors.synapses.dendrites import *
 from conex.behaviors.synapses.learning import *
 from conex.behaviors.synapses.specs import *
 
+from conex.behaviors.layer.dataset import *
+
 from conex.nn.Structure import *
 from conex.nn.Modules import *
+from conex.nn.Config import *
