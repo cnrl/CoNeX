@@ -19,6 +19,8 @@ MNIST_ROOT = "~/Temp/MNIST/"
 SENSORY_SIZE_HEIGHT = 28
 SENSORY_SIZE_WIDTH = 28  # MNIST's image size
 SENSORY_TRACE_TAU_S = 2.7
+REPRESENTATION_SIZE_HEIGHT = 7
+REPRESENTATION_SIZE_WIDTH = 7
 DEVICE = "cuda"
 DTYPE = torch.float16
 
@@ -29,7 +31,7 @@ from configs.sens_l4 import *
 from configs.l2_3_l5 import *
 from configs.l4_l2_3 import *
 from configs.l5_l2_3 import *
-
+from configs.l2_3_rep import *
 
 #############################
 # making dataloader
@@ -69,6 +71,18 @@ input_layer = InputLayer(
 
 #############################
 
+#############################
+# output layer
+#############################
+output_layer = OutputLayer(
+    net=net,
+    representation_size=NeuronDimension(
+        depth=1, height=REPRESENTATION_SIZE_HEIGHT, width=REPRESENTATION_SIZE_WIDTH
+    ),
+)
+
+#############################
+
 
 #############################
 # making cortical column
@@ -98,6 +112,7 @@ input_layer.connect(
 )
 #############################
 
+cc1.connect(output_layer, L2_3_representation_syn_config=l2_3_rep().make())
 
 net.initialize()
 

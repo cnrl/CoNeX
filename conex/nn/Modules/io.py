@@ -144,29 +144,31 @@ class OutputLayer(NetworkObject):
         motor_user_defined=None,
     ):
         behavior = {} if behavior is None else behavior
-        super().__init__(tag=tag, behavior=behavior, device=net.device)
+        super().__init__(tag=tag, network=net, behavior=behavior, device=net.device)
         self.network = net
         net.output_layers.append(self)
 
-        self.representation_pop = self.__get_ng(
-            net,
-            representation_size,
-            representation_tag,
-            representation_trace,
-            representation_dendrite_params,
-            representation_user_defined,
-        )
-        self.representation_pop.add_tag("Representation")
+        if representation_size is not None:
+            self.representation_pop = self.__get_ng(
+                net,
+                representation_size,
+                representation_tag,
+                representation_trace,
+                representation_dendrite_params,
+                representation_user_defined,
+            )
+            self.representation_pop.add_tag("Representation")
 
-        self.motor_pop = self.__get_ng(
-            net,
-            motor_size,
-            motor_tag,
-            motor_trace,
-            motor_dendrite_params,
-            motor_user_defined,
-        )
-        self.motor_pop.add_tag("Motor")
+        if motor_size is not None:
+            self.motor_pop = self.__get_ng(
+                net,
+                motor_size,
+                motor_tag,
+                motor_trace,
+                motor_dendrite_params,
+                motor_user_defined,
+            )
+            self.motor_pop.add_tag("Motor")
 
         self.add_tag(self.__class__.__name__)
 
