@@ -224,13 +224,9 @@ class NeuronDendrite(Behavior):
             else 0
         )
 
-        if (
-            self.apical_provocativeness is not None
-            and self.distal_provocativeness is not None
-        ):
-            neurons.I += (
-                non_priming_apical + non_priming_distal
-            ) / neurons.R  # TODO what to do ? (* tau)
+        neurons.I += (non_priming_apical + non_priming_distal) / getattr(
+            neurons, "R", 1
+        )  # TODO what to do ? (* tau)
 
         if self.apical_provocativeness is not None:
             neurons.apical_input = neurons.buffer_roll(
