@@ -56,7 +56,7 @@ class Layer(TaggableObject):
         self.inh_pop = self._create_neural_population(
             net, inh_pop_config, self.tags[0] + "_inh"
         )
-        if self.inh_pop and "exc" not in self.inh_pop.tags:
+        if self.inh_pop and "inh" not in self.inh_pop.tags:
             self.inh_pop.add_tag("inh")
 
         if self.inh_pop is None and self.exc_pop is None:
@@ -91,17 +91,11 @@ class Layer(TaggableObject):
     @staticmethod
     def _create_neural_population(net, config, tag):
         if isinstance(config, dict):
-            if not config.get("user_defined", False):
-                if config.get("tag", None) is None:
-                    config["tag"] = tag
-                else:
-                    if isinstance(config["tag"], str):
-                        config["tag"] = tag + "," + config["tag"]
-                    else:
-                        config["tag"].insert(0, tag)
-                return SpikingNeuronGroup(net=net, **config)
-            else:
-                return NeuronGroup(net=net, **config)
+            config.setdefault("tag", None)
+            config["tag"] = (
+                tag + "," + config["tag"] if config["tag"] is not None else tag
+            )
+            return SpikingNeuronGroup(net=net, **config)
         else:
             warnings.warn(f"No proper neural population is defined in {tag}.")
             return None
@@ -109,11 +103,8 @@ class Layer(TaggableObject):
     @staticmethod
     def _create_synaptic_connection(src, dst, net, config):
         if isinstance(config, dict):
-            if not config.get("user_defined", False):
-                syn = StructuredSynapseGroup(src, dst, net, **config)
-                syn.tags.insert(0, f"{src.tags[0]} => {dst.tags[0]}")
-            else:
-                syn = SynapseGroup(src, dst, net, config)
+            syn = StructuredSynapseGroup(src, dst, net, **config)
+            syn.tags.insert(0, f"{src.tags[0]} => {dst.tags[0]}")
             syn.add_tag("Proximal")
             return syn
         else:

@@ -2,10 +2,10 @@
 Structured SynapseGroup connection schemes.
 """
 
-from conex.behaviours.synapses import learning, dendrites
+from conex.behaviors.synapses import learning, dendrites
 from pymonntorch import SynapseGroup
 
-from conex.behaviours.synapses import (
+from conex.behaviors.synapses import (
     DelayInitializer,
     SynapseInit,
     WeightClip,
@@ -13,7 +13,7 @@ from conex.behaviours.synapses import (
     WeightNormalization,
 )
 
-from conex.nn.timestamps import SYNAPSE_TIMESTAMPS
+from conex.nn.priorities import SYNAPSE_PRIORITIES
 
 # TODO: should we add (read) structure and learning rule to (from) tags?
 
@@ -52,18 +52,19 @@ class StructuredSynapseGroup(SynapseGroup):
         src,
         dst,
         net,
-        structure="Simple",
+        weight_init_params,
+        structure,
+        structure_params,
         learning_rule=None,
+        learning_params=None,
         src_delay_init_mode=None,
+        src_delay_init_params=None,
         dst_delay_init_mode=None,
-        w_min=0.0,
-        w_max=1.0,
+        dst_delay_init_params=None,
+        w_interval=None,
         weight_norm=None,
         tag=None,
-        delay_init_params={},
-        weight_init_params={},
-        structure_params={},
-        learning_params={},
+        user_defined=None,
     ):
         assert net is not None, "net cannot be None."
 
@@ -71,33 +72,52 @@ class StructuredSynapseGroup(SynapseGroup):
             tag = f"StructuredSynapseGroup_{len(net.SynapseGroups) + 1}"
 
         behavior = {
-            SYNAPSE_TIMESTAMPS["Init"]: SynapseInit(),
-            SYNAPSE_TIMESTAMPS["WeightInit"]: WeightInitializer(**weight_init_params),
-            SYNAPSE_TIMESTAMPS["WeightClip"]: WeightClip(w_min=w_min, w_max=w_max),
+            SYNAPSE_PRIORITIES["Init"]: SynapseInit(),
+            SYNAPSE_PRIORITIES["WeightInit"]: WeightInitializer(**weight_init_params),
         }
 
+        if w_interval is not None:
+            behavior[SYNAPSE_PRIORITIES["WeightClip"]] = WeightClip(
+                w_min=w_interval[0], w_max=w_interval[1]
+            )
+
         if src_delay_init_mode is not None:
-            SYNAPSE_TIMESTAMPS["SrcDelayInit"]: DelayInitializer(
-                mode=src_delay_init_mode, **delay_init_params
+            behavior[SYNAPSE_PRIORITIES["SrcDelayInit"]] = DelayInitializer(
+                mode=src_delay_init_mode, **src_delay_init_params
             )
 
         if dst_delay_init_mode is not None:
-            SYNAPSE_TIMESTAMPS["DstDelayInit"]: DelayInitializer(
-                mode=dst_delay_init_mode, **delay_init_params
+            behavior[SYNAPSE_PRIORITIES["DstDelayInit"]] = DelayInitializer(
+                mode=dst_delay_init_mode, **dst_delay_init_params
             )
 
         if weight_norm is not None:
-            SYNAPSE_TIMESTAMPS["WeightNormalization"]: WeightNormalization(
+            behavior[SYNAPSE_PRIORITIES["WeightNormalization"]] = WeightNormalization(
                 norm=weight_norm
             )
 
-        if learning_rule is not None and isinstance(learning_rule, str):
-            learning_rule = getattr(learning, structure + learning_rule)
-            behavior[SYNAPSE_TIMESTAMPS["LearningRule"]] = learning_rule(**learning_params)
+        if learning_rule is not None:
+            if isinstance(learning_rule, str) and isinstance(structure, str):
+                learning_rule = getattr(learning, structure + learning_rule)
+                behavior[SYNAPSE_PRIORITIES["LearningRule"]] = learning_rule(
+                    **learning_params
+                )
+            else:
+                behavior[SYNAPSE_PRIORITIES["LearningRule"]] = learning_rule(
+                    **learning_params
+                )
 
-        structure += "DendriticInput"
-        behavior[SYNAPSE_TIMESTAMPS["DendriticInput"]] = getattr(dendrites, structure)(
-            **structure_params
-        )
+        if isinstance(structure, str):
+            structure += "DendriticInput"
+            behavior[SYNAPSE_PRIORITIES["DendriticInput"]] = getattr(
+                dendrites, structure
+            )(**structure_params)
+        else:
+            behavior[SYNAPSE_PRIORITIES["DendriticInput"]] = structure(
+                **structure_params
+            )
+
+        if user_defined is not None:
+            behavior.update(user_defined)
 
         super().__init__(src, dst, net, tag, behavior)

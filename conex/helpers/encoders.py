@@ -1,29 +1,23 @@
 import torch
 
 
-class transform_squeeze(torch.nn.Module):
-    def __init__(self, dim):
-        self.dim = dim
-
-    def __call__(self, image):
-        return image.squeeze(dim=self.dim)
-
-
-class poisson(torch.nn.Module):
-    def __init__(self, timesteps, ratio):
-        self.timesteps = timesteps
+class Poisson(torch.nn.Module):
+    def __init__(self, time_window, ratio):
+        self.time_window = time_window
         self.ratio = ratio
 
     def __call__(self, img):
-        random_probability = torch.rand(size=(self.timesteps, *img.shape))
-        intensity = img.unsqueeze(dim=0).expand(self.timesteps, *img.shape)
-        spike_probaility = intensity * self.ratio
-        return spike_probaility >= random_probability
+        random_probability = torch.rand(size=(self.time_window, *img.shape))
+        intensity = img.unsqueeze(dim=0).expand(self.time_window, *img.shape)
+        spike_probability = intensity * self.ratio
+        return spike_probability >= random_probability
 
 
-class latency_to_intensity(torch.nn.Module):
-    def __init__(self, timesteps, threshold=None, sparsity=None, min_val=0.0, max_val=1.0, lower_trim=True, higher_trim=True):
-        self.timesteps = timesteps
+
+
+class Intensity2Latency(torch.nn.Module):
+    def __init__(self, time_window, threshold=None, sparsity=None, min_val=0.0, max_val=1.0, lower_trim=True, higher_trim=True):
+        self.time_window = time_window
         self.threshold = threshold if threshold is not None else min_val
         self.sparsity = sparsity
         self.interval = (min_val, max_val)
@@ -47,14 +41,14 @@ class latency_to_intensity(torch.nn.Module):
         if self.higher_trim and img.max() != 0:
             max_factor = 1 / img.max()
 
-        index = img * max_factor * (self.timesteps-1)
+        index = img * max_factor * (self.time_window-1)
         index = index.ceil().long()
         index += 1
         index[below_index] = 0
         index = index.clamp(0)
         index = index.unsqueeze(0)
 
-        spikes = torch.zeros(self.timesteps+1, *img.shape,
+        spikes = torch.zeros(self.time_window+1, *img.shape,
                              dtype=torch.bool, device=img.device)
         spikes.scatter_(0, index, True)
         spikes = spikes[1:]
