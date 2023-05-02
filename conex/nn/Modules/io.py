@@ -61,7 +61,12 @@ class InputLayer(NetworkObject):
                 SensorySetter,
                 sensory_user_defined,
             )
-            self.sensory_pop.add_tag("Sensory")
+
+            if sensory_tag is None:
+                self.sensory_pop.tags.insert(0, "Sensory")
+            else:
+                self.sensory_pop.add_tag("Sensory")
+
             self.sensory_pop.layer = self
 
         if have_location:
@@ -73,7 +78,12 @@ class InputLayer(NetworkObject):
                 LocationSetter,
                 location_user_defined,
             )
-            self.location_pop.add_tag("Location")
+
+            if location_tag is None:
+                self.location_pop.tags.insert(0, "Location")
+            else:
+                self.location_pop.add_tag("Location")
+
             self.location_pop.layer = self
 
     def connect(
@@ -157,7 +167,13 @@ class OutputLayer(NetworkObject):
                 representation_dendrite_params,
                 representation_user_defined,
             )
-            self.representation_pop.add_tag("Representation")
+
+            if representation_tag is None:
+                self.representation_pop.tags.insert(0, "Representation")
+            else:
+                self.representation_pop.add_tag("Representation")
+
+            self.representation_pop.layer = self
 
         if motor_size is not None:
             self.motor_pop = self.__get_ng(
@@ -168,7 +184,13 @@ class OutputLayer(NetworkObject):
                 motor_dendrite_params,
                 motor_user_defined,
             )
-            self.motor_pop.add_tag("Motor")
+
+            if motor_tag is None:
+                self.motor_pop.tags.insert(0, "Motor")
+            else:
+                self.motor_pop.add_tag("Motor")
+
+            self.motor_pop.layer = self
 
         self.add_tag(self.__class__.__name__)
 
