@@ -1,13 +1,13 @@
 """
-This file specifies the timestamp for different behaviors.
+This file specifies the priorities for different behaviors.
 """
-NETWORK_TIMESTAMPS = {
-    "TimeStep": 1,
-    "Reward": 101,
+NETWORK_PRIORITIES = {
+    "TimeResolution": 1,
+    "Payoff": 101,
     "NeuroModulator": 150,
 }
 
-NEURON_TIMESTAMPS = {
+NEURON_PRIORITIES = {
     "NeuronDendrite": 310,
     "NeuronDynamic": 320,
     "DirectNoise": 330,
@@ -17,9 +17,9 @@ NEURON_TIMESTAMPS = {
     "NeuronAxon": 390,
 }
 
-LAYER_TIMESTAMPS = {"InputDataset": 350}
+LAYER_PRIORITIES = {"InputDataset": 350}
 
-SYNAPSE_TIMESTAMPS = {
+SYNAPSE_PRIORITIES = {
     "Init": 101,
     "WeightInit": 102,
     "SrcDelayInit": 103,

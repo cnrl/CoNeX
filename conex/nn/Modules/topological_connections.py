@@ -13,7 +13,7 @@ from conex.behaviors.synapses import (
     WeightNormalization,
 )
 
-from conex.nn.timestamps import SYNAPSE_TIMESTAMPS
+from conex.nn.priorities import SYNAPSE_PRIORITIES
 
 # TODO: should we add (read) structure and learning rule to (from) tags?
 
@@ -72,48 +72,48 @@ class StructuredSynapseGroup(SynapseGroup):
             tag = f"StructuredSynapseGroup_{len(net.SynapseGroups) + 1}"
 
         behavior = {
-            SYNAPSE_TIMESTAMPS["Init"]: SynapseInit(),
-            SYNAPSE_TIMESTAMPS["WeightInit"]: WeightInitializer(**weight_init_params),
+            SYNAPSE_PRIORITIES["Init"]: SynapseInit(),
+            SYNAPSE_PRIORITIES["WeightInit"]: WeightInitializer(**weight_init_params),
         }
 
         if w_interval is not None:
-            behavior[SYNAPSE_TIMESTAMPS["WeightClip"]] = WeightClip(
+            behavior[SYNAPSE_PRIORITIES["WeightClip"]] = WeightClip(
                 w_min=w_interval[0], w_max=w_interval[1]
             )
 
         if src_delay_init_mode is not None:
-            behavior[SYNAPSE_TIMESTAMPS["SrcDelayInit"]] = DelayInitializer(
+            behavior[SYNAPSE_PRIORITIES["SrcDelayInit"]] = DelayInitializer(
                 mode=src_delay_init_mode, **src_delay_init_params
             )
 
         if dst_delay_init_mode is not None:
-            behavior[SYNAPSE_TIMESTAMPS["DstDelayInit"]] = DelayInitializer(
+            behavior[SYNAPSE_PRIORITIES["DstDelayInit"]] = DelayInitializer(
                 mode=dst_delay_init_mode, **dst_delay_init_params
             )
 
         if weight_norm is not None:
-            behavior[SYNAPSE_TIMESTAMPS["WeightNormalization"]] = WeightNormalization(
+            behavior[SYNAPSE_PRIORITIES["WeightNormalization"]] = WeightNormalization(
                 norm=weight_norm
             )
 
         if learning_rule is not None:
             if isinstance(learning_rule, str) and isinstance(structure, str):
                 learning_rule = getattr(learning, structure + learning_rule)
-                behavior[SYNAPSE_TIMESTAMPS["LearningRule"]] = learning_rule(
+                behavior[SYNAPSE_PRIORITIES["LearningRule"]] = learning_rule(
                     **learning_params
                 )
             else:
-                behavior[SYNAPSE_TIMESTAMPS["LearningRule"]] = learning_rule(
+                behavior[SYNAPSE_PRIORITIES["LearningRule"]] = learning_rule(
                     **learning_params
                 )
 
         if isinstance(structure, str):
             structure += "DendriticInput"
-            behavior[SYNAPSE_TIMESTAMPS["DendriticInput"]] = getattr(
+            behavior[SYNAPSE_PRIORITIES["DendriticInput"]] = getattr(
                 dendrites, structure
             )(**structure_params)
         else:
-            behavior[SYNAPSE_TIMESTAMPS["DendriticInput"]] = structure(
+            behavior[SYNAPSE_PRIORITIES["DendriticInput"]] = structure(
                 **structure_params
             )
 

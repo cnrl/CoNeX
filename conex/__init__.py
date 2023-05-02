@@ -1,6 +1,6 @@
 from conex.behaviors.network.neuromodulators import *
-from conex.behaviors.network.timestep import *
-from conex.behaviors.network.reward import *
+from conex.behaviors.network.time_resolution import *
+from conex.behaviors.network.payoff import *
 
 from conex.behaviors.neurons.neuron_types.lif_neurons import *
 from conex.behaviors.neurons.setters import *

@@ -1,3 +1,3 @@
-from .reward import Reward
-from .timestep import TimeStep
+from .payoff import Payoff
+from .time_resolution import TimeResolution
 from .neuromodulators import Dopamine

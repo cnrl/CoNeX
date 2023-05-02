@@ -1,7 +1,7 @@
-from conex.behaviors.network.timestep import TimeStep
+from conex.behaviors.network.time_resolution import TimeResolution
 from pymonntorch import Network
 
-from conex.nn.timestamps import NETWORK_TIMESTAMPS
+from conex.nn.priorities import NETWORK_PRIORITIES
 
 
 class Neocortex(Network):
@@ -9,8 +9,8 @@ class Neocortex(Network):
     A subclass Network that enables defining cortical connections.
 
     Args:
-        dt (float): The timestep. Default is 1.
-        reward (Reward): If not None, enables reinforcement learning with a reward function defined by an instance of Reward class.
+        dt (float): The time resolution. Default is 1.
+        payoff (Payoff): If not None, enables reinforcement learning with a payoff function defined by an instance of Payoff class.
         neuromodulators (list): List of Neuromodulators used in the network.
         device (str): Device on which the network and its components are located. The default is "cpu".
 
@@ -110,14 +110,14 @@ class Neocortex(Network):
         # Now you can simulate your network using net.simulate_iterations(...)
     """
 
-    def __init__(self, dt=1, reward=None, neuromodulators=None, settings={}):
-        behavior = {NETWORK_TIMESTAMPS["TimeStep"]: TimeStep(dt=dt)}
-        if reward:
-            behavior[NETWORK_TIMESTAMPS["Reward"]] = reward
+    def __init__(self, dt=1, payoff=None, neuromodulators=None, settings={}):
+        behavior = {NETWORK_PRIORITIES["TimeResolution"]: TimeResolution(dt=dt)}
+        if payoff:
+            behavior[NETWORK_PRIORITIES["Payoff"]] = payoff
 
         if neuromodulators is not None:
             for i, neuromodulator in enumerate(neuromodulators):
-                behavior[NETWORK_TIMESTAMPS["NeuroModulator"] + i] = neuromodulator
+                behavior[NETWORK_PRIORITIES["NeuroModulator"] + i] = neuromodulator
 
         super().__init__(tag="Neocortex", behavior=behavior, settings=settings)
         self.dt = dt

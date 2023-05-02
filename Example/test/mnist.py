@@ -1,7 +1,7 @@
 from pymonntorch import *
 
 from conex import *
-from conex.nn.timestamps import NEURON_TIMESTAMPS
+from conex.nn.priorities import NEURON_PRIORITIES
 
 from conex.helpers.encoders import Poisson
 from conex.helpers.transforms import *
@@ -38,7 +38,7 @@ transformation = transforms.Compose(
     [
         transforms.ToTensor(),
         SqueezeTransform(dim=0),
-        Poisson(timesteps=POISSON_TIME, ratio=POISSON_RATIO),
+        Poisson(time_window=POISSON_TIME, ratio=POISSON_RATIO),
     ]
 )
 

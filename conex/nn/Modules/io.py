@@ -6,7 +6,7 @@ from pymonntorch import NeuronGroup, NetworkObject
 
 from conex.behaviors.neurons.setters import LocationSetter, SensorySetter
 from conex.behaviors.neurons.specs import NeuronAxon, NeuronDendrite, SpikeTrace
-from conex.nn.timestamps import NEURON_TIMESTAMPS, LAYER_TIMESTAMPS
+from conex.nn.priorities import NEURON_PRIORITIES, LAYER_PRIORITIES
 from conex.behaviors.layer.dataset import SpikeNdDataset
 
 
@@ -36,8 +36,8 @@ class InputLayer(NetworkObject):
     ):
         behavior = {} if behavior is None else behavior
 
-        if LAYER_TIMESTAMPS["InputDataset"] not in behavior:
-            behavior[LAYER_TIMESTAMPS["InputDataset"]] = SpikeNdDataset(
+        if LAYER_PRIORITIES["InputDataset"] not in behavior:
+            behavior[LAYER_PRIORITIES["InputDataset"]] = SpikeNdDataset(
                 dataloader=input_dataloader,
                 N_sensory=sensory_data_dim,
                 N_location=location_data_dim,
@@ -113,12 +113,12 @@ class InputLayer(NetworkObject):
 
     def __get_ng(self, net, size, tag, trace, setter, user_defined=None):
         behavior = {
-            NEURON_TIMESTAMPS["Fire"]: setter(),
-            NEURON_TIMESTAMPS["NeuronAxon"]: NeuronAxon(),
+            NEURON_PRIORITIES["Fire"]: setter(),
+            NEURON_PRIORITIES["NeuronAxon"]: NeuronAxon(),
         }
 
         if trace is not None:
-            behavior[NEURON_TIMESTAMPS["Trace"]] = SpikeTrace(tau_s=trace)
+            behavior[NEURON_PRIORITIES["Trace"]] = SpikeTrace(tau_s=trace)
 
         if user_defined is not None:
             behavior.update(user_defined)
@@ -173,11 +173,11 @@ class OutputLayer(NetworkObject):
     def __get_ng(self, net, size, tag, trace, dendrite_params, user_defined):
         dendrite_params = dendrite_params if dendrite_params is not None else {}
         behavior = {
-            NEURON_TIMESTAMPS["NeuronDendrite"]: NeuronDendrite(**dendrite_params),
+            NEURON_PRIORITIES["NeuronDendrite"]: NeuronDendrite(**dendrite_params),
         }
 
         if trace is not None:
-            behavior[NEURON_TIMESTAMPS["Trace"]] = SpikeTrace(tau_s=trace)
+            behavior[NEURON_PRIORITIES["Trace"]] = SpikeTrace(tau_s=trace)
 
         if user_defined is not None:
             behavior.update(user_defined)

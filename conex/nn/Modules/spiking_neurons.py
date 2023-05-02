@@ -13,7 +13,7 @@ from conex.behaviors.neurons import (
     SpikeTrace,
 )
 
-from conex.nn.timestamps import NEURON_TIMESTAMPS
+from conex.nn.priorities import NEURON_PRIORITIES
 
 from pymonntorch import NeuronGroup
 
@@ -58,27 +58,27 @@ class SpikingNeuronGroup(NeuronGroup):
         if isinstance(neuron_type, str):
             neuron_type = getattr(neuron_types, neuron_type)
 
-        behavior = {NEURON_TIMESTAMPS["NeuronDynamic"]: neuron_type(**neuron_params)}
+        behavior = {NEURON_PRIORITIES["NeuronDynamic"]: neuron_type(**neuron_params)}
 
         if dendrite_params is not None:
-            behavior[NEURON_TIMESTAMPS["NeuronDendrite"]] = NeuronDendrite(
+            behavior[NEURON_PRIORITIES["NeuronDendrite"]] = NeuronDendrite(
                 **dendrite_params
             )
 
         if kwta is not None:
-            behavior[NEURON_TIMESTAMPS["KWTA"]] = KWTA(k=kwta, dimension=kwta_dim)
+            behavior[NEURON_PRIORITIES["KWTA"]] = KWTA(k=kwta, dimension=kwta_dim)
 
         if tau_trace:
-            behavior[NEURON_TIMESTAMPS["Trace"]] = SpikeTrace(tau_s=tau_trace)
+            behavior[NEURON_PRIORITIES["Trace"]] = SpikeTrace(tau_s=tau_trace)
 
         if max_delay is not None:
-            behavior[NEURON_TIMESTAMPS["NeuronAxon"]] = NeuronAxon(max_delay=max_delay)
+            behavior[NEURON_PRIORITIES["NeuronAxon"]] = NeuronAxon(max_delay=max_delay)
 
         if noise_function:
-            behavior[NEURON_TIMESTAMPS["DirectNoise"]] = InherentNoise(noise_function)
+            behavior[NEURON_PRIORITIES["DirectNoise"]] = InherentNoise(noise_function)
 
         if fire:
-            behavior[NEURON_TIMESTAMPS["Fire"]] = Fire()
+            behavior[NEURON_PRIORITIES["Fire"]] = Fire()
 
         if user_defined is not None:
             behavior.update(user_defined)
