@@ -13,8 +13,8 @@ class SpikeNdDataset(Behavior):
 
     def initialize(self, layer):
         self.dataloader = self.parameter("dataloader", None, required=True)
-        self.sensory_dimension = self.parameter("N_sensory", 2)
-        self.location_dimension = self.parameter("N_location", 2)
+        self.sensory_dimension = self.parameter("ndim_sensory", 2)
+        self.location_dimension = self.parameter("ndim_location", 2)
         self.have_location = self.parameter("have_location", False)
         self.have_sensory = self.parameter("have_sensory", True)
         self.have_label = self.parameter("have_label", True)

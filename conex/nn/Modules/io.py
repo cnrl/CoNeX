@@ -39,8 +39,8 @@ class InputLayer(NetworkObject):
         if LAYER_PRIORITIES["InputDataset"] not in behavior:
             behavior[LAYER_PRIORITIES["InputDataset"]] = SpikeNdDataset(
                 dataloader=input_dataloader,
-                N_sensory=sensory_data_dim,
-                N_location=location_data_dim,
+                ndim_sensory=sensory_data_dim,
+                ndim_location=location_data_dim,
                 have_location=have_location,
                 have_sensory=have_sensory,
                 have_label=have_label,
