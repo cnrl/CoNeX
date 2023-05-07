@@ -129,6 +129,9 @@ class CorticalColumn(TaggableObject):
                 synapses[key] = StructuredSynapseGroup(
                     src=src_pop, dst=dst_pop, net=net, **config[key]
                 )
+
+                if tag in synapses[key].tags:
+                    synapses[key].tags.remove(tag)
                 synapses[key].tags.insert(0, tag)
                 synapses[key].add_tag(key)
 
