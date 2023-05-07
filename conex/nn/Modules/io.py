@@ -52,6 +52,8 @@ class InputLayer(NetworkObject):
         self.network = net
         net.input_layers.append(self)
 
+        sensory_tag = "Sensory" if sensory_tag is None else "Sensory," + sensory_tag
+
         if have_sensory:
             self.sensory_pop = self.__get_ng(
                 net,
@@ -62,12 +64,11 @@ class InputLayer(NetworkObject):
                 sensory_user_defined,
             )
 
-            if sensory_tag is None:
-                self.sensory_pop.tags.insert(0, "Sensory")
-            else:
-                self.sensory_pop.add_tag("Sensory")
-
             self.sensory_pop.layer = self
+
+        location_tag = (
+            "Location" if location_tag is None else "Location," + location_tag
+        )
 
         if have_location:
             self.location_pop = self.__get_ng(
@@ -78,11 +79,6 @@ class InputLayer(NetworkObject):
                 LocationSetter,
                 location_user_defined,
             )
-
-            if location_tag is None:
-                self.location_pop.tags.insert(0, "Location")
-            else:
-                self.location_pop.add_tag("Location")
 
             self.location_pop.layer = self
 
@@ -158,6 +154,12 @@ class OutputLayer(NetworkObject):
         self.network = net
         net.output_layers.append(self)
 
+        representation_tag = (
+            "Representation"
+            if representation_tag is None
+            else "Representation," + representation_tag
+        )
+
         if representation_size is not None:
             self.representation_pop = self.__get_ng(
                 net,
@@ -168,12 +170,9 @@ class OutputLayer(NetworkObject):
                 representation_user_defined,
             )
 
-            if representation_tag is None:
-                self.representation_pop.tags.insert(0, "Representation")
-            else:
-                self.representation_pop.add_tag("Representation")
-
             self.representation_pop.layer = self
+
+        motor_tag = "Motor" if motor_tag is None else "Motor," + motor_tag
 
         if motor_size is not None:
             self.motor_pop = self.__get_ng(
@@ -184,11 +183,6 @@ class OutputLayer(NetworkObject):
                 motor_dendrite_params,
                 motor_user_defined,
             )
-
-            if motor_tag is None:
-                self.motor_pop.tags.insert(0, "Motor")
-            else:
-                self.motor_pop.add_tag("Motor")
 
             self.motor_pop.layer = self
 
