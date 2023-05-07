@@ -6,6 +6,8 @@ from Example.test.configs.l2_3_l5 import *
 from Example.test.configs.l4_l2_3 import *
 from Example.test.configs.l5_l2_3 import *
 
+from conex.nn.Config.base_config import BaseConfig
+
 if __name__ == '__main__':
     l2_3().save_as_yaml(file_name="config-snn", hard_refresh=True)
     l4().save_as_yaml(file_name="config-snn")
@@ -16,7 +18,9 @@ if __name__ == '__main__':
     l5_l2_3().save_as_yaml(file_name="config-snn")
 
     l5_l2_3_instance = l5_l2_3()
-    l5_l2_3_instance.load_as_yaml(file_name="config-snn")
+    l5_l2_3_instance.update_from_yaml(file_name="config-snn")
     l5_l2_3_instance.exc_exc_structure_params['current_coef'] = 6
     l5_l2_3_instance.save_as_yaml(file_name="new-config")
+
+    loaded_instances = BaseConfig.load_from_yaml(file_name="config-snn")
 

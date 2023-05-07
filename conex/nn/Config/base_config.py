@@ -1,13 +1,11 @@
 import os
-from typing import Tuple, Union, Callable
-
 import yaml
-import json
-from pymonntorch import *
-
 import collections.abc
 
 from yaml import Loader
+from typing import Tuple, Union, Callable
+
+from pymonntorch import *
 
 
 class BaseConfig:
@@ -43,7 +41,8 @@ class BaseConfig:
             for attr in dir(self)
             if attr
             not in [
-                "load_as_yaml",
+                "update_from_yaml",
+                "load_from_yaml",
                 "save_as_yaml",
                 "make",
                 "update",
@@ -78,7 +77,12 @@ class BaseConfig:
         yaml_attributes_content = {attr: getattr(self, attr) for attr in members}
 
         scope_key = scope_key or self.__class__.__name__
-        yaml_content = {scope_key: yaml_attributes_content}
+        yaml_content = {
+            scope_key: {
+                "parameters": yaml_attributes_content,
+                "class": {self.__class__.__name__: self.__class__},
+            }
+        }
 
         if not file_name.endswith(".yml"):
             file_name += ".yml"
@@ -94,7 +98,9 @@ class BaseConfig:
         with open(file_path, "a") as yaml_file:
             yaml.dump(yaml_content, yaml_file, default_flow_style=False)
 
-    def load_as_yaml(self, file_name, scope_key=None, configs_dir="."):
+    def update_from_yaml(
+        self, file_name, scope_key=None, configs_dir=".", force_update=False
+    ):
         if not file_name.endswith(".yml"):
             file_name += ".yml"
         file_path = os.path.join(configs_dir, file_name)
@@ -104,5 +110,31 @@ class BaseConfig:
         scope_key = scope_key or self.__class__.__name__
         contents = yaml_content[scope_key]
 
-        for attr, attr_value in contents.items():
-            setattr(self, attr, attr_value)
+        if not force_update:
+            assert (
+                self.__class__.__name__ in contents["class"]
+            ), "YAML config should have been dumped from same class."
+
+        self.update(contents["parameters"])
+
+    @staticmethod
+    def _make_config_instance(config):
+        config_class = list(config["class"].values())[0]
+        instance = config_class()
+        instance.update(config["parameters"])
+        return instance
+
+    @staticmethod
+    def load_from_yaml(file_name, configs_dir="."):
+        if not file_name.endswith(".yml"):
+            file_name += ".yml"
+        file_path = os.path.join(configs_dir, file_name)
+        with open(file_path, "r") as yaml_file:
+            yaml_content = yaml.load(yaml_file, Loader=Loader)
+
+        configs = {
+            scope: BaseConfig._make_config_instance(content)
+            for scope, content in yaml_content.items()
+        }
+
+        return configs
