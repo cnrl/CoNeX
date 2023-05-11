@@ -1,8 +1,8 @@
+import importlib.util
 import os
-import yaml
 import collections.abc
 
-from yaml import Loader
+
 from typing import Tuple, Union, Callable
 
 from pymonntorch import *
@@ -54,6 +54,11 @@ class BaseConfig:
         members.sort(key=sort_by)
         return members
 
+    @staticmethod
+    def has_yaml_module():
+        if importlib.util.find_spec('pyyaml') is None:
+            raise ImportError("For using yaml file, you must have pyyaml=6.0 installed your environment!")
+
     def save_as_yaml(
         self,
         file_name,
@@ -72,6 +77,9 @@ class BaseConfig:
 
         Returns: None
         """
+        self.has_yaml_module()
+        import yaml
+
         members = self._get_members(sort_by)
 
         yaml_attributes_content = {attr: getattr(self, attr) for attr in members}
@@ -83,9 +91,6 @@ class BaseConfig:
                 "class": {self.__class__.__name__: self.__class__},
             }
         }
-
-        if not file_name.endswith(".yml"):
-            file_name += ".yml"
 
         file_path = os.path.join(configs_dir, file_name)
 
@@ -101,8 +106,10 @@ class BaseConfig:
     def update_from_yaml(
         self, file_name, scope_key=None, configs_dir=".", force_update=False
     ):
-        if not file_name.endswith(".yml"):
-            file_name += ".yml"
+        self.has_yaml_module()
+        import yaml
+        from yaml import Loader
+
         file_path = os.path.join(configs_dir, file_name)
         with open(file_path, "r") as yaml_file:
             yaml_content = yaml.load(yaml_file, Loader=Loader)
@@ -126,8 +133,10 @@ class BaseConfig:
 
     @staticmethod
     def load_from_yaml(file_name, configs_dir="."):
-        if not file_name.endswith(".yml"):
-            file_name += ".yml"
+        BaseConfig.has_yaml_module()
+        import yaml
+        from yaml import Loader
+
         file_path = os.path.join(configs_dir, file_name)
         with open(file_path, "r") as yaml_file:
             yaml_content = yaml.load(yaml_file, Loader=Loader)
