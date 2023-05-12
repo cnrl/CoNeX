@@ -107,14 +107,6 @@ class CorticalColumn(TaggableObject):
 
         synapses = {}
         for key in config:
-            src_tag = src.tags[0]
-            if pop_tag := config[key].get("src_pop"):
-                src_tag = src_tag + "_" + pop_tag.removesuffix("_pop")
-            dst_tag = dst.tags[0]
-            if pop_tag := config[key].get("dst_pop"):
-                dst_tag = dst_tag + "_" + pop_tag.removesuffix("_pop")
-            tag = f"{src_tag} => {dst_tag}"
-
             if isinstance(config[key], dict):
                 if isinstance(src, NeuronGroup):
                     src_pop = src
@@ -129,7 +121,7 @@ class CorticalColumn(TaggableObject):
                 synapses[key] = StructuredSynapseGroup(
                     src=src_pop, dst=dst_pop, net=net, **config[key]
                 )
-                synapses[key].tags.insert(0, tag)
+
                 synapses[key].add_tag(key)
 
                 if not (
@@ -140,9 +132,13 @@ class CorticalColumn(TaggableObject):
                         for connection in ["Proximal", "Distal", "Apical"]
                     )
                 ):
-                    if hasattr(dst, "cortical_column"):
+                    if hasattr(src, "cortical_column") and hasattr(
+                        dst, "cortical_column"
+                    ):
                         if src.cortical_column == dst.cortical_column:
-                            if "L4" in src_tag and "L2_3" in dst_tag:
+                            if any("L4" in tag for tag in src.tags) and any(
+                                "L2_3" in tag for tag in dst.tags
+                            ):
                                 synapses[key].add_tag("Proximal")
                             else:
                                 synapses[key].add_tag("Distal")
