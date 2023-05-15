@@ -143,20 +143,12 @@ class BaseConfig:
 
         return configs
 
-    @staticmethod
-    def _has_yaml_module():
-        # NOTE: importlib.util.find_spec didn't work as expected!
-        try:
-            import yaml
-        except ImportError as e:
-            raise ImportError("For using yaml file, you must have pyyaml==6.0 installed your environment!")
 
     def _save_as_yaml(
             self,
             file_name,
             **store_content_kwargs,
     ):
-        self._has_yaml_module()
         import yaml
 
         self._store_content(
@@ -201,7 +193,6 @@ class BaseConfig:
     def _update_from_yaml(
             self, file_name, **load_content_kwargs
     ):
-        self._has_yaml_module()
         import yaml
         from yaml import Loader
 
@@ -212,7 +203,6 @@ class BaseConfig:
 
     @staticmethod
     def _load_from_yaml(file_name, **load_content_kwargs):
-        BaseConfig._has_yaml_module()
         import yaml
         from yaml import Loader
 
