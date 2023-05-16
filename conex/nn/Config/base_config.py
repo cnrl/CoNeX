@@ -261,8 +261,8 @@ class BaseConfig:
     @staticmethod
     def load(file_name, **load_content_kwargs):
         if file_name.endswith(YML_EXT):
-            BaseConfig._load_from_yaml(file_name, **load_content_kwargs)
+            return BaseConfig._load_from_yaml(file_name, **load_content_kwargs)
         elif file_name.endswith(JSON_EXT):
-            BaseConfig._load_from_json(file_name, **load_content_kwargs)
+            return BaseConfig._load_from_json(file_name, **load_content_kwargs)
         else:
             raise TypeError(f"{file_name} must end with .json or .yaml")

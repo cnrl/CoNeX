@@ -8,8 +8,8 @@ from Example.test.configs.l5_l2_3 import *
 
 from conex.nn.Config.base_config import BaseConfig
 
-if __name__ == '__main__':
-    config_type = 'json'  # json
+if __name__ == "__main__":
+    config_type = "json"  # json
     l2_3().save(file_name=f"config-snn.{config_type}", hard_refresh=True)
     l4().save(file_name=f"config-snn.{config_type}")
     l5().save(file_name=f"config-snn.{config_type}")
@@ -20,7 +20,9 @@ if __name__ == '__main__':
 
     l5_l2_3_instance = l5_l2_3()
     l5_l2_3_instance.update_from_file(file_name=f"config-snn.{config_type}")
-    l5_l2_3_instance.exc_exc_structure_params['current_coef'] = 6
+    l5_l2_3_instance.exc_exc_structure_params["current_coef"] = 6
     l5_l2_3_instance.save(file_name=f"new-config.{config_type}")
 
     loaded_instances = BaseConfig.load(file_name=f"config-snn.{config_type}")
+    print(loaded_instances)
+    print(loaded_instances["l2_3"].make())
