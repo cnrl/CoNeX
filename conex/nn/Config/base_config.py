@@ -15,9 +15,9 @@ def object_hook(json_dict):
             if isinstance(v, dict):
                 load_python_callables(v)
             if isinstance(v, list) and len(v) > 0 and v[0] == "python_callable":
-                import_string = f"from {v[1]} import {v[2]}"
+                import_string = f"import {v[1]}"
                 exec(import_string)
-                raw_dict[k] = eval(v[2])
+                raw_dict[k] = eval(f"{v[1]}.{v[2]}")
 
     load_python_callables(json_dict)
     return json_dict
