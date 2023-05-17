@@ -6,7 +6,6 @@ from conex.nn.Modules.topological_connections import StructuredSynapseGroup
 from pymonntorch import SynapseGroup, NeuronGroup, TaggableObject
 
 # TODO: handle multi-scale
-# TODO: str.removesuffix needs python 3.9
 
 
 class CorticalColumn(TaggableObject):
