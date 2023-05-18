@@ -22,8 +22,8 @@ class Neocortex(Network):
 
         # define neural network responsible for generating output
         output = SpikingNeuronGroup(
-            10, 
-            net, 
+            10,
+            net,
             neuron_type=LIF,
             kwta=1,
             dendrite_params={
@@ -137,5 +137,35 @@ class Neocortex(Network):
         for syn in self.SynapseGroups:
             if hasattr(syn, "Apical"):
                 self.inter_column_synapses.append(syn)
-        
+
         super().initialize(info=info, storage_manager=storage_manager)
+
+    def connect_columns(
+        self,
+        L2_3_L2_3_config=None,
+        L2_3_L4_config=None,
+        L5_L5_config=None,
+        L5_L6_config=None,
+    ):
+        """
+        Makes connections between all column in the network.
+
+        Note: In the config dicts, the key is the name of synapse between the populations in the corresponding layers
+              and the values are the synaptic config dicts.
+
+        Args:
+            L2_3_L2_3_config (dict): Adds the synaptic connections from L2/3 of a to L2/3 of the other with the specified configurations.
+            L2_3_L4_config (dict): Adds the synaptic connections from L2/3 of a column to L4 of the other with the specified configurations.
+            L5_L5_config (dict): Adds the synaptic connections from L5 of a column to L5 of the other with the specified configurations.
+            L6_L6_config (dict): Adds the synaptic connections from L6 of a column to L6 of the other with the specified configurations.
+        """
+        synapses = {}
+
+        for i, col_i in enumerate(self.columns):
+            for j, col_j in enumerate(self.columns[i:], i):
+                col_syn = col_i.connect(
+                    col_j, L2_3_L2_3_config, L2_3_L4_config, L5_L5_config, L5_L6_config
+                )
+                synapses.update(col_syn)
+
+        return synapses
