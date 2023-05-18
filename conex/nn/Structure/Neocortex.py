@@ -163,9 +163,14 @@ class Neocortex(Network):
 
         for i, col_i in enumerate(self.columns):
             for j, col_j in enumerate(self.columns[i:], i):
-                col_syn = col_i.connect(
+                syns = col_i.connect(
                     col_j, L2_3_L2_3_config, L2_3_L4_config, L5_L5_config, L5_L6_config
                 )
-                synapses.update(col_syn)
+                synapses.update(syns)
+
+                syns = col_j.connect(
+                    col_i, L2_3_L2_3_config, L2_3_L4_config, L5_L5_config, L5_L6_config
+                )
+                synapses.update(syns)
 
         return synapses
