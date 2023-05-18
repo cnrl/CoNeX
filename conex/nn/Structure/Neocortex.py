@@ -135,7 +135,7 @@ class Neocortex(Network):
             storage_manager (StorageManager): Storage manager to use for the network.
         """
         for syn in self.SynapseGroups:
-            if hasattr(syn, "Apical"):
+            if "Apical" in syn.tags and syn not in self.inter_column_synapses:
                 self.inter_column_synapses.append(syn)
 
         super().initialize(info=info, storage_manager=storage_manager)
@@ -162,7 +162,7 @@ class Neocortex(Network):
         synapses = {}
 
         for i, col_i in enumerate(self.columns):
-            for j, col_j in enumerate(self.columns[i:], i):
+            for col_j in self.columns[i:]:
                 syns = col_i.connect(
                     col_j, L2_3_L2_3_config, L2_3_L4_config, L5_L5_config, L5_L6_config
                 )
@@ -173,4 +173,5 @@ class Neocortex(Network):
                 )
                 synapses.update(syns)
 
+        self.inter_column_synapses.append(list(synapses.values()))
         return synapses
