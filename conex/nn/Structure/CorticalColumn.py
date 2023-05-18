@@ -27,6 +27,7 @@ class CorticalColumn(TaggableObject):
         L6_config (dict): If not None, adds L6 with the specified configurations to the column.
         L6_L4_syn_config (dict): If not None, adds the synaptic connections from L6 to L4 with the specified configurations.
         L4_L2_3_syn_config (dict): If not None, adds the synaptic connections from L4 to L2/3 with the specified configurations.
+        L2_3_L4_syn_config (dict): If not None, adds the synaptic connections from L2/3 to L4 with the specified configurations.
         L2_3_L5_syn_config (dict): If not None, adds the synaptic connections from L2/3 to L5 with the specified configurations.
         L5_L2_3_syn_config (dict): If not None, adds the synaptic connections from L5 to L2/3 with the specified configurations.
         L5_L6_syn_config (dict): If not None, adds the synaptic connections from L5 to L6 with the specified configurations.
@@ -41,6 +42,7 @@ class CorticalColumn(TaggableObject):
         L6_config=None,
         L6_L4_syn_config=None,
         L4_L2_3_syn_config=None,
+        L2_3_L4_syn_config=None,
         L2_3_L5_syn_config=None,
         L5_L2_3_syn_config=None,
         L5_L6_syn_config=None,
@@ -75,6 +77,10 @@ class CorticalColumn(TaggableObject):
 
         self.L2_3_L5_synapses = self._add_synaptic_connection(
             self.L2_3, self.L5, L2_3_L5_syn_config
+        )
+
+        self.L2_3_L4_synapses = self._add_synaptic_connection(
+            self.L2_3, self.L4, L2_3_L4_syn_config
         )
 
         self.L5_L2_3_synapses = self._add_synaptic_connection(
