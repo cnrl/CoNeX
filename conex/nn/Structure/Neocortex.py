@@ -1,7 +1,9 @@
 from conex.behaviors.network.time_resolution import TimeResolution
+from conex.nn.priorities import NETWORK_PRIORITIES
+
 from pymonntorch import Network
 
-from conex.nn.priorities import NETWORK_PRIORITIES
+import warnings
 
 
 class Neocortex(Network):
@@ -22,8 +24,8 @@ class Neocortex(Network):
 
         # define neural network responsible for generating output
         output = SpikingNeuronGroup(
-            10, 
-            net, 
+            10,
+            net,
             neuron_type=LIF,
             kwta=1,
             dendrite_params={
@@ -135,7 +137,85 @@ class Neocortex(Network):
             storage_manager (StorageManager): Storage manager to use for the network.
         """
         for syn in self.SynapseGroups:
-            if hasattr(syn, "Apical"):
+            if (
+                "Apical" in syn.tags
+                and syn not in self.inter_column_synapses
+                and hasattr(syn.src, "cortical_column")
+                and hasattr(syn.dst, "cortical_column")
+                and syn.src.cortical_column != syn.dst.cortical_column
+            ):
                 self.inter_column_synapses.append(syn)
-        
+
         super().initialize(info=info, storage_manager=storage_manager)
+
+    def connect_columns(
+        self,
+        columns=None,
+        mode="all2all",
+        L2_3_L2_3_config=None,
+        L2_3_L4_config=None,
+        L5_L5_config=None,
+        L5_L6_config=None,
+    ):
+        """
+        Makes connections between all column in the network.
+
+        Note: In the config dicts, the key is the name of synapse between the populations in the corresponding layers
+              and the values are the synaptic config dicts.
+
+        Args:
+            columns (list): The list of columns to create connection between. if not provided connection will apply on all cortical columns.
+            mode (str): The method of connection. Accepting "all2all", "sequential_one_way" and "sequential_reciprocal". defaults to "all2all"
+            L2_3_L2_3_config (dict): Adds the synaptic connections from L2/3 of a column to L2/3 of the other with the specified configurations.
+            L2_3_L4_config (dict): Adds the synaptic connections from L2/3 of a column to L4 of the other with the specified configurations.
+            L5_L5_config (dict): Adds the synaptic connections from L5 of a column to L5 of the other with the specified configurations.
+            L6_L6_config (dict): Adds the synaptic connections from L6 of a column to L6 of the other with the specified configurations.
+        """
+        synapses = {}
+
+        columns = self.columns if columns is None else columns
+
+        if mode == "all2all":
+            for i, col_i in enumerate(columns):
+                for col_j in columns[i:]:
+                    syns = col_i.connect(
+                        col_j,
+                        L2_3_L2_3_config,
+                        L2_3_L4_config,
+                        L5_L5_config,
+                        L5_L6_config,
+                    )
+                    synapses.update(syns)
+
+                    syns = col_j.connect(
+                        col_i,
+                        L2_3_L2_3_config,
+                        L2_3_L4_config,
+                        L5_L5_config,
+                        L5_L6_config,
+                    )
+                    synapses.update(syns)
+        elif mode.startswith("sequential"):
+            for col_a, col_b in zip(columns[:-1], columns[1:]):
+                syns = col_a.connect(
+                    col_b,
+                    L2_3_L2_3_config,
+                    L2_3_L4_config,
+                    L5_L5_config,
+                    L5_L6_config,
+                )
+                synapses.update(syns)
+                if mode == "sequential_reciprocal":
+                    syns = col_b.connect(
+                        col_a,
+                        L2_3_L2_3_config,
+                        L2_3_L4_config,
+                        L5_L5_config,
+                        L5_L6_config,
+                    )
+                    synapses.update(syns)
+        else:
+            warnings.warn(f"{mode} is not supported.")
+
+        self.inter_column_synapses.extend(list(synapses.values()))
+        return synapses
