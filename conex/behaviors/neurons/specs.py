@@ -11,14 +11,18 @@ class InherentNoise(Behavior):
     Applies noisy voltage to neurons in the population.
 
     Args:
-        noise_function (function): random function that generates the noise. The default is `torch.randn`.
+        mode (str): Mode to be used in initialize the tensor. Accepts similar values to Pymonntorch's `_get_mat` function. Defaults to "rand".
+        scale (float): Scale factor to multiply to the tensor. Default is 1.0.
+        offset (function): An offset value to be added to the tensor. Default is 0.0.
     """
 
     def initialize(self, neurons):
-        self.noise_function = self.parameter("noise_function", torch.randn)
+        self.mode = self.parameter("mode", "rand")
+        self.scale = self.parameter("scale", 1)
+        self.offset = self.parameter("offset", 0)
 
     def forward(self, neurons):
-        neurons.v += self.noise_function(neurons.size)
+        neurons.v += neurons.vector(mode=self.mode, scale=self.scale) + self.offset
 
 
 class SpikeTrace(Behavior):
@@ -101,7 +105,6 @@ class NeuronAxon(Behavior):
             self.trace_history = neurons.buffer_roll(
                 mat=self.trace_history, new=neurons.trace
             )
-            # TODO should trace decay as it propagate through the axon?
 
 
 class NeuronDendrite(Behavior):
@@ -226,7 +229,7 @@ class NeuronDendrite(Behavior):
 
         neurons.I += (non_priming_apical + non_priming_distal) / getattr(
             neurons, "R", 1
-        )  # TODO what to do ? (* tau)
+        )
 
         if self.apical_provocativeness is not None:
             neurons.apical_input = neurons.buffer_roll(

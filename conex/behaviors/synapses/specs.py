@@ -15,8 +15,20 @@ class SynapseInit(Behavior):
     """
 
     def initialize(self, synapse):
-        synapse.src_shape = (synapse.src.depth, synapse.src.height, synapse.src.width)
-        synapse.dst_shape = (synapse.dst.depth, synapse.dst.height, synapse.dst.width)
+        synapse.src_shape = (1, 1, synapse.src.size)
+        if hasattr(synapse.src, "depth"):
+            synapse.src_shape = (
+                synapse.src.depth,
+                synapse.src.height,
+                synapse.src.width,
+            )
+        synapse.dst_shape = (1, 1, synapse.dst.size)
+        if hasattr(synapse.dst, "depth"):
+            synapse.dst_shape = (
+                synapse.dst.depth,
+                synapse.dst.height,
+                synapse.dst.width,
+            )
 
         synapse.src_delay = synapse._get_mat(
             mode="zeros", dim=(1,), dtype=torch.long

@@ -7,6 +7,8 @@ from pymonntorch import Behavior
 import torch
 import torch.nn.functional as F
 
+# TODO add boundings function
+
 
 class SimpleSTDP(Behavior):
     """
@@ -50,8 +52,8 @@ class SimpleSTDP(Behavior):
             dst_spike_trace,
         ) = self.get_spike_and_trace(synapse)
 
-        dw_plus = torch.outer(dst_spike_trace, src_spike) * self.a_plus
-        dw_minus = torch.outer(dst_spike, src_spike_trace) * self.a_minus
+        dw_minus = torch.outer(src_spike, dst_spike_trace) * self.a_minus
+        dw_plus = torch.outer(src_spike_trace, dst_spike) * self.a_plus
 
         return dw_plus - dw_minus
 
@@ -84,7 +86,8 @@ class Conv2dSTDP(SimpleSTDP):
 
         src_spike = src_spike.view(synapse.src_shape).to(self.def_dtype)
         src_spike = F.unfold(
-            src_spike, kernel_size=synapse.weights.size()[-2:],
+            src_spike,
+            kernel_size=synapse.weights.size()[-2:],
             stride=synapse.stride,
             padding=synapse.padding,
         )
@@ -92,8 +95,7 @@ class Conv2dSTDP(SimpleSTDP):
 
         dst_spike_trace = dst_spike_trace.view((synapse.dst_shape[0], -1, 1))
 
-        dw_minus = torch.bmm(src_spike, dst_spike_trace).view(
-            synapse.weights.shape)
+        dw_minus = torch.bmm(src_spike, dst_spike_trace).view(synapse.weights.shape)
 
         src_spike_trace = src_spike_trace.view(synapse.src_shape)
         src_spike_trace = F.unfold(
@@ -106,11 +108,9 @@ class Conv2dSTDP(SimpleSTDP):
             synapse.dst_shape[0], *src_spike_trace.shape
         )
 
-        dst_spike = dst_spike.view(
-            (synapse.dst_shape[0], -1, 1)).to(self.def_dtype)
+        dst_spike = dst_spike.view((synapse.dst_shape[0], -1, 1)).to(self.def_dtype)
 
-        dw_plus = torch.bmm(src_spike_trace, dst_spike).view(
-            synapse.weights.shape)
+        dw_plus = torch.bmm(src_spike_trace, dst_spike).view(synapse.weights.shape)
 
         return (dw_plus * self.a_plus - dw_minus * self.a_minus) / self.weight_divisor
 
@@ -130,7 +130,8 @@ class Local2dSTDP(SimpleSTDP):
 
         src_spike = src_spike.view(synapse.src_shape).to(self.def_dtype)
         src_spike = F.unfold(
-            src_spike, kernel_size=synapse.kernel_shape[-2:],
+            src_spike,
+            kernel_size=synapse.kernel_shape[-2:],
             stride=synapse.stride,
             padding=synapse.padding,
         )
@@ -154,8 +155,7 @@ class Local2dSTDP(SimpleSTDP):
             synapse.dst_shape[0], *src_spike_trace.shape
         )
 
-        dst_spike = dst_spike.view(
-            (synapse.dst_shape[0], -1, 1)).to(self.def_dtype)
+        dst_spike = dst_spike.view((synapse.dst_shape[0], -1, 1)).to(self.def_dtype)
         dst_spike = dst_spike.expand(synapse.weights.shape)
 
         dw_plus = dst_spike * src_spike_trace

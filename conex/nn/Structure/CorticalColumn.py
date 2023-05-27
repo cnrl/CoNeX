@@ -102,7 +102,7 @@ class CorticalColumn(TaggableObject):
     @classmethod
     def _add_synaptic_connection(cls, src, dst, config):
         # src and dst can either be Layer or NeuronGroup
-        if src is None or dst is None:
+        if src is None or dst is None or not config:
             return {}
 
         net = src.network
