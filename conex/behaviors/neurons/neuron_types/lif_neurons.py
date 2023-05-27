@@ -40,11 +40,11 @@ class LIF(Behavior):
         """
         self.add_tag(self.__class__.__name__)
 
-        neurons.R = self.parameter("R", None)
-        neurons.tau = self.parameter("tau", None)
-        neurons.threshold = self.parameter("threshold", None)
-        neurons.v_reset = self.parameter("v_reset", None)
-        neurons.v_rest = self.parameter("v_rest", None)
+        neurons.R = self.parameter("R", None, required=True)
+        neurons.tau = self.parameter("tau", None, required=True)
+        neurons.threshold = self.parameter("threshold", None, required=True)
+        neurons.v_reset = self.parameter("v_reset", None, required=True)
+        neurons.v_rest = self.parameter("v_rest", None, required=True)
 
         neurons.v = self.parameter("init_v", neurons.vector())
         neurons.spikes = self.parameter(
@@ -114,8 +114,8 @@ class ELIF(LIF):
         """
         super().initialize(neurons)
 
-        neurons.delta = self.parameter("delta", None)
-        neurons.theta_rh = self.parameter("theta_rh", None)
+        neurons.delta = self.parameter("delta", None, required=True)
+        neurons.theta_rh = self.parameter("theta_rh", None, required=True)
 
     def _Fu(self, neurons):
         """
@@ -160,9 +160,9 @@ class AELIF(ELIF):
         """
         super().initialize(neurons)
 
-        neurons.alpha = self.parameter("alpha", None)
-        neurons.beta = self.parameter("beta", None)
-        neurons.w_tau = self.parameter("w_tau", None)
+        neurons.alpha = self.parameter("alpha", None, required=True)
+        neurons.beta = self.parameter("beta", None, required=True)
+        neurons.w_tau = self.parameter("w_tau", None, required=True)
 
         neurons.omega = self.parameter("omega", neurons.vector())
 

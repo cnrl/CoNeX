@@ -20,8 +20,8 @@ class SimpleSTDP(Behavior):
     """
 
     def initialize(self, synapse):
-        self.a_plus = self.parameter("a_plus", None)
-        self.a_minus = self.parameter("a_minus", None)
+        self.a_plus = self.parameter("a_plus", None, required=True)
+        self.a_minus = self.parameter("a_minus", None, required=True)
 
         self.def_dtype = (
             torch.float32
@@ -178,7 +178,7 @@ class SimpleRSTDP(SimpleSTDP):
 
     def initialize(self, synapse):
         super().initialize(synapse)
-        self.tau_c = self.parameter("tau_c", None)
+        self.tau_c = self.parameter("tau_c", None, required=True)
         mode = self.parameter("init_c_mode", 0)
         synapse.c = synapse._get_mat(mode=mode, dim=synapse.weights.shape)
 

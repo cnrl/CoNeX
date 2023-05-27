@@ -35,7 +35,7 @@ class SpikeTrace(Behavior):
         """
         Sets the trace attribute for the neural population.
         """
-        self.tau_s = self.parameter("tau_s", None)
+        self.tau_s = self.parameter("tau_s", None, required=True)
         neurons.trace = neurons.vector(0.0)
 
     def forward(self, neurons):
@@ -267,7 +267,7 @@ class KWTA(Behavior):
     """
 
     def initialize(self, neurons):
-        self.k = self.parameter("k", None)
+        self.k = self.parameter("k", None, required=True)
         self.dimension = self.parameter("dimension", None)
         self.shape = (neurons.depth, neurons.height, neurons.width)
 
