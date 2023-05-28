@@ -6,6 +6,8 @@ from pymonntorch import *
 from conex.behaviors.neurons.specs import NeuronAxon, NeuronDendrite
 from .base_config import *
 
+# TODO: check default valus
+
 
 class LayerConfig(BaseConfig):
     exc_size = 0

@@ -4,6 +4,8 @@ from .base_config import *
 
 from pymonntorch import *
 
+# TODO: check default valus
+
 
 class Layer2LayerConnectionConfig(BaseConfig):
     exc_exc_weight_init_params = {}

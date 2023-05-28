@@ -31,6 +31,7 @@ class CorticalColumn(TaggableObject):
         L2_3_L5_syn_config (dict): If not None, adds the synaptic connections from L2/3 to L5 with the specified configurations.
         L5_L2_3_syn_config (dict): If not None, adds the synaptic connections from L5 to L2/3 with the specified configurations.
         L5_L6_syn_config (dict): If not None, adds the synaptic connections from L5 to L6 with the specified configurations.
+        L6_L5_syn_config (dict): If not None, adds the synaptic connections from L6 to L5 with the specified configurations.
     """
 
     def __init__(
@@ -46,6 +47,7 @@ class CorticalColumn(TaggableObject):
         L2_3_L5_syn_config=None,
         L5_L2_3_syn_config=None,
         L5_L6_syn_config=None,
+        L6_L5_syn_config=None,
     ):
         super().__init__(f"CorticalColumn{len(net.columns)}", device=net.device)
         self.network = net
@@ -89,6 +91,10 @@ class CorticalColumn(TaggableObject):
 
         self.L5_L6_synapses = self._add_synaptic_connection(
             self.L5, self.L6, L5_L6_syn_config
+        )
+
+        self.L6_L5_synapses = self._add_synaptic_connection(
+            self.L6, self.L5, L6_L5_syn_config
         )
 
         self.network.columns.append(self)
