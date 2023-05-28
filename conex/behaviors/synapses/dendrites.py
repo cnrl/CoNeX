@@ -49,7 +49,7 @@ class SimpleDendriticInput(Behavior):
         synapse.I = synapse.dst.vector(0)
 
         if (
-            not synapse.network.tranposed_synapse_matrix_mode
+            not synapse.network.transposed_synapse_matrix_mode
             and self.__class__.__name__ == "SimpleDendriticInput"
         ):
             raise RuntimeError(f"Network should've made with SxD mode for synapses")

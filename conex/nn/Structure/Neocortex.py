@@ -1,7 +1,7 @@
 from conex.behaviors.network.time_resolution import TimeResolution
 from conex.nn.priorities import NETWORK_PRIORITIES
 
-from pymonntorch import Network
+from pymonntorch import Network, SxD, DxS
 
 import warnings
 

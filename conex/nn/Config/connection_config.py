@@ -1,5 +1,7 @@
-from typing import Tuple, Union, Callable
+from typing import Tuple, Union
+from collections.abc import Mapping
 from .base_config import *
+
 from pymonntorch import *
 
 
@@ -75,23 +77,23 @@ class Layer2LayerConnectionConfig(BaseConfig):
     @classmethod
     def _syn_config(
         cls,
-        weight_init_params: dict,
+        weight_init_params: Mapping,
         structure: Union[str, type[Behavior]],
-        structure_params: dict,
+        structure_params: Mapping,
         learning_rule: Union[None, str, type[Behavior]] = None,
-        learning_params: Union[None, dict] = None,
+        learning_params: Union[None, Mapping] = None,
         src_delay_init_mode: Union[None, float, str] = None,
-        src_delay_init_params: Union[None, dict] = None,
+        src_delay_init_params: Union[None, Mapping] = None,
         dst_delay_init_mode: Union[None, float, str] = None,
-        dst_delay_init_params: Union[None, dict] = None,
+        dst_delay_init_params: Union[None, Mapping] = None,
         w_interval: Union[None, Tuple[float, float]] = None,
         weight_norm: Union[None, float] = None,
         tag: Union[None, str] = None,
-        user_defined_behaviors_class: Union[None, dict[int, type[Behavior]]] = None,
-        user_defined_behaviors_params: Union[None, dict[int, dict]] = None,
+        user_defined_behaviors_class: Union[None, Mapping[int, type[Behavior]]] = None,
+        user_defined_behaviors_params: Union[None, Mapping[int, Mapping]] = None,
         src_pop: Union[None, str] = None,
         dst_pop: Union[None, str] = None,
-    ) -> dict:
+    ) -> Mapping:
         config = {
             "weight_init_params": weight_init_params,
             "structure": structure,
@@ -265,22 +267,22 @@ class Pop2LayerConnectionConfig(BaseConfig):
     @classmethod
     def _syn_config(
         cls,
-        weight_init_params: dict,
+        weight_init_params: Mapping,
         structure: Union[str, type[Behavior]],
-        structure_params: dict,
+        structure_params: Mapping,
         learning_rule: Union[None, str, type[Behavior]] = None,
-        learning_params: Union[None, dict] = None,
+        learning_params: Union[None, Mapping] = None,
         src_delay_init_mode: Union[None, float, str] = None,
-        src_delay_init_params: Union[None, dict] = None,
+        src_delay_init_params: Union[None, Mapping] = None,
         dst_delay_init_mode: Union[None, float, str] = None,
-        dst_delay_init_params: Union[None, dict] = None,
+        dst_delay_init_params: Union[None, Mapping] = None,
         w_interval: Union[None, Tuple[float, float]] = None,
         weight_norm: Union[None, float] = None,
         tag: Union[None, str] = None,
-        user_defined_behaviors_class: Union[None, dict[int, type[Behavior]]] = None,
-        user_defined_behaviors_params: Union[None, dict[int, dict]] = None,
+        user_defined_behaviors_class: Union[None, Mapping[int, type[Behavior]]] = None,
+        user_defined_behaviors_params: Union[None, Mapping[int, Mapping]] = None,
         dst_pop: Union[None, str] = None,
-    ) -> dict:
+    ) -> Mapping:
         config = {
             "weight_init_params": weight_init_params,
             "structure": structure,
@@ -409,22 +411,22 @@ class Layer2PopConnectionConfig(BaseConfig):
     @classmethod
     def _syn_config(
         cls,
-        weight_init_params: dict,
+        weight_init_params: Mapping,
         structure: Union[str, type[Behavior]],
-        structure_params: dict,
+        structure_params: Mapping,
         learning_rule: Union[None, str, type[Behavior]] = None,
-        learning_params: Union[None, dict] = None,
+        learning_params: Union[None, Mapping] = None,
         src_delay_init_mode: Union[None, float, str] = None,
-        src_delay_init_params: Union[None, dict] = None,
+        src_delay_init_params: Union[None, Mapping] = None,
         dst_delay_init_mode: Union[None, float, str] = None,
-        dst_delay_init_params: Union[None, dict] = None,
+        dst_delay_init_params: Union[None, Mapping] = None,
         w_interval: Union[None, Tuple[float, float]] = None,
         weight_norm: Union[None, float] = None,
         tag: Union[None, str] = None,
-        user_defined_behaviors_class: Union[None, dict[int, type[Behavior]]] = None,
-        user_defined_behaviors_params: Union[None, dict[int, dict]] = None,
+        user_defined_behaviors_class: Union[None, Mapping[int, type[Behavior]]] = None,
+        user_defined_behaviors_params: Union[None, Mapping[int, Mapping]] = None,
         src_pop: Union[None, str] = None,
-    ) -> dict:
+    ) -> Mapping:
         config = {
             "weight_init_params": weight_init_params,
             "structure": structure,
