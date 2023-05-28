@@ -2,8 +2,12 @@ import warnings
 from conex.nn.Modules.io import OutputLayer
 from conex.nn.Structure.Layers import Layer
 from conex.nn.Modules.topological_connections import StructuredSynapseGroup
+from conex.nn.connections import (
+    INTER_COLUMN_CONNECTION_TYPE,
+    INTRA_COLUMN_CONNECTION_TYPE,
+)
 
-from pymonntorch import SynapseGroup, NeuronGroup, TaggableObject
+from pymonntorch import NeuronGroup, TaggableObject
 
 # TODO: handle multi-scale
 
@@ -146,15 +150,29 @@ class CorticalColumn(TaggableObject):
                     if hasattr(src, "cortical_column") and hasattr(
                         dst, "cortical_column"
                     ):
+                        connect_type = INTER_COLUMN_CONNECTION_TYPE
                         if src.cortical_column == dst.cortical_column:
-                            if any("L4" in tag for tag in src.tags) and any(
-                                "L2_3" in tag for tag in dst.tags
-                            ):
-                                synapses[key].add_tag("Proximal")
-                            else:
-                                synapses[key].add_tag("Distal")
-                        else:
-                            synapses[key].add_tag("Apical")
+                            connect_type = INTRA_COLUMN_CONNECTION_TYPE
+
+                        src_layer_tag = list(
+                            {"L2_3", "L4", "L5", "L6"}.intersection(set(src.tags))
+                        )[0]
+                        dst_layer_tag = list(
+                            {"L2_3", "L4", "L5", "L6"}.intersection(set(dst.tags))
+                        )[0]
+                        src_pop_tag = list(
+                            {"exc", "inh"}.intersection(set(src_pop.tags))
+                        )[0]
+                        dst_pop_tag = list(
+                            {"exc", "inh"}.intersection(set(dst_pop.tags))
+                        )[0]
+
+                        synapses[key].add_tag(
+                            connect_type[
+                                (src_layer_tag, dst_layer_tag, src_pop_tag, dst_pop_tag)
+                            ]
+                        )
+
                     elif isinstance(dst, OutputLayer):
                         synapses[key].add_tag("Proximal")
                     else:
