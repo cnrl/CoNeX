@@ -6,10 +6,10 @@ import warnings
 from conex.nn.Modules.spiking_neurons import SpikingNeuronGroup
 from conex.nn.Modules.topological_connections import StructuredSynapseGroup
 from conex.nn.connections import LAYER_CONNECTION_TYPE
-from pymonntorch import NeuronGroup, SynapseGroup, TaggableObject
+from pymonntorch import NetworkObject
 
 
-class Layer(TaggableObject):
+class Layer(NetworkObject):
     """
     Base class to create a cortical layer.
 
@@ -43,9 +43,15 @@ class Layer(TaggableObject):
         exc_inh_config=None,
         inh_exc_config=None,
         inh_inh_config=None,
+        behavior=None,
     ):
-        super().__init__(f"{cortical_column.tags[0]}_{tag}", device=net.device)
-        self.network = net
+        behavior = {} if behavior is None else behavior
+        super().__init__(
+            tag=f"{cortical_column.tags[0]}_{tag}",
+            behavior=behavior,
+            network=net,
+            device=net.device,
+        )
         self.cortical_column = cortical_column
         self.add_tag(tag)
 

@@ -124,6 +124,7 @@ class Neocortex(Network):
 
         settings = settings if settings is not None else {}
         settings.setdefault("synapse_mode", SxD)
+        settings.setdefault("index", False)
 
         super().__init__(tag="Neocortex", behavior=behavior, settings=settings)
         self.dt = dt

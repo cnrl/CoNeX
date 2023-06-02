@@ -2,6 +2,8 @@ import math
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
+from conex.nn.connections import *
+
 CONNECTION_COLOR = {
     "Apical": "orange",
     "Proximal": "green",
@@ -9,17 +11,18 @@ CONNECTION_COLOR = {
     "NoConnection": "Black",
 }
 
-from conex.nn.connections import *
-
 
 def make_handle():
     apical = mpatches.Patch(color=CONNECTION_COLOR["Apical"], label="Apical")
     proximal = mpatches.Patch(color=CONNECTION_COLOR["Proximal"], label="Proximal")
     distal = mpatches.Patch(color=CONNECTION_COLOR["Distal"], label="Distal")
-    return [proximal, apical, distal]
+    exc = mpatches.Patch(color="blue", label="Excitatory")
+    inh = mpatches.Patch(color="red", label="Inhibitory")
+    return [exc, inh, proximal, apical, distal]
 
 
-def make_layer(name, bottom_left, width, height, radius):
+def make_layer(name, bottom_left, width, height):
+    radius = height / 4
     layer = mpatches.Rectangle(bottom_left, width, height, fc=(1, 1, 1, 0), ec="black")
     start_x, start_y = bottom_left
     width_sep = (width - 4 * radius) / 3
@@ -108,7 +111,7 @@ def make_layer(name, bottom_left, width, height, radius):
     }
 
 
-def make_cortical_column(name, bottom_left, width, height, radius):
+def make_cortical_column(name, bottom_left, width, height):
     layer_names = ["L6", "L5", "L4", "L2_3"]
     pop_names = ["exc", "inh"]
     height_step = height / len(layer_names)
@@ -119,7 +122,6 @@ def make_cortical_column(name, bottom_left, width, height, radius):
             (start_x, start_y + index * height_step),
             width,
             height=height_step,
-            radius=radius,
         )
         for index, name in enumerate(layer_names)
     }
@@ -166,11 +168,11 @@ def make_cortical_column(name, bottom_left, width, height, radius):
     }
 
 
-def make_two_cortical_column(names, bottom_left, width, height, radius, distance):
-    cc1 = make_cortical_column(names[0], bottom_left, width, height, radius)
+def make_two_cortical_column(names, bottom_left, width, height, distance):
+    cc1 = make_cortical_column(names[0], bottom_left, width, height)
     start_x, start_y = bottom_left
     cc2 = make_cortical_column(
-        names[1], (start_x + width + distance, start_y), width, height, radius
+        names[1], (start_x + width + distance, start_y), width, height
     )
 
     layer_names = ["L6", "L5", "L4", "L2_3"]
@@ -203,7 +205,7 @@ def make_two_cortical_column(names, bottom_left, width, height, radius, distance
 if __name__ == "__main__":
     # Single layer
     fig, ax = plt.subplots(figsize=(6, 6))
-    for label, value in make_layer("L4", (0.3, 0.3), 0.4, 0.2, 0.05).items():
+    for label, value in make_layer("L4", (0.3, 0.3), 0.4, 0.2).items():
         ax.add_artist(value)
 
     ax.set_axis_off()
@@ -212,7 +214,7 @@ if __name__ == "__main__":
 
     # Single column
     fig, ax = plt.subplots(figsize=(8, 8))
-    cc = make_cortical_column("CC1", (0.1, 0.1), 0.4, 0.8, 0.05)
+    cc = make_cortical_column("CC1", (0.1, 0.1), 0.4, 0.8)
 
     for layer in ["L2_3", "L4", "L5", "L6"]:
         for patch in cc["layers"][layer].values():
@@ -228,7 +230,7 @@ if __name__ == "__main__":
     # single column showing layer by layer connection:
     for src_layer in ["L2_3", "L4", "L5", "L6"]:
         fig, ax = plt.subplots(figsize=(8, 8))
-        cc = make_cortical_column("cc1", (0.1, 0.1), 0.4, 0.8, 0.05)
+        cc = make_cortical_column("cc1", (0.1, 0.1), 0.4, 0.8)
 
         for layer in ["L2_3", "L4", "L5", "L6"]:
             for key, patch in cc["layers"][layer].items():
@@ -246,7 +248,7 @@ if __name__ == "__main__":
 
     # two cortical column
     fig, ax = plt.subplots(figsize=(8, 8))
-    ccs = make_two_cortical_column(["CC1", "CC2"], (0.05, 0.1), 0.3, 0.6, 0.05, 0.1)
+    ccs = make_two_cortical_column(["CC1", "CC2"], (0.05, 0.1), 0.3, 0.6, 0.1)
 
     for cc in [ccs["cc1"], ccs["cc2"]]:
         for layer in ["L2_3", "L4", "L5", "L6"]:
@@ -266,7 +268,7 @@ if __name__ == "__main__":
     # two cortical column showing layer by layer connection
     for src_layer in ["L2_3", "L4", "L5", "L6"]:
         fig, ax = plt.subplots(figsize=(8, 8))
-        ccs = make_two_cortical_column(["CC1", "CC2"], (0.05, 0.1), 0.3, 0.6, 0.05, 0.1)
+        ccs = make_two_cortical_column(["CC1", "CC2"], (0.05, 0.1), 0.3, 0.6, 0.1)
 
         for cc in [ccs["cc1"], ccs["cc2"]]:
             for layer in ["L2_3", "L4", "L5", "L6"]:

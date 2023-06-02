@@ -7,12 +7,12 @@ from conex.nn.connections import (
     INTRA_COLUMN_CONNECTION_TYPE,
 )
 
-from pymonntorch import NeuronGroup, TaggableObject
+from pymonntorch import NeuronGroup, NetworkObject
 
 # TODO: handle multi-scale
 
 
-class CorticalColumn(TaggableObject):
+class CorticalColumn(NetworkObject):
     """
     Base class to define a single cortical column.
 
@@ -52,9 +52,15 @@ class CorticalColumn(TaggableObject):
         L5_L2_3_syn_config=None,
         L5_L6_syn_config=None,
         L6_L5_syn_config=None,
+        behavior=None,
     ):
-        super().__init__(f"CorticalColumn{len(net.columns)}", device=net.device)
-        self.network = net
+        behavior = {} if behavior is None else behavior
+        super().__init__(
+            tag=f"CorticalColumn{len(net.columns)}",
+            behavior=behavior,
+            network=net,
+            device=net.device,
+        )
 
         self.L2_3 = self._create_layer(net, L2_3_config, "L2_3")
         self.L4 = self._create_layer(net, L4_config, "L4")
