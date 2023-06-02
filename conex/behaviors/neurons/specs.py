@@ -272,7 +272,9 @@ class KWTA(Behavior):
     def initialize(self, neurons):
         self.k = self.parameter("k", None, required=True)
         self.dimension = self.parameter("dimension", None)
-        self.shape = (neurons.depth, neurons.height, neurons.width)
+        self.shape = (1, 1, neurons.size)
+        if hasattr(neurons, "depth"):
+            self.shape = (neurons.depth, neurons.height, neurons.width)
 
     def forward(self, neurons):
         will_spike = neurons.v >= neurons.threshold
