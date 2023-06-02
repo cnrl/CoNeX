@@ -14,4 +14,4 @@ from conex.behaviors.layer.dataset import *
 
 from conex.nn.Structure import *
 from conex.nn.Modules import *
-from conex.nn.Config import *
+from conex.nn.config import *

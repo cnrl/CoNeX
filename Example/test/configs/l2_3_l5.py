@@ -1,4 +1,4 @@
-from conex.nn.Config.connection_config import Layer2LayerConnectionConfig
+from conex.nn.config.connection_config import Layer2LayerConnectionConfig
 
 
 class l2_3_l5(Layer2LayerConnectionConfig):

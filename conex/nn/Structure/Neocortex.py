@@ -1,5 +1,6 @@
 from conex.behaviors.network.time_resolution import TimeResolution
 from conex.nn.priorities import NETWORK_PRIORITIES
+from conex.nn.config.base_config import BaseConfig
 
 from pymonntorch import Network, SxD, DxS
 
@@ -167,10 +168,19 @@ class Neocortex(Network):
             L2_3_L2_3_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L2/3 of a column to L2/3 of the other with the specified configurations.
             L2_3_L4_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L2/3 of a column to L4 of the other with the specified configurations.
             L5_L5_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L5 of a column to L5 of the other with the specified configurations.
-            L6_L6_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L6 of a column to L6 of the other with the specified configurations.
+            L5_L6_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L6 of a column to L6 of the other with the specified configurations.
         """
         synapses = {}
         columns = self.columns if columns is None else columns
+
+        L2_3_L2_3_config = (
+            BaseConfig() if L2_3_L2_3_config is None else L2_3_L2_3_config
+        )
+        L2_3_L4_config_config = (
+            BaseConfig() if L2_3_L4_config is None else L2_3_L4_config
+        )
+        L5_L5_config = BaseConfig() if L5_L5_config is None else L5_L5_config
+        L5_L6_config = BaseConfig() if L5_L6_config is None else L5_L6_config
 
         for i, col_i in enumerate(columns):
             for col_j in columns[i:]:
@@ -195,7 +205,7 @@ class Neocortex(Network):
         self.inter_column_synapses.extend(list(synapses.values()))
         return synapses
 
-    def connect_columns_sequential(
+    def _connect_columns_sequential(  # same as forward
         self,
         columns=None,
         reciprocal=False,
@@ -210,37 +220,40 @@ class Neocortex(Network):
         Args:
             columns (list): The list of columns to create connection between. If not provided connection will apply on all cortical columns.
             reciprocal (bool): If true, same config is used to create backward connections.
-            L2_3_L2_3_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L2/3 of a column to L2/3 of the other with the specified configurations.
-            L2_3_L4_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L2/3 of a column to L4 of the other with the specified configurations.
-            L5_L5_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L5 of a column to L5 of the other with the specified configurations.
-            L6_L6_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L6 of a column to L6 of the other with the specified configurations.
+            L2_3_L2_3_config (Layer2LayerConnectionConfig): Adds the backward synaptic connections from L2/3 of a column to L2/3 of the other with the specified configurations.
+            L2_3_L4_config (Layer2LayerConnectionConfig): Adds the forward synaptic connections from L2/3 of a column to L4 of the other with the specified configurations.
+            L5_L5_config (Layer2LayerConnectionConfig): Adds the backward synaptic connections from L5 of a column to L5 of the other with the specified configurations.
+            L5_L6_config (Layer2LayerConnectionConfig): Adds the forward synaptic connections from L6 of a column to L6 of the other with the specified configurations.
         """
         synapses = {}
         columns = self.columns if columns is None else columns
+
+        L2_3_L2_3_config = (
+            BaseConfig() if L2_3_L2_3_config is None else L2_3_L2_3_config
+        )
+        L2_3_L4_config = BaseConfig() if L2_3_L4_config is None else L2_3_L4_config
+        L5_L5_config = BaseConfig() if L5_L5_config is None else L5_L5_config
+        L5_L6_config = BaseConfig() if L5_L6_config is None else L5_L6_config
 
         for col_a, col_b in zip(columns[:-1], columns[1:]):
             syns = col_a.connect(
                 col_b,
                 L2_3_L2_3_config=L2_3_L2_3_config().make(),
-                L2_3_L4_config=L2_3_L4_config().make(),
-                L5_L5_config=L5_L5_config().make(),
                 L5_L6_config=L5_L6_config().make(),
             )
             synapses.update(syns)
             if reciprocal:
                 syns = col_b.connect(
                     col_a,
-                    L2_3_L2_3_config=L2_3_L2_3_config().make(),
                     L2_3_L4_config=L2_3_L4_config().make(),
                     L5_L5_config=L5_L5_config().make(),
-                    L5_L6_config=L5_L6_config().make(),
                 )
                 synapses.update(syns)
 
         self.inter_column_synapses.extend(list(synapses.values()))
         return synapses
 
-    def connect_columns_forward(self, src, dst, L2_3_L4_config=None):
+    def connect_columns_forward(self, src, dst, L2_3_L4_config=None, L5_L6_config=None):
         """
         Makes forward connections between columns in the network.
 
@@ -248,19 +261,27 @@ class Neocortex(Network):
             src (list): The list of columns to create connection from.
             dst (list): The list of columns to create connection to.
             L2_3_L4_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L2/3 of a column to L4 of the other with the specified configurations.
+            L5_L6_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L6 of a column to L6 of the other with the specified configurations.
         """
         synapses = {}
 
+        L2_3_L4_config = BaseConfig() if L2_3_L4_config is None else L2_3_L4_config
+        L5_L6_config = BaseConfig() if L5_L6_config is None else L5_L6_config
+
         for s in src:
             for d in dst:
-                syns = s.connect(d, L2_3_L4_config=L2_3_L4_config().make())
+                syns = s.connect(
+                    d,
+                    L2_3_L4_config=L2_3_L4_config().make(),
+                    L5_L6_config=L5_L6_config().make(),
+                )
                 synapses.update(syns)
 
         self.inter_column_synapses.extend(list(synapses.values()))
         return synapses
 
     def connect_columns_backward(
-        self, src, dst, L2_3_L2_3_config=None, L5_L5_config=None, L5_L6_config=None
+        self, src, dst, L2_3_L2_3_config=None, L5_L5_config=None
     ):
         """
         Makes forward connections between columns in the network.
@@ -269,10 +290,14 @@ class Neocortex(Network):
             src (list): The list of columns to create connection from.
             dst (list): The list of columns to create connection to.
             L2_3_L2_3_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L2/3 of a column to L2/3 of the other with the specified configurations.
-            L5_L5_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L5 of a column to L5 of the other with the specified configurations.
-            L6_L6_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L6 of a column to L6 of the other with the specified configurations.
+            L5_L6_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L6 of a column to L6 of the other with the specified configurations.
         """
         synapses = {}
+
+        L2_3_L2_3_config = (
+            BaseConfig() if L2_3_L2_3_config is None else L2_3_L2_3_config
+        )
+        L5_L5_config = BaseConfig() if L5_L5_config is None else L5_L5_config
 
         for s in src:
             for d in dst:
@@ -280,7 +305,6 @@ class Neocortex(Network):
                     d,
                     L2_3_L2_3_config=L2_3_L2_3_config().make(),
                     L5_L5_config=L5_L5_config().make(),
-                    L5_L6_config=L5_L6_config().make(),
                 )
                 synapses.update(syns)
 
@@ -288,21 +312,27 @@ class Neocortex(Network):
         return synapses
 
     def connect_columns_lateral(
-        self, columns=None, L2_3_L2_3_config=None, L5_L5_config=None, L5_L6_config=None
+        self,
+        columns=None,
+        L2_3_L2_3_config=None,
+        L2_3_L4_config=None,
+        L5_L5_config=None,
+        L5_L6_config=None,
     ):
         """
         Makes lateral connections between columns in the network.
 
         Args:
             columns (list): The list of columns to create connection between. If not provided connection will apply on all cortical columns.
-            reciprocal (bool): If true, same config is used to create backward connections.
             L2_3_L2_3_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L2/3 of a column to L2/3 of the other with the specified configurations.
+            L2_3_L4_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L2/3 of a column to L4 of the other with the specified configurations.
             L5_L5_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L5 of a column to L5 of the other with the specified configurations.
-            L6_L6_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L6 of a column to L6 of the other with the specified configurations.
+            L5_L6_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L6 of a column to L6 of the other with the specified configurations.
         """
         return self.connect_columns_complete(
             columns=columns,
             L2_3_L2_3_config=L2_3_L2_3_config,
+            L2_3_L4_config=L2_3_L4_config,
             L5_L5_config=L5_L5_config,
             L5_L6_config=L5_L6_config,
         )

@@ -1,5 +1,5 @@
 from conex.behaviors.neurons.neuron_types.lif_neurons import AELIF, ELIF
-from conex.nn.Config.layer_config import LayerConfig
+from conex.nn.config.layer_config import LayerConfig
 from pymonntorch import *
 
 

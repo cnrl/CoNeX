@@ -1,4 +1,4 @@
-from conex.nn.Config.connection_config import Layer2PopConnectionConfig
+from conex.nn.config.connection_config import Layer2PopConnectionConfig
 
 
 class l2_3_rep(Layer2PopConnectionConfig):
