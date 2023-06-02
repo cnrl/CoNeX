@@ -180,7 +180,7 @@ class SimpleRSTDP(SimpleSTDP):
         super().initialize(synapse)
         self.tau_c = self.parameter("tau_c", None, required=True)
         mode = self.parameter("init_c_mode", 0)
-        synapse.c = synapse._get_mat(mode=mode, dim=synapse.weights.shape)
+        synapse.c = synapse.tensor(mode=mode, dim=synapse.weights.shape)
 
     def forward(self, synapse):
         computed_stdp = self.compute_dw(synapse)

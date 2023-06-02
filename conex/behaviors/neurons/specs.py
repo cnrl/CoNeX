@@ -11,7 +11,7 @@ class InherentNoise(Behavior):
     Applies noisy voltage to neurons in the population.
 
     Args:
-        mode (str): Mode to be used in initialize the tensor. Accepts similar values to Pymonntorch's `_get_mat` function. Defaults to "rand".
+        mode (str): Mode to be used in initialize the tensor. Accepts similar values to Pymonntorch's `tensor` function. Defaults to "rand".
         scale (float): Scale factor to multiply to the tensor. Default is 1.0.
         offset (function): An offset value to be added to the tensor. Default is 0.0.
     """

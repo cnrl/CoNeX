@@ -30,10 +30,10 @@ class SynapseInit(Behavior):
                 synapse.dst.width,
             )
 
-        synapse.src_delay = synapse._get_mat(
+        synapse.src_delay = synapse.tensor(
             mode="zeros", dim=(1,), dtype=torch.long
         ).expand(synapse.src.size)
-        synapse.dst_delay = synapse._get_mat(
+        synapse.dst_delay = synapse.tensor(
             mode="zeros", dim=(1,), dtype=torch.long
         ).expand(synapse.dst.size)
 
@@ -106,7 +106,7 @@ class WeightInitializer(Behavior):
             if synapse.weight_shape is None:
                 synapse.weights = synapse.matrix(mode=init_mode)
             else:
-                synapse.weights = synapse._get_mat(
+                synapse.weights = synapse.tensor(
                     mode=init_mode, dim=synapse.weight_shape
                 )
 
