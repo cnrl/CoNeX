@@ -96,9 +96,7 @@ def make_layer(name, bottom_left, width, height):
         fc=(1, 1, 1, 0),
         ec=CONNECTION_COLOR[LAYER_CONNECTION_TYPE[("inh", "exc")]],
     )
-    layer_text = plt.text(
-        x=start_x + 0.01, y=start_y + 0.01, s=name
-    )  # TODO use patch like object
+    layer_text = plt.text(x=start_x + 0.01, y=start_y + 0.01, s=name)
     return {
         "layer": layer,
         "exc": exc,

@@ -139,8 +139,8 @@ class WeightClip(Behavior):
     Clip the synaptic weights in a range.
 
     Args:
-        w_min (float): minimum weight constraint.
-        w_max (float): maximum weight constraint.
+        w_min (float): Minimum weight constraint.
+        w_max (float): Maximum weight constraint.
     """
 
     def initialize(self, synapse):

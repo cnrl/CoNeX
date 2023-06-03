@@ -85,7 +85,6 @@ INTRA_COLUMN_CONNECTION_TYPE = {
 }
 
 
-# TODO no inhibitory connection
 INTER_COLUMN_CONNECTION_TYPE = {
     # from l2_3 to L2_3
     (l2_3, l2_3, exc, exc): apical,
