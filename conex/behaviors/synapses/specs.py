@@ -134,6 +134,37 @@ class WeightNormalization(Behavior):
         synapse.weights *= self.norm / weights_sum
 
 
+class CurrentNormalization(Behavior):
+    """
+    This Behavior normalize Current in order to assure each destination neuron
+    maximum input current is eight equal to ``norm``. Supporting `Simple`, `Local2d`, 'Conv2d'.
+
+    Args:
+        norm (int): Desired maximum of current for each neuron.
+    """
+
+    def initialize(self, synapse):
+        self.norm = self.parameter("norm", 1)
+        self.dims = [x for x in range(1, len(synapse.weights.shape))]
+        if len(synapse.weights.shape) == 1:
+            self.dims = [0]
+        if len(synapse.weights.shape) == 2:
+            self.dims = [2]
+
+    def forward(self, synapse):
+        weights_sum = synapse.weights.sum(dim=self.dims).view(
+            -1,
+        )
+        weights_sum[weights_sum == 0] = 1
+        normalized = self.norm / weights_sum
+        if self.dims[0] == 0:
+            synapse.I *= normalized
+        else:
+            synapse.I *= normalized.repeat_interleave(
+                synapse.dst.size // normalized.numel()
+            )
+
+
 class WeightClip(Behavior):
     """
     Clip the synaptic weights in a range.
