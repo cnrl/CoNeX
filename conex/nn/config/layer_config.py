@@ -3,7 +3,8 @@ from collections.abc import Mapping
 
 from pymonntorch import *
 
-from conex.behaviors.neurons.specs import NeuronAxon, NeuronDendrite
+from conex.behaviors.neurons.axon import NeuronAxon
+from conex.behaviors.neurons.specs import NeuronDendrite
 from .base_config import *
 
 # TODO: check default valus

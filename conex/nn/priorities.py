@@ -8,16 +8,16 @@ NETWORK_PRIORITIES = {
 }
 
 NEURON_PRIORITIES = {
-    "NeuronDendrite": 200,
-    "NeuronDynamic": 220,
-    "DirectNoise": 240,
-    "KWTA": 260,
-    "Fire": 300,
-    "Trace": 320,
-    "NeuronAxon": 340,
+    "NeuronDendrite": 220,
+    "NeuronDynamic": 240,
+    "DirectNoise": 260,
+    "KWTA": 280,
+    "Fire": 320,
+    "Trace": 340,
+    "NeuronAxon": 360,
 }
 
-LAYER_PRIORITIES = {"InputDataset": 280}
+LAYER_PRIORITIES = {"InputDataset": 300}
 
 SYNAPSE_PRIORITIES = {
     "Init": 2,
@@ -25,7 +25,8 @@ SYNAPSE_PRIORITIES = {
     "SrcDelayInit": 4,
     "DstDelayInit": 5,
     "DendriticInput": 180,
-    "LearningRule": 360,
-    "WeightNormalization": 380,
-    "WeightClip": 400,
+    "CurrentNormalization": 200,
+    "LearningRule": 380,
+    "WeightNormalization": 400,
+    "WeightClip": 420,
 }

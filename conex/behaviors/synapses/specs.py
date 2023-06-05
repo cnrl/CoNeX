@@ -157,12 +157,9 @@ class CurrentNormalization(Behavior):
         )
         weights_sum[weights_sum == 0] = 1
         normalized = self.norm / weights_sum
-        if self.dims[0] == 0:
-            synapse.I *= normalized
-        else:
-            synapse.I *= normalized.repeat_interleave(
-                synapse.dst.size // normalized.numel()
-            )
+        synapse.I *= normalized.repeat_interleave(
+            synapse.I.numel() // normalized.numel()
+        )
 
 
 class WeightClip(Behavior):

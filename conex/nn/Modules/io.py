@@ -5,7 +5,8 @@ Module of input and output neuronal populations.
 from pymonntorch import NeuronGroup, NetworkObject
 
 from conex.behaviors.neurons.setters import LocationSetter, SensorySetter
-from conex.behaviors.neurons.specs import NeuronAxon, NeuronDendrite, SpikeTrace
+from conex.behaviors.neurons.axon import NeuronAxon
+from conex.behaviors.neurons.specs import NeuronDendrite, SpikeTrace
 from conex.nn.priorities import NEURON_PRIORITIES, LAYER_PRIORITIES
 from conex.behaviors.layer.dataset import SpikeNdDataset
 
