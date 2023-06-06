@@ -5,10 +5,11 @@ Implementation of Cortical layers.
 import warnings
 from conex.nn.Modules.spiking_neurons import SpikingNeuronGroup
 from conex.nn.Modules.topological_connections import StructuredSynapseGroup
-from pymonntorch import NeuronGroup, SynapseGroup, TaggableObject
+from conex.nn.connections import LAYER_CONNECTION_TYPE
+from pymonntorch import NetworkObject
 
 
-class Layer(TaggableObject):
+class Layer(NetworkObject):
     """
     Base class to create a cortical layer.
 
@@ -42,10 +43,17 @@ class Layer(TaggableObject):
         exc_inh_config=None,
         inh_exc_config=None,
         inh_inh_config=None,
+        behavior=None,
     ):
-        super().__init__(f"{cortical_column.tags[0]}_{tag}", device=net.device)
-        self.network = net
+        behavior = {} if behavior is None else behavior
+        super().__init__(
+            tag=f"{cortical_column.tags[0]}_{tag}",
+            behavior=behavior,
+            network=net,
+            device=net.device,
+        )
         self.cortical_column = cortical_column
+        self.add_tag(tag)
 
         self.exc_pop = self._create_neural_population(
             net, exc_pop_config, self.tags[0] + "_exc"
@@ -66,21 +74,21 @@ class Layer(TaggableObject):
 
         if self.exc_pop:
             self.exc_exc_syn = self._create_synaptic_connection(
-                self.exc_pop, self.exc_pop, net, exc_exc_config
+                self.exc_pop, self.exc_pop, net, exc_exc_config, ("exc", "exc")
             )
 
         if self.inh_pop:
             self.inh_inh_syn = self._create_synaptic_connection(
-                self.inh_pop, self.inh_pop, net, inh_inh_config
+                self.inh_pop, self.inh_pop, net, inh_inh_config, ("inh", "inh")
             )
 
         if self.inh_pop and self.exc_pop:
             self.exc_inh_syn = self._create_synaptic_connection(
-                self.exc_pop, self.inh_pop, net, exc_inh_config
+                self.exc_pop, self.inh_pop, net, exc_inh_config, ("exc", "inh")
             )
 
             self.inh_exc_syn = self._create_synaptic_connection(
-                self.inh_pop, self.exc_pop, net, inh_exc_config
+                self.inh_pop, self.exc_pop, net, inh_exc_config, ("inh", "exc")
             )
 
             if self.inh_exc_syn is None and self.exc_inh_syn is None:
@@ -101,10 +109,10 @@ class Layer(TaggableObject):
             return None
 
     @staticmethod
-    def _create_synaptic_connection(src, dst, net, config):
+    def _create_synaptic_connection(src, dst, net, config, type):
         if isinstance(config, dict):
             syn = StructuredSynapseGroup(src, dst, net, **config)
-            syn.add_tag("Proximal")
+            syn.add_tag(LAYER_CONNECTION_TYPE[type])
             return syn
         else:
             warnings.warn(

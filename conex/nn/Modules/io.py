@@ -5,12 +5,15 @@ Module of input and output neuronal populations.
 from pymonntorch import NeuronGroup, NetworkObject
 
 from conex.behaviors.neurons.setters import LocationSetter, SensorySetter
-from conex.behaviors.neurons.specs import NeuronAxon, NeuronDendrite, SpikeTrace
-from conex.nn.priorities import NEURON_PRIORITIES, LAYER_PRIORITIES
+from conex.behaviors.neurons.dendrite import SimpleDendriteStructure
+from conex.behaviors.neurons.axon import NeuronAxon
+from conex.behaviors.neurons.specs import SpikeTrace
 from conex.behaviors.layer.dataset import SpikeNdDataset
 
+from conex.nn.priorities import NEURON_PRIORITIES, LAYER_PRIORITIES
 
 # TODO: Define spike analysis behaviors for output neuron groups
+# TODO: Docstring
 
 
 class InputLayer(NetworkObject):
@@ -23,6 +26,10 @@ class InputLayer(NetworkObject):
         have_label=True,
         sensory_size=None,
         location_size=None,
+        sensory_axon=NeuronAxon,
+        sensory_axon_params=None,
+        location_axon=NeuronAxon,
+        location_axon_params=None,
         sensory_trace=None,
         location_trace=None,
         sensory_data_dim=2,
@@ -56,12 +63,14 @@ class InputLayer(NetworkObject):
 
         if have_sensory:
             self.sensory_pop = self.__get_ng(
-                net,
-                sensory_size,
-                sensory_tag,
-                sensory_trace,
-                SensorySetter,
-                sensory_user_defined,
+                net=net,
+                size=sensory_size,
+                tag=sensory_tag,
+                trace=sensory_trace,
+                setter=SensorySetter,
+                axon=sensory_axon,
+                axon_params=sensory_axon_params,
+                user_defined=sensory_user_defined,
             )
 
             self.sensory_pop.layer = self
@@ -72,12 +81,14 @@ class InputLayer(NetworkObject):
 
         if have_location:
             self.location_pop = self.__get_ng(
-                net,
-                location_size,
-                location_tag,
-                location_trace,
-                LocationSetter,
-                location_user_defined,
+                net=net,
+                size=location_size,
+                tag=location_tag,
+                trace=location_trace,
+                setter=LocationSetter,
+                axon=location_axon,
+                axon_params=location_axon_params,
+                user_defined=location_user_defined,
             )
 
             self.location_pop.layer = self
@@ -117,11 +128,24 @@ class InputLayer(NetworkObject):
 
         return synapses
 
-    def __get_ng(self, net, size, tag, trace, setter, user_defined=None):
+    def __get_ng(
+        self,
+        net,
+        size,
+        tag,
+        trace,
+        setter,
+        axon=NeuronAxon,
+        axon_params=None,
+        user_defined=None,
+    ):
         behavior = {
             NEURON_PRIORITIES["Fire"]: setter(),
-            NEURON_PRIORITIES["NeuronAxon"]: NeuronAxon(),
         }
+
+        if axon:
+            params = axon_params if axon_params is not None else {}
+            behavior[NEURON_PRIORITIES["NeuronAxon"]] = axon(**params)
 
         if trace is not None:
             behavior[NEURON_PRIORITIES["Trace"]] = SpikeTrace(tau_s=trace)
@@ -140,8 +164,10 @@ class OutputLayer(NetworkObject):
         motor_size=None,
         representation_trace=None,
         motor_trace=None,
-        representation_dendrite_params=None,
-        motor_dendrite_params=None,
+        representation_dendrite_structure=SimpleDendriteStructure,
+        representation_dendrite_structure_params=None,
+        motor_dendrite_structure=SimpleDendriteStructure,
+        motor_dendrite_structure_params=None,
         tag=None,
         behavior=None,
         representation_tag=None,
@@ -162,12 +188,13 @@ class OutputLayer(NetworkObject):
 
         if representation_size is not None:
             self.representation_pop = self.__get_ng(
-                net,
-                representation_size,
-                representation_tag,
-                representation_trace,
-                representation_dendrite_params,
-                representation_user_defined,
+                net=net,
+                size=representation_size,
+                tag=representation_tag,
+                trace=representation_trace,
+                dendrite_structure=representation_dendrite_structure,
+                dendrite_structure_params=representation_dendrite_structure_params,
+                user_defined=representation_user_defined,
             )
 
             self.representation_pop.layer = self
@@ -176,23 +203,38 @@ class OutputLayer(NetworkObject):
 
         if motor_size is not None:
             self.motor_pop = self.__get_ng(
-                net,
-                motor_size,
-                motor_tag,
-                motor_trace,
-                motor_dendrite_params,
-                motor_user_defined,
+                net=net,
+                size=motor_size,
+                tag=motor_tag,
+                trace=motor_trace,
+                dendrite_structure=motor_dendrite_structure,
+                dendrite_structure_params=motor_dendrite_structure_params,
+                user_defined=motor_user_defined,
             )
 
             self.motor_pop.layer = self
 
         self.add_tag(self.__class__.__name__)
 
-    def __get_ng(self, net, size, tag, trace, dendrite_params, user_defined):
-        dendrite_params = dendrite_params if dendrite_params is not None else {}
-        behavior = {
-            NEURON_PRIORITIES["NeuronDendrite"]: NeuronDendrite(**dendrite_params),
-        }
+    def __get_ng(
+        self,
+        net,
+        size,
+        tag,
+        trace=None,
+        dendrite_structure=SimpleDendriteStructure,
+        dendrite_structure_params=None,
+        user_defined=None,
+    ):
+        dendrite_structure_params = (
+            dendrite_structure_params if dendrite_structure_params is not None else {}
+        )
+        behavior = {}
+
+        if dendrite_structure:
+            behavior[NEURON_PRIORITIES["DendriteStructure"]] = dendrite_structure(
+                **dendrite_structure_params
+            )
 
         if trace is not None:
             behavior[NEURON_PRIORITIES["Trace"]] = SpikeTrace(tau_s=trace)

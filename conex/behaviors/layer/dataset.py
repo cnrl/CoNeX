@@ -9,6 +9,15 @@ import torch
 class SpikeNdDataset(Behavior):
     """
     This behavior ease loading dataset as spikes for `InputLayer`.
+
+    Args:
+        dataloader (Dataloader): A pytorch dataloader kind returning up to a triole of (sensory, location, label).
+        ndim_sensory (int): Sensory's number of dimension refering to a single instance.
+        ndim_location (int): Location's number of dimension refering to a single instance.
+        have_location (bool): Whether dataloader returns location input.
+        have_sensory (bool): Whether dataloader returns sensory input.
+        have_label (bool): Whether dataloader returns label of input.
+        loop (bool): If True, dataloader repeats.
     """
 
     def initialize(self, layer):

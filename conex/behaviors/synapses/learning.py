@@ -7,6 +7,23 @@ from pymonntorch import Behavior
 import torch
 import torch.nn.functional as F
 
+# TODO docstring for bound functions
+
+
+def soft_bound(w, w_min, w_max):
+    return (w - w_min) * (w_max - w)
+
+
+def hard_bound(w, w_min, w_max):
+    return (w > w_min) * (w < w_max)
+
+
+def no_bound(w, w_min, w_max):
+    return 1
+
+
+BOUNDS = {"soft_bound": soft_bound, "hard_bound": hard_bound, "no_bound": no_bound}
+
 
 class SimpleSTDP(Behavior):
     """
@@ -15,13 +32,28 @@ class SimpleSTDP(Behavior):
     Note: The implementation uses local variables (spike trace).
 
     Args:
+        w_min (float): Minimum for weights. The default is 0.0.
+        w_max (float): Maximum for weights. The default is 1.0.
         a_plus (float): Coefficient for the positive weight change. The default is None.
         a_minus (float): Coefficient for the negative weight change. The default is None.
+        positive_bound (str or function): Bounding mechanism for positive learning. Accepting "no_bound", "hard_bound" and "soft_bound". The default is "no_bound". "weights", "w_min" and "w_max" pass as arguments for a bounding function.
+        negative_bound (str or function): Bounding mechanism for negative learning. Accepting "no_bound", "hard_bound" and "soft_bound". The default is "no_bound". "weights", "w_min" and "w_max" pass as arguments for a bounding function.
     """
 
     def initialize(self, synapse):
-        self.a_plus = self.parameter("a_plus", None)
-        self.a_minus = self.parameter("a_minus", None)
+        self.w_min = self.parameter("w_min", 0.0)
+        self.w_max = self.parameter("w_max", 1.0)
+        self.a_plus = self.parameter("a_plus", None, required=True)
+        self.a_minus = self.parameter("a_minus", None, required=True)
+        self.p_bound = self.parameter("positive_bound", "no_bound")
+        self.n_bound = self.parameter("negative_bound", "no_bound")
+
+        self.p_bound = (
+            BOUNDS[self.p_bound] if isinstance(self.p_bound, str) else self.p_bound
+        )
+        self.n_bound = (
+            BOUNDS[self.n_bound] if isinstance(self.n_bound, str) else self.n_bound
+        )
 
         self.def_dtype = (
             torch.float32
@@ -50,8 +82,16 @@ class SimpleSTDP(Behavior):
             dst_spike_trace,
         ) = self.get_spike_and_trace(synapse)
 
-        dw_plus = torch.outer(dst_spike_trace, src_spike) * self.a_plus
-        dw_minus = torch.outer(dst_spike, src_spike_trace) * self.a_minus
+        dw_minus = (
+            torch.outer(src_spike, dst_spike_trace)
+            * self.a_minus
+            * self.n_bound(synapse.weights, self.w_min, self.w_max)
+        )
+        dw_plus = (
+            torch.outer(src_spike_trace, dst_spike)
+            * self.a_plus
+            * self.p_bound(synapse.weights, self.w_min, self.w_max)
+        )
 
         return dw_plus - dw_minus
 
@@ -84,7 +124,8 @@ class Conv2dSTDP(SimpleSTDP):
 
         src_spike = src_spike.view(synapse.src_shape).to(self.def_dtype)
         src_spike = F.unfold(
-            src_spike, kernel_size=synapse.weights.size()[-2:],
+            src_spike,
+            kernel_size=synapse.weights.size()[-2:],
             stride=synapse.stride,
             padding=synapse.padding,
         )
@@ -93,7 +134,8 @@ class Conv2dSTDP(SimpleSTDP):
         dst_spike_trace = dst_spike_trace.view((synapse.dst_shape[0], -1, 1))
 
         dw_minus = torch.bmm(src_spike, dst_spike_trace).view(
-            synapse.weights.shape)
+            synapse.weights.shape
+        ) * self.n_bound(synapse.weights, self.w_min, self.w_max)
 
         src_spike_trace = src_spike_trace.view(synapse.src_shape)
         src_spike_trace = F.unfold(
@@ -106,11 +148,11 @@ class Conv2dSTDP(SimpleSTDP):
             synapse.dst_shape[0], *src_spike_trace.shape
         )
 
-        dst_spike = dst_spike.view(
-            (synapse.dst_shape[0], -1, 1)).to(self.def_dtype)
+        dst_spike = dst_spike.view((synapse.dst_shape[0], -1, 1)).to(self.def_dtype)
 
         dw_plus = torch.bmm(src_spike_trace, dst_spike).view(
-            synapse.weights.shape)
+            synapse.weights.shape
+        ) * self.p_bound(synapse.weights, self.w_min, self.w_max)
 
         return (dw_plus * self.a_plus - dw_minus * self.a_minus) / self.weight_divisor
 
@@ -130,7 +172,8 @@ class Local2dSTDP(SimpleSTDP):
 
         src_spike = src_spike.view(synapse.src_shape).to(self.def_dtype)
         src_spike = F.unfold(
-            src_spike, kernel_size=synapse.kernel_shape[-2:],
+            src_spike,
+            kernel_size=synapse.kernel_shape[-2:],
             stride=synapse.stride,
             padding=synapse.padding,
         )
@@ -140,7 +183,11 @@ class Local2dSTDP(SimpleSTDP):
         dst_spike_trace = dst_spike_trace.view((synapse.dst_shape[0], -1, 1))
         dst_spike_trace = dst_spike_trace.expand(synapse.weights.shape)
 
-        dw_minus = dst_spike_trace * src_spike
+        dw_minus = (
+            dst_spike_trace
+            * src_spike
+            * self.n_bound(synapse.weights, self.w_min, self.w_max)
+        )
 
         src_spike_trace = src_spike_trace.view(synapse.src_shape)
         src_spike_trace = F.unfold(
@@ -154,11 +201,14 @@ class Local2dSTDP(SimpleSTDP):
             synapse.dst_shape[0], *src_spike_trace.shape
         )
 
-        dst_spike = dst_spike.view(
-            (synapse.dst_shape[0], -1, 1)).to(self.def_dtype)
+        dst_spike = dst_spike.view((synapse.dst_shape[0], -1, 1)).to(self.def_dtype)
         dst_spike = dst_spike.expand(synapse.weights.shape)
 
-        dw_plus = dst_spike * src_spike_trace
+        dw_plus = (
+            dst_spike
+            * src_spike_trace
+            * self.p_bound(synapse.weights, self.w_min, self.w_max)
+        )
 
         return dw_plus * self.a_plus - dw_minus * self.a_minus
 
@@ -178,9 +228,9 @@ class SimpleRSTDP(SimpleSTDP):
 
     def initialize(self, synapse):
         super().initialize(synapse)
-        self.tau_c = self.parameter("tau_c", None)
+        self.tau_c = self.parameter("tau_c", None, required=True)
         mode = self.parameter("init_c_mode", 0)
-        synapse.c = synapse._get_mat(mode=mode, dim=synapse.weights.shape)
+        synapse.c = synapse.tensor(mode=mode, dim=synapse.weights.shape)
 
     def forward(self, synapse):
         computed_stdp = self.compute_dw(synapse)

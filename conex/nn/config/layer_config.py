@@ -1,6 +1,16 @@
 from typing import Tuple, Union, Callable
-from .base_config import *
+from collections.abc import Mapping
+
 from pymonntorch import *
+
+from conex.behaviors.neurons.dendrite import (
+    SimpleDendriteStructure,
+    SimpleDendriteComputation,
+)
+from conex.behaviors.neurons.axon import NeuronAxon
+from .base_config import *
+
+# TODO: check default valus
 
 
 class LayerConfig(BaseConfig):
@@ -10,11 +20,15 @@ class LayerConfig(BaseConfig):
     exc_kwta = None
     exc_kwta_dim = None
     exc_tau_trace = None
+    exc_axon = NeuronAxon
     exc_max_delay = None
-    exc_noise_function = None
+    exc_noise_params = None
     exc_fire = True
     exc_tag = None
-    exc_dendrite_params = None
+    exc_dendrite_structure = SimpleDendriteStructure
+    exc_dendrite_structure_params = None
+    exc_dendrite_computation = SimpleDendriteComputation
+    exc_dendrite_computation_params = None
     exc_user_defined_behaviors_class = None
     exc_user_defined_behaviors_params = None
 
@@ -24,11 +38,15 @@ class LayerConfig(BaseConfig):
     inh_kwta = None
     inh_kwta_dim = None
     inh_tau_trace = None
+    inh_axon = NeuronAxon
     inh_max_delay = None
-    inh_noise_function = None
+    inh_noise_params = None
     inh_fire = True
     inh_tag = None
-    inh_dendrite_params = None
+    inh_dendrite_structure = SimpleDendriteStructure
+    inh_dendrite_computation = SimpleDendriteComputation
+    inh_dendrite_computation_params = None
+    inh_dendrite_structure_params = None
     inh_user_defined_behaviors_class = None
     inh_user_defined_behaviors_params = None
 
@@ -96,19 +114,23 @@ class LayerConfig(BaseConfig):
     def _pop_config(
         cls,
         size: Union[int, Tuple[int, int, int]],
-        neuron_params: dict,
+        neuron_params: Mapping,
         neuron_type: Union[str, type[Behavior]],
         kwta: Union[None, int] = None,
         kwta_dim: Union[None, int] = None,
         tau_trace: Union[None, float] = None,
+        axon: Union[None, type[Behavior]] = None,
         max_delay: Union[None, int] = None,
-        noise_function: Union[None, callable] = None,
+        noise_params: Union[None, Mapping] = None,
         fire: bool = False,
         tag: Union[None, str] = None,
-        dendrite_params: Union[None, dict] = None,
-        user_defined_behaviors_class: Union[None, dict[int, type[Behavior]]] = None,
-        user_defined_behaviors_params: Union[None, dict[int, dict]] = None,
-    ) -> dict:
+        dendrite_structure: Union[None, type[Behavior]] = None,
+        dendrite_structure_params: Union[None, Mapping] = None,
+        dendrite_computation: Union[None, type[Behavior]] = None,
+        dendrite_computation_params: Union[None, Mapping] = None,
+        user_defined_behaviors_class: Union[None, Mapping[int, type[Behavior]]] = None,
+        user_defined_behaviors_params: Union[None, Mapping[int, Mapping]] = None,
+    ) -> Mapping:
         if isinstance(size, int):
             config = {"size": size}
         else:
@@ -126,11 +148,14 @@ class LayerConfig(BaseConfig):
         if tau_trace is not None:
             config["tau_trace"] = tau_trace
 
+        if axon is not None:
+            config["axon"] = axon
+
         if max_delay is not None:
             config["max_delay"] = max_delay
 
-        if noise_function is not None:
-            config["noise_function"] = noise_function
+        if noise_params is not None:
+            config["noise_params"] = noise_params
 
         if fire:
             config["fire"] = True
@@ -138,8 +163,17 @@ class LayerConfig(BaseConfig):
         if tag is not None:
             config["tag"] = tag
 
-        if dendrite_params is not None:
-            config["dendrite_params"] = dendrite_params
+        if dendrite_structure is not None:
+            config["dendrite_structure"] = dendrite_structure
+
+        if dendrite_structure_params is not None:
+            config["dendrite_structure_params"] = dendrite_structure_params
+
+        if dendrite_computation is not None:
+            config["dendrite_computation"] = dendrite_computation
+
+        if dendrite_computation_params is not None:
+            config["dendrite_computation_params"] = dendrite_computation_params
 
         if user_defined_behaviors_class is not None:
             config["user_defined"] = {}
@@ -156,21 +190,21 @@ class LayerConfig(BaseConfig):
     @classmethod
     def _syn_config(
         cls,
-        weight_init_params: dict,
+        weight_init_params: Mapping,
         structure: Union[str, type[Behavior]],
-        structure_params: dict,
+        structure_params: Mapping,
         learning_rule: Union[None, str, type[Behavior]] = None,
-        learning_params: Union[None, dict] = None,
+        learning_params: Union[None, Mapping] = None,
         src_delay_init_mode: Union[None, float, str] = None,
-        src_delay_init_params: Union[None, dict] = None,
+        src_delay_init_params: Union[None, Mapping] = None,
         dst_delay_init_mode: Union[None, float, str] = None,
-        dst_delay_init_params: Union[None, dict] = None,
+        dst_delay_init_params: Union[None, Mapping] = None,
         w_interval: Union[None, Tuple[float, float]] = None,
         weight_norm: Union[None, float] = None,
         tag: Union[None, str] = None,
-        user_defined_behaviors_class: Union[None, dict[int, type[Behavior]]] = None,
-        user_defined_behaviors_params: Union[None, dict[int, dict]] = None,
-    ) -> dict:
+        user_defined_behaviors_class: Union[None, Mapping[int, type[Behavior]]] = None,
+        user_defined_behaviors_params: Union[None, Mapping[int, Mapping]] = None,
+    ) -> Mapping:
         config = {
             "weight_init_params": weight_init_params,
             "structure": structure,
@@ -227,11 +261,15 @@ class LayerConfig(BaseConfig):
                 self.exc_kwta,
                 self.exc_kwta_dim,
                 self.exc_tau_trace,
+                self.exc_axon,
                 self.exc_max_delay,
-                self.exc_noise_function,
+                self.exc_noise_params,
                 self.exc_fire,
                 self.exc_tag,
-                self.exc_dendrite_params,
+                self.exc_dendrite_structure,
+                self.exc_dendrite_structure_params,
+                self.exc_dendrite_computation,
+                self.exc_dendrite_computation_params,
                 self.exc_user_defined_behaviors_class,
                 self.exc_user_defined_behaviors_params,
             )
@@ -244,11 +282,15 @@ class LayerConfig(BaseConfig):
                 self.inh_kwta,
                 self.inh_kwta_dim,
                 self.inh_tau_trace,
+                self.inh_axon,
                 self.inh_max_delay,
-                self.inh_noise_function,
+                self.inh_noise_params,
                 self.inh_fire,
                 self.inh_tag,
-                self.inh_dendrite_params,
+                self.inh_dendrite_structure,
+                self.inh_dendrite_structure_params,
+                self.inh_dendrite_computation,
+                self.inh_dendrite_computation_params,
                 self.inh_user_defined_behaviors_class,
                 self.inh_user_defined_behaviors_params,
             )

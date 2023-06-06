@@ -9,7 +9,8 @@ from conex.behaviors.neurons import (
     Fire,
     InherentNoise,
     NeuronAxon,
-    NeuronDendrite,
+    SimpleDendriteStructure,
+    SimpleDendriteComputation,
     SpikeTrace,
 )
 
@@ -29,10 +30,14 @@ class SpikingNeuronGroup(NeuronGroup):
         kwta (int):  If not None, enables k-winner-take-all (KWTA) mechanism and specifies the number of winners.
         kwta_dim (tuple): If KWTA is enabled, specifies the dimension of KWTA neighborhood.
         tau_trace (float): If not None, enables the spike trace for neurons and specifies its time constant.
+        axon (Behavior): Behavior class for axon dynamic of neuron group.
         max_delay (int): Defines the maximum (buffer size of) axonal delay. The default is 1.
-        noise_function (function): If not None, enables inherent noise in membrane potential and specifies its function.
+        noise_params (dict): If not None, enables inherent noise in membrane potential and specifies its parameters.
         tag (str): The tag(s) of the population. If None, it is set to `"SpikingNeuronGroup{str(len(net.NeuronGroups) + 1)}"`.
-        dendrite_params (dict): Parameters of the NeuronDendrite behavior.
+        dendrite_structure (Behavior): Behavior class for defining the structure of dendrite.
+        dendrite_structure_params (dict): Parameters of the dendrite_structure behavior.
+        dendrite_computation (Behavior): Behavior class for dynamics of a the dendrite structure to compute the current entering the soma.
+        dendrite_computation_params (dict): Parameters of the dendrite_computation behavior.
         neuron_params (dict): Parameters of the specified neuron type.
     """
 
@@ -45,11 +50,15 @@ class SpikingNeuronGroup(NeuronGroup):
         kwta=None,
         kwta_dim=None,
         tau_trace=None,
+        axon=NeuronAxon,
         max_delay=1,
-        noise_function=None,
+        noise_params=None,
         fire=True,
         tag=None,
-        dendrite_params=None,
+        dendrite_structure=SimpleDendriteStructure,
+        dendrite_structure_params=None,
+        dendrite_computation=SimpleDendriteComputation,
+        dendrite_computation_params=None,
         user_defined=None,
     ):
         if tag is None and net is not None:
@@ -60,9 +69,24 @@ class SpikingNeuronGroup(NeuronGroup):
 
         behavior = {NEURON_PRIORITIES["NeuronDynamic"]: neuron_type(**neuron_params)}
 
-        if dendrite_params is not None:
-            behavior[NEURON_PRIORITIES["NeuronDendrite"]] = NeuronDendrite(
-                **dendrite_params
+        if dendrite_structure is not None:
+            dendrite_structure_params = (
+                dendrite_structure_params
+                if dendrite_structure_params is not None
+                else {}
+            )
+            behavior[NEURON_PRIORITIES["DendriteStructure"]] = dendrite_structure(
+                **dendrite_structure_params
+            )
+
+        if dendrite_computation is not None:
+            dendrite_computation_params = (
+                dendrite_computation_params
+                if dendrite_computation_params is not None
+                else {}
+            )
+            behavior[NEURON_PRIORITIES["DendriteComputation"]] = dendrite_computation(
+                **dendrite_computation_params
             )
 
         if kwta is not None:
@@ -72,10 +96,10 @@ class SpikingNeuronGroup(NeuronGroup):
             behavior[NEURON_PRIORITIES["Trace"]] = SpikeTrace(tau_s=tau_trace)
 
         if max_delay is not None:
-            behavior[NEURON_PRIORITIES["NeuronAxon"]] = NeuronAxon(max_delay=max_delay)
+            behavior[NEURON_PRIORITIES["NeuronAxon"]] = axon(max_delay=max_delay)
 
-        if noise_function:
-            behavior[NEURON_PRIORITIES["DirectNoise"]] = InherentNoise(noise_function)
+        if noise_params:
+            behavior[NEURON_PRIORITIES["DirectNoise"]] = InherentNoise(**noise_params)
 
         if fire:
             behavior[NEURON_PRIORITIES["Fire"]] = Fire()

@@ -6,7 +6,7 @@ from Example.test.configs.l2_3_l5 import *
 from Example.test.configs.l4_l2_3 import *
 from Example.test.configs.l5_l2_3 import *
 
-from conex.nn.Config.base_config import BaseConfig
+from conex.nn.config.base_config import BaseConfig
 
 if __name__ == "__main__":
     config_type = "json"  # json

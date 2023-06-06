@@ -28,10 +28,10 @@ class SimpleDendriticInput(Behavior):
 
     def initialize(self, synapse):
         """
-        Sets the current_coef to -1 if the pre-synaptic neurons are inhibitory.
+        Sets the current_type to -1 if the pre-synaptic neurons are inhibitory.
 
         Args:
-            synapse (SynapseGroup): Synapses on which the dendrites are defined.
+            current_coef (float): Strength of the synapse.
         """
         synapse.add_tag(self.__class__.__name__)
         self.current_coef = self.parameter("current_coef", 1)
@@ -48,14 +48,19 @@ class SimpleDendriticInput(Behavior):
 
         synapse.I = synapse.dst.vector(0)
 
+        if (
+            not synapse.network.transposed_synapse_matrix_mode
+            and self.__class__.__name__ == "SimpleDendriticInput"
+        ):
+            raise RuntimeError(f"Network should've made with SxD mode for synapses")
+
     def calculate_input(self, synapse):
         spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay)
-        return torch.sum(synapse.weights[:, spikes], axis=1)
+        return torch.sum(synapse.weights[spikes], axis=0)
 
     def forward(self, synapse):
         synapse.I = (
-            self.current_coef * self.current_type *
-            self.calculate_input(synapse)
+            self.current_coef * self.current_type * self.calculate_input(synapse)
         )
 
 

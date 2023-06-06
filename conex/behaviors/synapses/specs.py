@@ -15,13 +15,25 @@ class SynapseInit(Behavior):
     """
 
     def initialize(self, synapse):
-        synapse.src_shape = (synapse.src.depth, synapse.src.height, synapse.src.width)
-        synapse.dst_shape = (synapse.dst.depth, synapse.dst.height, synapse.dst.width)
+        synapse.src_shape = (1, 1, synapse.src.size)
+        if hasattr(synapse.src, "depth"):
+            synapse.src_shape = (
+                synapse.src.depth,
+                synapse.src.height,
+                synapse.src.width,
+            )
+        synapse.dst_shape = (1, 1, synapse.dst.size)
+        if hasattr(synapse.dst, "depth"):
+            synapse.dst_shape = (
+                synapse.dst.depth,
+                synapse.dst.height,
+                synapse.dst.width,
+            )
 
-        synapse.src_delay = synapse._get_mat(
+        synapse.src_delay = synapse.tensor(
             mode="zeros", dim=(1,), dtype=torch.long
         ).expand(synapse.src.size)
-        synapse.dst_delay = synapse._get_mat(
+        synapse.dst_delay = synapse.tensor(
             mode="zeros", dim=(1,), dtype=torch.long
         ).expand(synapse.dst.size)
 
@@ -94,7 +106,7 @@ class WeightInitializer(Behavior):
             if synapse.weight_shape is None:
                 synapse.weights = synapse.matrix(mode=init_mode)
             else:
-                synapse.weights = synapse._get_mat(
+                synapse.weights = synapse.tensor(
                     mode=init_mode, dim=synapse.weight_shape
                 )
 
@@ -111,6 +123,8 @@ class WeightNormalization(Behavior):
     def initialize(self, synapse):
         self.norm = self.parameter("norm", 1)
         self.dims = [x for x in range(1, len(synapse.weights.shape))]
+        if len(synapse.weights.shape) == 1:
+            self.dims = [0]
         if len(synapse.weights.shape) == 2:
             self.dims = [2]
 
@@ -120,13 +134,41 @@ class WeightNormalization(Behavior):
         synapse.weights *= self.norm / weights_sum
 
 
+class CurrentNormalization(Behavior):
+    """
+    This Behavior normalize Current in order to assure each destination neuron
+    maximum input current is eight equal to ``norm``. Supporting `Simple`, `Local2d`, 'Conv2d'.
+
+    Args:
+        norm (int): Desired maximum of current for each neuron.
+    """
+
+    def initialize(self, synapse):
+        self.norm = self.parameter("norm", 1)
+        self.dims = [x for x in range(1, len(synapse.weights.shape))]
+        if len(synapse.weights.shape) == 1:
+            self.dims = [0]
+        if len(synapse.weights.shape) == 2:
+            self.dims = [2]
+
+    def forward(self, synapse):
+        weights_sum = synapse.weights.sum(dim=self.dims).view(
+            -1,
+        )
+        weights_sum[weights_sum == 0] = 1
+        normalized = self.norm / weights_sum
+        synapse.I *= normalized.repeat_interleave(
+            synapse.I.numel() // normalized.numel()
+        )
+
+
 class WeightClip(Behavior):
     """
     Clip the synaptic weights in a range.
 
     Args:
-        w_min (float): minimum weight constraint.
-        w_max (float): maximum weight constraint.
+        w_min (float): Minimum weight constraint.
+        w_max (float): Maximum weight constraint.
     """
 
     def initialize(self, synapse):

@@ -1,4 +1,4 @@
-from conex.nn.Config.connection_config import Pop2LayerConnectionConfig
+from conex.nn.config.connection_config import Pop2LayerConnectionConfig
 
 
 class sens_l4(Pop2LayerConnectionConfig):

@@ -1,5 +1,5 @@
 from conex.behaviors.neurons.neuron_types.lif_neurons import ELIF
-from conex.nn.Config.layer_config import LayerConfig
+from conex.nn.config.layer_config import LayerConfig
 from pymonntorch import *
 
 
@@ -17,7 +17,8 @@ class l5(LayerConfig):
     exc_neuron_type = ELIF
     exc_tau_trace = 2.7
     exc_fire = True
-    exc_dendrite_params = {"distal_provocativeness": 0.5}
+    exc_dendrite_structure_params = {"Apical_max_delay": 0}
+    exc_dendrite_computation_params = {"distal_provocativeness": 0.5}
 
     inh_size = (1, 5, 5)
     inh_neuron_params = {
@@ -32,7 +33,8 @@ class l5(LayerConfig):
     inh_neuron_type = ELIF
     inh_tau_trace = 2.7
     inh_fire = True
-    inh_dendrite_params = {"distal_provocativeness": 0.5}
+    inh_dendrite_structure_params = {"Apical_max_delay": 0}
+    inh_dendrite_computation_params = {"distal_provocativeness": 0.5}
 
     exc_exc_weight_init_params = {"mode": "uniform"}
     exc_exc_structure = "Simple"
