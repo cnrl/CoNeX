@@ -160,6 +160,7 @@ class Neocortex(Network):
         L2_3_L4_config=None,
         L5_L5_config=None,
         L5_L6_config=None,
+        connect_type=None,
     ):
         """
         Makes connections between columns in the network.
@@ -170,6 +171,7 @@ class Neocortex(Network):
             L2_3_L4_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L2/3 of a column to L4 of the other with the specified configurations.
             L5_L5_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L5 of a column to L5 of the other with the specified configurations.
             L5_L6_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L6 of a column to L6 of the other with the specified configurations.
+            connect_type (dict): A Dictionary Specifiying connection tag between two possible population.
         """
         synapses = {}
         columns = self.columns if columns is None else columns
@@ -191,6 +193,7 @@ class Neocortex(Network):
                     L2_3_L4_config=L2_3_L4_config().make(),
                     L5_L5_config=L5_L5_config().make(),
                     L5_L6_config=L5_L6_config().make(),
+                    connect_type=connect_type,
                 )
                 synapses.update(syns)
 
@@ -200,6 +203,7 @@ class Neocortex(Network):
                     L2_3_L4_config=L2_3_L4_config().make(),
                     L5_L5_config=L5_L5_config().make(),
                     L5_L6_config=L5_L6_config().make(),
+                    connect_type=connect_type,
                 )
                 synapses.update(syns)
 
@@ -214,6 +218,7 @@ class Neocortex(Network):
         L2_3_L4_config=None,
         L5_L5_config=None,
         L5_L6_config=None,
+        connect_type=None,
     ):
         """
         Makes connections between columns in the network.
@@ -225,6 +230,7 @@ class Neocortex(Network):
             L2_3_L4_config (Layer2LayerConnectionConfig): Adds the forward synaptic connections from L2/3 of a column to L4 of the other with the specified configurations.
             L5_L5_config (Layer2LayerConnectionConfig): Adds the backward synaptic connections from L5 of a column to L5 of the other with the specified configurations.
             L5_L6_config (Layer2LayerConnectionConfig): Adds the forward synaptic connections from L6 of a column to L6 of the other with the specified configurations.
+            connect_type (dict): A Dictionary Specifiying connection tag between two possible population.
         """
         synapses = {}
         columns = self.columns if columns is None else columns
@@ -241,6 +247,7 @@ class Neocortex(Network):
                 col_b,
                 L2_3_L2_3_config=L2_3_L2_3_config().make(),
                 L5_L6_config=L5_L6_config().make(),
+                connect_type=connect_type,
             )
             synapses.update(syns)
             if reciprocal:
@@ -248,13 +255,16 @@ class Neocortex(Network):
                     col_a,
                     L2_3_L4_config=L2_3_L4_config().make(),
                     L5_L5_config=L5_L5_config().make(),
+                    connect_type=connect_type,
                 )
                 synapses.update(syns)
 
         self.inter_column_synapses.extend(list(synapses.values()))
         return synapses
 
-    def connect_columns_forward(self, src, dst, L2_3_L4_config=None, L5_L6_config=None):
+    def connect_columns_forward(
+        self, src, dst, L2_3_L4_config=None, L5_L6_config=None, connect_type=None
+    ):
         """
         Makes forward connections between columns in the network.
 
@@ -263,6 +273,7 @@ class Neocortex(Network):
             dst (list): The list of columns to create connection to.
             L2_3_L4_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L2/3 of a column to L4 of the other with the specified configurations.
             L5_L6_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L6 of a column to L6 of the other with the specified configurations.
+            connect_type (dict): A Dictionary Specifiying connection tag between two possible population.
         """
         synapses = {}
 
@@ -275,6 +286,7 @@ class Neocortex(Network):
                     d,
                     L2_3_L4_config=L2_3_L4_config().make(),
                     L5_L6_config=L5_L6_config().make(),
+                    connect_type=connect_type,
                 )
                 synapses.update(syns)
 
@@ -282,7 +294,7 @@ class Neocortex(Network):
         return synapses
 
     def connect_columns_backward(
-        self, src, dst, L2_3_L2_3_config=None, L5_L5_config=None
+        self, src, dst, L2_3_L2_3_config=None, L5_L5_config=None, connect_type=None
     ):
         """
         Makes forward connections between columns in the network.
@@ -292,6 +304,7 @@ class Neocortex(Network):
             dst (list): The list of columns to create connection to.
             L2_3_L2_3_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L2/3 of a column to L2/3 of the other with the specified configurations.
             L5_L6_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L6 of a column to L6 of the other with the specified configurations.
+            connect_type (dict): A Dictionary Specifiying connection tag between two possible population.
         """
         synapses = {}
 
@@ -306,6 +319,7 @@ class Neocortex(Network):
                     d,
                     L2_3_L2_3_config=L2_3_L2_3_config().make(),
                     L5_L5_config=L5_L5_config().make(),
+                    connect_type=connect_type,
                 )
                 synapses.update(syns)
 
@@ -319,6 +333,7 @@ class Neocortex(Network):
         L2_3_L4_config=None,
         L5_L5_config=None,
         L5_L6_config=None,
+        connect_type=None,
     ):
         """
         Makes lateral connections between columns in the network.
@@ -329,6 +344,7 @@ class Neocortex(Network):
             L2_3_L4_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L2/3 of a column to L4 of the other with the specified configurations.
             L5_L5_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L5 of a column to L5 of the other with the specified configurations.
             L5_L6_config (Layer2LayerConnectionConfig): Adds the synaptic connections from L6 of a column to L6 of the other with the specified configurations.
+            connect_type (dict): A Dictionary Specifiying connection tag between two possible population.
         """
         return self.connect_columns_complete(
             columns=columns,
@@ -336,4 +352,5 @@ class Neocortex(Network):
             L2_3_L4_config=L2_3_L4_config,
             L5_L5_config=L5_L5_config,
             L5_L6_config=L5_L6_config,
+            connect_type=connect_type,
         )

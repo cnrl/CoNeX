@@ -116,7 +116,7 @@ class CorticalColumn(NetworkObject):
             return None
 
     @classmethod
-    def _add_synaptic_connection(cls, src, dst, config):
+    def _add_synaptic_connection(cls, src, dst, config, connect_type=None):
         # src and dst can either be Layer or NeuronGroup
         if src is None or dst is None or not config:
             return {}
@@ -156,9 +156,10 @@ class CorticalColumn(NetworkObject):
                     if hasattr(src, "cortical_column") and hasattr(
                         dst, "cortical_column"
                     ):
-                        connect_type = INTER_COLUMN_CONNECTION_TYPE
-                        if src.cortical_column == dst.cortical_column:
-                            connect_type = INTRA_COLUMN_CONNECTION_TYPE
+                        if connect_type is None:
+                            connect_type = INTER_COLUMN_CONNECTION_TYPE
+                            if src.cortical_column == dst.cortical_column:
+                                connect_type = INTRA_COLUMN_CONNECTION_TYPE
 
                         src_layer_tag = list(
                             {"L2_3", "L4", "L5", "L6"}.intersection(set(src.tags))
@@ -196,6 +197,7 @@ class CorticalColumn(NetworkObject):
         L2_3_L4_config=None,
         L5_L5_config=None,
         L5_L6_config=None,
+        connect_type=None,
     ):
         """
         Makes connections between current cortical column and another one.
@@ -209,6 +211,7 @@ class CorticalColumn(NetworkObject):
             L2_3_L4_config (dict): Adds the synaptic connections from L2/3 of current column to L4 of the other with the specified configurations.
             L5_L5_config (dict): Adds the synaptic connections from L5 of current column to L5 of the other with the specified configurations.
             L6_L6_config (dict): Adds the synaptic connections from L6 of current column to L6 of the other with the specified configurations.
+            connect_type (dict): A Dictionary Specifiying connection tag between two possible population. 
         """
         synapses = {}
         all_empty = True
@@ -216,28 +219,28 @@ class CorticalColumn(NetworkObject):
         if L2_3_L2_3_config:
             tag = self.tags[0] + "_" + "L2_3 => " + cortical_column.tags[0] + "_L2_3"
             synapses[tag] = self._add_synaptic_connection(
-                self.L2_3, cortical_column.L2_3, L2_3_L2_3_config
+                self.L2_3, cortical_column.L2_3, L2_3_L2_3_config, connect_type
             )
             all_empty *= synapses[tag] == {}
 
         if L2_3_L4_config:
             tag = self.tags[0] + "_" + "L2_3 => " + cortical_column.tags[0] + "_L4"
             synapses[tag] = self._add_synaptic_connection(
-                self.L2_3, cortical_column.L4, L2_3_L4_config
+                self.L2_3, cortical_column.L4, L2_3_L4_config, connect_type
             )
             all_empty *= synapses[tag] == {}
 
         if L5_L5_config:
             tag = self.tags[0] + "_" + "L5 => " + cortical_column.tags[0] + "_L5"
             synapses[tag] = self._add_synaptic_connection(
-                self.L5, cortical_column.L5, L5_L5_config
+                self.L5, cortical_column.L5, L5_L5_config, connect_type
             )
             all_empty *= synapses[tag] == {}
 
         if L5_L6_config:
             tag = self.tags[0] + "_" + "L5 => " + cortical_column.tags[0] + "_L6"
             synapses[tag] = self._add_synaptic_connection(
-                self.L5, cortical_column.L6, L5_L6_config
+                self.L5, cortical_column.L6, L5_L6_config, connect_type
             )
             all_empty *= synapses[tag] == {}
 
@@ -249,19 +252,19 @@ class CorticalColumn(NetworkObject):
         return synapses
 
     def connect2output(
-        self, other, L2_3_representation_syn_config=None, L5_motor_syn_config=None
+        self, other, L2_3_representation_syn_config=None, L5_motor_syn_config=None, connect_type=None
     ):
         synapses = {}
         if L2_3_representation_syn_config:
             if hasattr(other, "representation_pop") and hasattr(self, "L2_3"):
                 synapses["L2_3_representation_synapse"] = self._add_synaptic_connection(
-                    self.L2_3, other.representation_pop, L2_3_representation_syn_config
+                    self.L2_3, other.representation_pop, L2_3_representation_syn_config, connect_type
                 )
 
         if L5_motor_syn_config:
             if hasattr(other, "motor_pop") and hasattr(self, "L5"):
                 synapses["L5_motor_synapse"] = self._add_synaptic_connection(
-                    self.L5, other.motor_pop, L5_motor_syn_config
+                    self.L5, other.motor_pop, L5_motor_syn_config, connect_type
                 )
 
         return synapses
