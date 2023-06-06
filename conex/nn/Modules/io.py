@@ -5,11 +5,12 @@ Module of input and output neuronal populations.
 from pymonntorch import NeuronGroup, NetworkObject
 
 from conex.behaviors.neurons.setters import LocationSetter, SensorySetter
+from conex.behaviors.neurons.dendrite import SimpleDendriteStructure
 from conex.behaviors.neurons.axon import NeuronAxon
-from conex.behaviors.neurons.specs import NeuronDendrite, SpikeTrace
-from conex.nn.priorities import NEURON_PRIORITIES, LAYER_PRIORITIES
+from conex.behaviors.neurons.specs import SpikeTrace
 from conex.behaviors.layer.dataset import SpikeNdDataset
 
+from conex.nn.priorities import NEURON_PRIORITIES, LAYER_PRIORITIES
 
 # TODO: Define spike analysis behaviors for output neuron groups
 # TODO: Docstring
@@ -163,10 +164,10 @@ class OutputLayer(NetworkObject):
         motor_size=None,
         representation_trace=None,
         motor_trace=None,
-        representation_dendrite=NeuronDendrite,
-        representation_dendrite_params=None,
-        motor_dendrite=NeuronDendrite,
-        motor_dendrite_params=None,
+        representation_dendrite_structure=SimpleDendriteStructure,
+        representation_dendrite_structure_params=None,
+        motor_dendrite_structure=SimpleDendriteStructure,
+        motor_dendrite_structure_params=None,
         tag=None,
         behavior=None,
         representation_tag=None,
@@ -191,8 +192,8 @@ class OutputLayer(NetworkObject):
                 size=representation_size,
                 tag=representation_tag,
                 trace=representation_trace,
-                dendrite=representation_dendrite,
-                dendrite_params=representation_dendrite_params,
+                dendrite_structure=representation_dendrite_structure,
+                dendrite_structure_params=representation_dendrite_structure_params,
                 user_defined=representation_user_defined,
             )
 
@@ -206,8 +207,8 @@ class OutputLayer(NetworkObject):
                 size=motor_size,
                 tag=motor_tag,
                 trace=motor_trace,
-                denrite=motor_dendrite,
-                dendrite_params=motor_dendrite_params,
+                dendrite_structure=motor_dendrite_structure,
+                dendrite_structure_params=motor_dendrite_structure_params,
                 user_defined=motor_user_defined,
             )
 
@@ -221,15 +222,19 @@ class OutputLayer(NetworkObject):
         size,
         tag,
         trace=None,
-        dendrite=NeuronDendrite,
-        dendrite_params=None,
+        dendrite_structure=SimpleDendriteStructure,
+        dendrite_structure_params=None,
         user_defined=None,
     ):
-        dendrite_params = dendrite_params if dendrite_params is not None else {}
+        dendrite_structure_params = (
+            dendrite_structure_params if dendrite_structure_params is not None else {}
+        )
         behavior = {}
 
-        if dendrite:
-            behavior[NEURON_PRIORITIES["NeuronDendrite"]] = dendrite(**dendrite_params)
+        if dendrite_structure:
+            behavior[NEURON_PRIORITIES["DendriteStructure"]] = dendrite_structure(
+                **dendrite_structure_params
+            )
 
         if trace is not None:
             behavior[NEURON_PRIORITIES["Trace"]] = SpikeTrace(tau_s=trace)

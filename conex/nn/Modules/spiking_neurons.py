@@ -9,7 +9,8 @@ from conex.behaviors.neurons import (
     Fire,
     InherentNoise,
     NeuronAxon,
-    NeuronDendrite,
+    SimpleDendriteStructure,
+    SimpleDendriteComputation,
     SpikeTrace,
 )
 
@@ -33,8 +34,10 @@ class SpikingNeuronGroup(NeuronGroup):
         max_delay (int): Defines the maximum (buffer size of) axonal delay. The default is 1.
         noise_params (dict): If not None, enables inherent noise in membrane potential and specifies its parameters.
         tag (str): The tag(s) of the population. If None, it is set to `"SpikingNeuronGroup{str(len(net.NeuronGroups) + 1)}"`.
-        dendrite (Behavior): Behavior class for dendrite dynamic for neuron group.
-        dendrite_params (dict): Parameters of the NeuronDendrite behavior.
+        dendrite_structure (Behavior): Behavior class for defining the structure of dendrite.
+        dendrite_structure_params (dict): Parameters of the dendrite_structure behavior.
+        dendrite_computation (Behavior): Behavior class for dynamics of a the dendrite structure to compute the current entering the soma.
+        dendrite_computation_params (dict): Parameters of the dendrite_computation behavior.
         neuron_params (dict): Parameters of the specified neuron type.
     """
 
@@ -52,8 +55,10 @@ class SpikingNeuronGroup(NeuronGroup):
         noise_params=None,
         fire=True,
         tag=None,
-        dendrite=NeuronDendrite,
-        dendrite_params=None,
+        dendrite_structure=SimpleDendriteStructure,
+        dendrite_structure_params=None,
+        dendrite_computation=SimpleDendriteComputation,
+        dendrite_computation_params=None,
         user_defined=None,
     ):
         if tag is None and net is not None:
@@ -64,8 +69,25 @@ class SpikingNeuronGroup(NeuronGroup):
 
         behavior = {NEURON_PRIORITIES["NeuronDynamic"]: neuron_type(**neuron_params)}
 
-        if dendrite_params is not None:
-            behavior[NEURON_PRIORITIES["NeuronDendrite"]] = dendrite(**dendrite_params)
+        if dendrite_structure is not None:
+            dendrite_structure_params = (
+                dendrite_structure_params
+                if dendrite_structure_params is not None
+                else {}
+            )
+            behavior[NEURON_PRIORITIES["DendriteStructure"]] = dendrite_structure(
+                **dendrite_structure_params
+            )
+
+        if dendrite_computation is not None:
+            dendrite_computation_params = (
+                dendrite_computation_params
+                if dendrite_computation_params is not None
+                else {}
+            )
+            behavior[NEURON_PRIORITIES["DendriteComputation"]] = dendrite_computation(
+                **dendrite_computation_params
+            )
 
         if kwta is not None:
             behavior[NEURON_PRIORITIES["KWTA"]] = KWTA(k=kwta, dimension=kwta_dim)

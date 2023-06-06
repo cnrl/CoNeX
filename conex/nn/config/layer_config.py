@@ -3,8 +3,11 @@ from collections.abc import Mapping
 
 from pymonntorch import *
 
+from conex.behaviors.neurons.dendrite import (
+    SimpleDendriteStructure,
+    SimpleDendriteComputation,
+)
 from conex.behaviors.neurons.axon import NeuronAxon
-from conex.behaviors.neurons.specs import NeuronDendrite
 from .base_config import *
 
 # TODO: check default valus
@@ -22,8 +25,10 @@ class LayerConfig(BaseConfig):
     exc_noise_params = None
     exc_fire = True
     exc_tag = None
-    exc_dendrite = NeuronDendrite
-    exc_dendrite_params = None
+    exc_dendrite_structure = SimpleDendriteStructure
+    exc_dendrite_structure_params = None
+    exc_dendrite_computation = SimpleDendriteComputation
+    exc_dendrite_computation_params = None
     exc_user_defined_behaviors_class = None
     exc_user_defined_behaviors_params = None
 
@@ -38,8 +43,10 @@ class LayerConfig(BaseConfig):
     inh_noise_params = None
     inh_fire = True
     inh_tag = None
-    inh_dendrite = NeuronDendrite
-    inh_dendrite_params = None
+    inh_dendrite_structure = SimpleDendriteStructure
+    inh_dendrite_computation = SimpleDendriteComputation
+    inh_dendrite_computation_params = None
+    inh_dendrite_structure_params = None
     inh_user_defined_behaviors_class = None
     inh_user_defined_behaviors_params = None
 
@@ -117,8 +124,10 @@ class LayerConfig(BaseConfig):
         noise_params: Union[None, Mapping] = None,
         fire: bool = False,
         tag: Union[None, str] = None,
-        dendrite: Union[None, type[Behavior]] = None,
-        dendrite_params: Union[None, Mapping] = None,
+        dendrite_structure: Union[None, type[Behavior]] = None,
+        dendrite_structure_params: Union[None, Mapping] = None,
+        dendrite_computation: Union[None, type[Behavior]] = None,
+        dendrite_computation_params: Union[None, Mapping] = None,
         user_defined_behaviors_class: Union[None, Mapping[int, type[Behavior]]] = None,
         user_defined_behaviors_params: Union[None, Mapping[int, Mapping]] = None,
     ) -> Mapping:
@@ -154,11 +163,17 @@ class LayerConfig(BaseConfig):
         if tag is not None:
             config["tag"] = tag
 
-        if dendrite is not None:
-            config["dendrite"] = dendrite
+        if dendrite_structure is not None:
+            config["dendrite_structure"] = dendrite_structure
 
-        if dendrite_params is not None:
-            config["dendrite_params"] = dendrite_params
+        if dendrite_structure_params is not None:
+            config["dendrite_structure_params"] = dendrite_structure_params
+
+        if dendrite_computation is not None:
+            config["dendrite_computation"] = dendrite_computation
+
+        if dendrite_computation_params is not None:
+            config["dendrite_computation_params"] = dendrite_computation_params
 
         if user_defined_behaviors_class is not None:
             config["user_defined"] = {}
@@ -251,8 +266,10 @@ class LayerConfig(BaseConfig):
                 self.exc_noise_params,
                 self.exc_fire,
                 self.exc_tag,
-                self.exc_dendrite,
-                self.exc_dendrite_params,
+                self.exc_dendrite_structure,
+                self.exc_dendrite_structure_params,
+                self.exc_dendrite_computation,
+                self.exc_dendrite_computation_params,
                 self.exc_user_defined_behaviors_class,
                 self.exc_user_defined_behaviors_params,
             )
@@ -270,8 +287,10 @@ class LayerConfig(BaseConfig):
                 self.inh_noise_params,
                 self.inh_fire,
                 self.inh_tag,
-                self.inh_dendrite,
-                self.inh_dendrite_params,
+                self.inh_dendrite_structure,
+                self.inh_dendrite_structure_params,
+                self.inh_dendrite_computation,
+                self.inh_dendrite_computation_params,
                 self.inh_user_defined_behaviors_class,
                 self.inh_user_defined_behaviors_params,
             )

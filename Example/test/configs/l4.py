@@ -15,7 +15,8 @@ class l4(LayerConfig):
     exc_neuron_type = LIF
     exc_tau_trace = 2.7
     exc_fire = True
-    exc_dendrite_params = {"distal_provocativeness": 0.5}
+    exc_dendrite_structure_params = {"Apical_max_delay": 0}
+    exc_dendrite_computation_params = {"distal_provocativeness": 0.5}
 
     inh_size = (4, 5, 5)
     inh_neuron_params = {
@@ -30,7 +31,8 @@ class l4(LayerConfig):
     inh_neuron_type = ELIF
     inh_tau_trace = 2.7
     inh_fire = True
-    inh_dendrite_params = {"distal_provocativeness": 0.5}
+    inh_dendrite_structure_params = {"Apical_max_delay": 0}
+    inh_dendrite_computation_params = {"distal_provocativeness": 0.5}
 
     exc_exc_weight_init_params = {"mode": "uniform"}
     exc_exc_structure = "Simple"
