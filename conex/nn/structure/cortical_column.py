@@ -1,7 +1,7 @@
 import warnings
-from conex.nn.Modules.io import OutputLayer
-from conex.nn.Structure.Layers import Layer
-from conex.nn.Modules.topological_connections import StructuredSynapseGroup
+from conex.nn.modules.io import OutputLayer
+from conex.nn.structure.layers import Layer
+from conex.nn.modules.topological_connections import StructuredSynapseGroup
 from conex.nn.connections import (
     INTER_COLUMN_CONNECTION_TYPE,
     INTRA_COLUMN_CONNECTION_TYPE,
