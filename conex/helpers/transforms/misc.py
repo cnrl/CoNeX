@@ -10,6 +10,14 @@ class SqueezeTransform(torch.nn.Module):
         return image.squeeze(dim=self.dim)
 
 
+class SwapTransform(torch.nn.Module):
+    def __init__(self, axis1, axis2):
+        self.axes = (axis1, axis2)
+
+    def __call__(self, image):
+        return image.swapaxes(*self.axes)
+
+
 class DeviceTransform(torch.nn.Module):
     def __init__(self, device):
         self.device = device
