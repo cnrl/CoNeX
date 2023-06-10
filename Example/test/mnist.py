@@ -3,8 +3,8 @@ from pymonntorch import *
 from conex import *
 from conex.nn.priorities import NEURON_PRIORITIES
 
-from conex.helpers.encoders import Poisson
-from conex.helpers.transforms import *
+from conex.helpers.transforms.encoders import Poisson
+from conex.helpers.transforms.misc import *
 
 from torchvision import transforms
 from torchvision.datasets import MNIST

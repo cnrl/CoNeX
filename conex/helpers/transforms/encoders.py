@@ -13,10 +13,17 @@ class Poisson(torch.nn.Module):
         return spike_probability >= random_probability
 
 
-
-
 class Intensity2Latency(torch.nn.Module):
-    def __init__(self, time_window, threshold=None, sparsity=None, min_val=0.0, max_val=1.0, lower_trim=True, higher_trim=True):
+    def __init__(
+        self,
+        time_window,
+        threshold=None,
+        sparsity=None,
+        min_val=0.0,
+        max_val=1.0,
+        lower_trim=True,
+        higher_trim=True,
+    ):
         self.time_window = time_window
         self.threshold = threshold if threshold is not None else min_val
         self.sparsity = sparsity
@@ -25,8 +32,11 @@ class Intensity2Latency(torch.nn.Module):
         self.lower_trim = lower_trim
 
     def __call__(self, img):
-        self.threshold = img.quantile(
-            1 - self.sparsity) if self.sparsity is not None else self.threshold
+        self.threshold = (
+            img.quantile(1 - self.sparsity)
+            if self.sparsity is not None
+            else self.threshold
+        )
         below_index = img < self.threshold
 
         img -= self.interval[0]
@@ -41,15 +51,16 @@ class Intensity2Latency(torch.nn.Module):
         if self.higher_trim and img.max() != 0:
             max_factor = 1 / img.max()
 
-        index = img * max_factor * (self.time_window-1)
+        index = img * max_factor * (self.time_window - 1)
         index = index.ceil().long()
         index += 1
         index[below_index] = 0
         index = index.clamp(0)
         index = index.unsqueeze(0)
 
-        spikes = torch.zeros(self.time_window+1, *img.shape,
-                             dtype=torch.bool, device=img.device)
+        spikes = torch.zeros(
+            self.time_window + 1, *img.shape, dtype=torch.bool, device=img.device
+        )
         spikes.scatter_(0, index, True)
         spikes = spikes[1:]
 
