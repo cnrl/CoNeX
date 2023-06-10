@@ -1,55 +1,123 @@
+import math
 import torch
 import torchvision.transforms.functional as TF
 
+from itertools import product
 
-class Mask:
+
+class GridEraseMask:
     """
-    The input must be an image represented by
-    and torch tensor."""
+    A Transformer that Grids input image and removes only one cell.
+    Adding a new dimension in position for total number of cells.
 
-    def __init__(self, m, n, mode="erase", keep_base_image=True):
-        """
-        Arguments:
-            m(int) : the rows size
-            n(int) : the colemn size
-            mode('erase' or 'crop') : the function to do
-            keep_base_image(True or Flase) : keep the base image at beginning"""
+    Args:
+        m (int): The grid row size.
+        n (int): The grid column size.
+        random (bool): If true, shuffles the order of the masks.
+    """
+
+    def __init__(self, m, n, random=False):
         self.m = m
         self.n = n
-        self.mode = mode
-        self.keep_base_image = keep_base_image
+        self.random = random
 
     def __call__(self, img):
-        _, w, h = img.shape
-        cell_size_w = w // self.n
-        cell_size_h = h // self.m
-        collection = img
+        _, h, w = img.shape
+        w_grid = math.ceil(w / self.n)
+        h_grid = math.ceil(h / self.m)
 
-        for i in range(self.n):
-            for j in range(self.m):
-                box = (
-                    i * cell_size_w,
-                    j * cell_size_h,
-                    (i + 1) * cell_size_w,
-                    (j + 1) * cell_size_h,
-                )
+        result = []
+        location = torch.ones(
+            self.m * self.n, self.m, self.n, dtype=torch.bool, device=img.device
+        )
+        for index, ij in enumerate(product(range(self.m), range(self.n))):
+            i, j = ij
+            result.append(TF.erase(img, i * h_grid, j * w_grid, h_grid, w_grid, v=0))
+            location[index, ij[0], ij[1]] = False
 
-                if self.mode == "erase":
-                    mask = TF.erase(
-                        img,
-                        i=j * cell_size_h,
-                        j=i * cell_size_w,
-                        w=cell_size_w,
-                        h=cell_size_h,
-                        v=0,
-                    )
-                    collection = torch.cat((collection, mask), 0)
+        result = torch.stack(result)
+        if self.random:
+            indices = torch.randperm(result.size(0), device=result.device)
+            location = location[indices]
+            result = result[indices]
+        return result, location
 
-                elif self.mode == "crop":
-                    mask = TF.to_pil_image(torch.zeros_like(img))
-                    mask.paste(TF.to_pil_image(img).crop(box), box)
-                    collection = torch.cat((collection, TF.to_tensor(mask)), 0)
 
-        if not self.keep_base_image:
-            collection = collection[3:]
-        return collection
+class GridKeepMask:
+    """
+    A Transformer that Grids input image and removes alls but only one cell.
+    Adding a new dimension in position for total number of cells.
+
+    Args:
+        m (int): The grid row size.
+        n (int): The grid column size.
+        random (bool): If true, shuffles the order of the masks.
+    """
+
+    def __init__(self, m, n, random=False):
+        self.m = m
+        self.n = n
+        self.random = random
+
+    def __call__(self, img):
+        _, h, w = img.shape
+        w_grid = math.ceil(w / self.n)
+        h_grid = math.ceil(h / self.m)
+
+        result = []
+        location = torch.zeros(
+            self.m * self.n, self.m, self.n, dtype=torch.bool, device=img.device
+        )
+        for index, ij in enumerate(product(range(self.m), range(self.n))):
+            i, j = ij
+            bg = torch.zeros_like(img)
+            bg[:, i * h_grid : (i + 1) * h_grid, j * w_grid : (j + 1) * w_grid] = img[
+                :, i * h_grid : (i + 1) * h_grid, j * w_grid : (j + 1) * w_grid
+            ]
+            result.append(bg)
+            location[index, ij[0], ij[1]] = True
+
+        result = torch.stack(result)
+        if self.random:
+            indices = torch.randperm(result.size(0), device=result.device)
+            location = location[indices]
+            result = result[indices]
+        return result, location
+
+
+class GridCropMask:
+    """
+    A Transformer that Grids input image and crops to one cell.
+    Adding a new dimension in position for total number of cells.
+
+    Args:
+        m (int): The grid row size.
+        n (int): The grid column size.
+        random (bool): If true, shuffles the order of the masks.
+    """
+
+    def __init__(self, m, n, random=False):
+        self.m = m
+        self.n = n
+        self.random = random
+
+    def __call__(self, img):
+        _, h, w = img.shape
+        w_grid = math.ceil(w / self.n)
+        h_grid = math.ceil(h / self.m)
+
+        result = []
+        location = torch.zeros(
+            self.m * self.n, self.m, self.n, dtype=torch.bool, device=img.device
+        )
+        for index, ij in enumerate(product(range(self.m), range(self.n))):
+            i, j = ij
+            result.append(TF.crop(img, i * h_grid, j * w_grid, h_grid, w_grid))
+            location[index, ij[0], ij[1]] = True
+
+        result = torch.stack(result)
+        if self.random:
+            indices = torch.randperm(result.size(0), device=result.device)
+            location = location[indices]
+            result = result[indices]
+        return result, location
