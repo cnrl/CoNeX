@@ -12,6 +12,7 @@ class LocationDataset(Dataset):
         location_transform (Transform): A Transformation applies on location data. Suitable for encodings.
         target_transform (Transform): A Transformation applies on labels.
     """
+
     def __init__(
         self,
         dataset,
@@ -29,7 +30,7 @@ class LocationDataset(Dataset):
     def __len__(self):
         return len(self.dataset)
 
-    def __call__(self, idx):
+    def __getitem__(self, idx):
         image, label = self.dataset[idx]
         location = None
         if self.pre_transform:

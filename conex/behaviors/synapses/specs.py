@@ -98,6 +98,8 @@ class WeightInitializer(Behavior):
 
     def initialize(self, synapse):
         init_mode = self.parameter("mode", None)
+        scale = self.parameter("scale", 1)
+        offset = self.parameter("offset", 0)
         synapse.weights = self.parameter("weights", None)
         synapse.weight_shape = self.parameter("weight_shape", None)
         synapse.kernel_shape = self.parameter("kernel_shape", None)
@@ -109,6 +111,8 @@ class WeightInitializer(Behavior):
                 synapse.weights = synapse.tensor(
                     mode=init_mode, dim=synapse.weight_shape
                 )
+
+            synapse.weights = synapse.weights * scale + offset
 
 
 class WeightNormalization(Behavior):
