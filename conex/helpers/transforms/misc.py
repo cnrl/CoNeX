@@ -42,3 +42,15 @@ class Conv2dFilter(torch.nn.Module):
 
     def __call__(self, image):
         return F.conv2d(image, self.filters, stride=self.stride, padding=self.padding)
+
+
+class AbsoluteTransform(torch.nn.Module):
+    def __call__(self, image):
+        return torch.abs(image)
+
+
+class DivideSignPolarity(torch.nn.Module):
+    def __call__(self, image):
+        p_image = image * (image > 0)
+        n_image = -image * (image < 0)
+        return torch.cat([p_image, n_image], axis=0)
