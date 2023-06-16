@@ -2,6 +2,16 @@ import torch
 
 
 class Poisson(torch.nn.Module):
+    """
+    Simple Poisson encoding.
+    Input values should be between 0 and 1. Spike rate is increased linearly with regard to the values.
+    This transformer uses regular random generator provided for `torch.rand`.
+
+    Args:
+        time_window (int): The interval of the coding.
+        ratio (float): A scale factor for probability of spiking.
+    """
+
     def __init__(self, time_window, ratio):
         self.time_window = time_window
         self.ratio = ratio
@@ -14,6 +24,20 @@ class Poisson(torch.nn.Module):
 
 
 class Intensity2Latency(torch.nn.Module):
+    """
+    Intensity to latency encoding.
+    Stronger values spikes sooner.
+
+    Args:
+        time_windows (int): The interval of the coding.
+        threshold (float): If not None, values lower than threshold will not spike.
+        sparsity (float): If not None, defines a threshold for each input based on sparsity.
+        min_val (float): Minimum possible value of input. The default is 0.0.
+        max_val (float): Maximum possible value of input. The default is 1.0.
+        lower_trim (bool): If True, spikes are transformed in order to have the last spike on the end of the interval. The default is True.
+        higher_trim (bool): If True, spikes are transformed in order to have the first spike on the first of the interval. The default is True.
+    """
+
     def __init__(
         self,
         time_window,

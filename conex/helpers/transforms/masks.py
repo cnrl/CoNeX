@@ -7,8 +7,9 @@ from itertools import product
 
 class GridEraseMask:
     """
-    A Transformer that Grids input image and removes only one cell.
+    A Transformer that Grids input and removes only one cell.
     Adding a new dimension in position for total number of cells.
+    Inputs should have channel at first index.
 
     Args:
         m (int): The grid row size.
@@ -45,8 +46,9 @@ class GridEraseMask:
 
 class GridKeepMask:
     """
-    A Transformer that Grids input image and removes alls but only one cell.
+    A Transformer that Grids input and removes alls but only one cell.
     Adding a new dimension in position for total number of cells.
+    Inputs should have channel at first index.
 
     Args:
         m (int): The grid row size.
@@ -87,8 +89,9 @@ class GridKeepMask:
 
 class GridCropMask:
     """
-    A Transformer that Grids input image and crops to one cell.
+    A Transformer that Grids input and crops to one cell.
     Adding a new dimension in position for total number of cells.
+    Inputs should have channel at first index.
 
     Args:
         m (int): The grid row size.

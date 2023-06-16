@@ -5,13 +5,28 @@ def DoGFilter(
     size,
     sigma_1,
     sigma_2,
-    step=None,
+    step=1.0,
     zero_mean=False,
     one_sum=False,
     device=None,
     dtype=None,
 ):
-    step = 1 if step is None else step
+    """Difference of Gaussians.
+    Makes a square mono-colored DoG filter.
+
+    Args:
+        size (int): Filter size.
+        sigma_1 (float): First standard deviation.
+        sigma_2 (float): Second standard deviation.
+        step (float, optional): Scaling factor for axes. Defaults to 1.0.
+        zero_mean (bool, optional): Whether to scale negative values in order to have zero mean. Defaults to False.
+        one_sum (bool, optional): Whether to divide values in order to have maximum possible dot product equal to one. Defaults to False.
+        device (str, optional): Device to locate filter on. Defaults to None.
+        dtype (dtype, optional): Datatype of desired filter. Defaults to None.
+
+    Returns:
+        tensor: the desired DoG filter
+    """
     scale = (size - 1) / 2
 
     v_range = torch.arange(-scale, scale + step, step, dtype=dtype, device=device)
@@ -43,13 +58,31 @@ def GaborFilter(
     theta,
     sigma,
     gamma,
-    step=None,
+    step=1.0,
     zero_mean=False,
     one_sum=False,
     device=None,
     dtype=None,
 ):
-    step = 1 if step is None else step
+    """Gabor filter
+    Makes a square mono-colored Gabor filter.
+
+    Args:
+        size (int): Filter size.
+        labda (float): The wavelength of the filter.
+        theta (float): The orientation of the filter.
+        sigma (float): The standard deviation of the filter.
+        gamma (float): The aspect ratio for the filter.
+        step (float, optional): Scaling factor for axes. Defaults to 1.0.
+        zero_mean (bool, optional): Whether to scale negative values in order to have zero mean. Defaults to False.
+        one_sum (bool, optional): Whether to divide values in order to have maximum possible dot product equal to one. Defaults to False.
+        device (str, optional): Device to locate filter on. Defaults to None.
+        dtype (dtype, optional): Datatype of desired filter. Defaults to None.
+
+    Returns:
+        tensor: the desired Gabor filter
+    """
+
     scale = (size - 1) / 2
 
     v_range = torch.arange(-scale, scale + step, step, dtype=dtype, device=device)
