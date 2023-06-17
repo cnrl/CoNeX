@@ -3,8 +3,8 @@ Implementation of Cortical layers.
 """
 
 import warnings
-from conex.nn.Modules.spiking_neurons import SpikingNeuronGroup
-from conex.nn.Modules.topological_connections import StructuredSynapseGroup
+from conex.nn.modules.spiking_neurons import SpikingNeuronGroup
+from conex.nn.modules.topological_connections import StructuredSynapseGroup
 from conex.nn.connections import LAYER_CONNECTION_TYPE
 from pymonntorch import NetworkObject
 

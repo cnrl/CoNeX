@@ -1,3 +1,5 @@
+import torch
+
 """
 Behaviors to load datasets 
 """
@@ -17,6 +19,8 @@ class SpikeNdDataset(Behavior):
         have_location (bool): Whether dataloader returns location input.
         have_sensory (bool): Whether dataloader returns sensory input.
         have_label (bool): Whether dataloader returns label of input.
+        silent_interval (int): The interval of silent activity between two different input.
+        instance_duration (int): The duration of each instance of input with same target value.
         loop (bool): If True, dataloader repeats.
     """
 
@@ -27,10 +31,14 @@ class SpikeNdDataset(Behavior):
         self.have_location = self.parameter("have_location", False)
         self.have_sensory = self.parameter("have_sensory", True)
         self.have_label = self.parameter("have_label", True)
+        self.silent_interval = self.parameter("silent_interval", 0)
+        self.each_instance = self.parameter("instance_duration", 0, required=True)
         self.loop = self.parameter("loop", True)
 
         self.data_generator = self._get_data()
         self.device = layer.device
+        self.new_data = False
+        self.silent_iteration = 0
 
     def _get_data(self):
         while self.loop:
@@ -59,13 +67,39 @@ class SpikeNdDataset(Behavior):
 
                 if batch_y is not None:
                     batch_y = batch_y.to(self.device)
-                    each_instance = num_instance // torch.numel(batch_y)
+                    self.each_instance = num_instance // torch.numel(batch_y)
 
                 for i in range(num_instance):
                     x = batch_x[i].view((-1,)) if batch_x is not None else None
                     loc = batch_loc[i].view((-1,)) if batch_loc is not None else None
-                    y = batch_y[i // each_instance] if batch_y is not None else None
+                    y = (
+                        batch_y[i // self.each_instance]
+                        if batch_y is not None
+                        else None
+                    )
+                    if i % self.each_instance == self.each_instance - 1:
+                        self.new_data = True
                     yield x, loc, y
 
     def forward(self, layer):
+        if self.silent_interval and self.new_data:
+            if self.silent_iteration == 0:
+                layer.x = (
+                    layer.tensor(mode="zeros", dtype=torch.bool, dim=layer.x.shape)
+                    if layer.x is not None
+                    else None
+                )
+                layer.loc = (
+                    layer.tensor(mode="zeros", dtype=torch.bool, dim=layer.loc.shape)
+                    if layer.loc is not None
+                    else None
+                )
+
+            self.silent_iteration += 1
+
+            if self.silent_iteration == self.silent_interval:
+                self.new_data = False
+                self.silent_iteration = 0
+            return
+
         layer.x, layer.loc, layer.y = next(self.data_generator)

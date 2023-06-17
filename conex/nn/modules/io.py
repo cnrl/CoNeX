@@ -30,6 +30,8 @@ class InputLayer(NetworkObject):
         sensory_axon_params=None,
         location_axon=NeuronAxon,
         location_axon_params=None,
+        silent_interval=0,
+        instance_duration=0,
         sensory_trace=None,
         location_trace=None,
         sensory_data_dim=2,
@@ -51,6 +53,8 @@ class InputLayer(NetworkObject):
                 have_location=have_location,
                 have_sensory=have_sensory,
                 have_label=have_label,
+                silent_interval=silent_interval,
+                instance_duration=instance_duration,
             )
 
         super().__init__(tag=tag, network=net, behavior=behavior, device=net.device)
