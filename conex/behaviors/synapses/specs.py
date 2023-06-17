@@ -91,6 +91,9 @@ class WeightInitializer(Behavior):
         mode (str or number): string should be torch functions that fills a tensor like:
                               "random", "normal", "zeros", "ones", ... .
                               In number case the synapse weights will be filled with that number.
+        scale (float): Scaling factor to apply on the weight.
+        offset (float): An offset to add to the weight.
+        function (callable): A function to apply on weight.
         weights (tensor): Optional parameter to specify the weights matrix directly.
         weight_shape (tuple): Optional parameter to specify the shape of the weights matrix.
         kernel_shape (tuple): Optional parameter to specify the shape of the kernel.
@@ -100,17 +103,19 @@ class WeightInitializer(Behavior):
         init_mode = self.parameter("mode", None)
         scale = self.parameter("scale", 1)
         offset = self.parameter("offset", 0)
+        function = self.parameter("function", None)
+        weight_shape = self.parameter("weight_shape", None)
         synapse.weights = self.parameter("weights", None)
-        synapse.weight_shape = self.parameter("weight_shape", None)
         synapse.kernel_shape = self.parameter("kernel_shape", None)
 
         if init_mode is not None and synapse.weights is None:
-            if synapse.weight_shape is None:
+            if weight_shape is None:
                 synapse.weights = synapse.matrix(mode=init_mode)
             else:
-                synapse.weights = synapse.tensor(
-                    mode=init_mode, dim=synapse.weight_shape
-                )
+                synapse.weights = synapse.tensor(mode=init_mode, dim=weight_shape)
+
+            if function is not None:
+                synapse.weights = function(synapse.weights)
 
             synapse.weights = synapse.weights * scale + offset
 

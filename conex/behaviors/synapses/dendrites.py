@@ -13,7 +13,7 @@ import torch.nn.functional as F
 
 class SimpleDendriticInput(Behavior):
     """
-    Base dendrite behavior. It checks for excitatory/inhibitory attributes
+    Fully connected dendrite behavior. It checks for excitatory/inhibitory attributes
     of pre-synaptic neurons and sets a coefficient, accordingly.
 
     Note: weights must be initialize by others behaviors.
@@ -40,11 +40,7 @@ class SimpleDendriticInput(Behavior):
             -1 if ("GABA" in synapse.src.tags) or ("inh" in synapse.src.tags) else 1
         )
 
-        self.def_dtype = (
-            torch.float32
-            if not hasattr(synapse.network, "def_dtype")
-            else synapse.network.def_dtype
-        )
+        self.def_dtype = synapse.def_dtype
 
         synapse.I = synapse.dst.vector(0)
 
@@ -64,13 +60,64 @@ class SimpleDendriticInput(Behavior):
         )
 
 
-class Conv2dDendriticInput(SimpleDendriticInput):
+class LateralDendriticInput(SimpleDendriticInput):
     """
-    2D convolutional dendrite behavior.
+    Lateral dendrite behavior.
 
-    Note: Weight shape = (out_channel, in_channel, kernel_height, kernel_width)
+    Note: Weight shape = (1, 1, 1, kernel_height, kernel_width) for 2D connection.
+          weight shape = (1, 1, kernel_depth, kernel_height, kernel_width) for for 3D connection.
+          weights must be initialize by others behaviors.
+          Also, Axon paradigm should be added to the neurons.
+          Connection type (Proximal, Distal, Apical) should be specified by the tag
+          of the synapse. and Dendrite behavior of the neurons group should access the
+          `I` of each synapse to apply them.
 
     Args:
+        current_coef (float): scalar coefficient that multiplies weights.
+        inhibitory (bool or None): If None, connection type respect the NeuronGroup type. if True, the effect in inhibitory and False is excitatory.
+    """
+
+    def initialize(self, synapse):
+        super().initialize(synapse)
+        ctype = self.parameter("inhibitory", None)
+
+        have_padding = [not i == 1 for i in synapse.weights.shape[2:]]
+        self.padding = tuple(
+            have_padding[i] * ((synapse.weights.shape[i + 2] - 1) // 2)
+            for i in range(len(have_padding))
+        )
+        if ctype is not None:
+            self.current_type = float(not (ctype))
+        if synapse.src != synapse.dst:
+            raise RuntimeError(
+                f"For lateral connection src and dst neuron group should be same"
+            )
+
+    def calculate_input(self, synapse):
+        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay).to(
+            self.def_dtype
+        )
+        spikes = spikes.view(1, *synapse.src_shape)
+
+        I = F.conv3d(input=spikes, weight=synapse.weights, padding=self.padding)
+
+        return I.view((-1,))
+
+
+class Conv2dDendriticInput(SimpleDendriticInput):
+    """
+    2D convolutional dendrite behavior. It checks for excitatory/inhibitory attributes
+    of pre-synaptic neurons and sets a coefficient, accordingly.
+
+    Note: Weight shape = (out_channel, in_channel, kernel_height, kernel_width)
+          weights must be initialize by others behaviors.
+          Also, Axon paradigm should be added to the neurons.
+          Connection type (Proximal, Distal, Apical) should be specified by the tag
+          of the synapse. and Dendrite behavior of the neurons group should access the
+          `I` of each synapse to apply them.
+
+    Args:
+        current_coef (float): scalar coefficient that multiplies weights.
         stride (int): stride of the convolution. The default is 1.
         padding (int): padding added to both sides of the input. The default is 0.
     """
@@ -104,11 +151,22 @@ class Conv2dDendriticInput(SimpleDendriticInput):
 
 class Local2dDendriticInput(Conv2dDendriticInput):
     """
-    2D local dendrite behavior.
+    2D local dendrite behavior. It checks for excitatory/inhibitory attributes
+    of pre-synaptic neurons and sets a coefficient, accordingly.
 
-    Note: Weight shape = (out_channel, out_size, connection_size)
-                    out_size = out_height * out_width,
-                    connection_size = input_channel * connection_height * connection_width
+    Note: Weight shape = (out_channel, out_size, connection_size);
+          where out_size = out_height * out_width,
+          and connection_size = input_channel * connection_height * connection_width.
+          weights must be initialize by others behaviors.
+          Also, Axon paradigm should be added to the neurons.
+          Connection type (Proximal, Distal, Apical) should be specified by the tag
+          of the synapse. and Dendrite behavior of the neurons group should access the
+          `I` of each synapse to apply them.
+
+    Args:
+        current_coef (float): scalar coefficient that multiplies weights.
+        stride (int): stride of the convolution. The default is 1.
+        padding (int): padding added to both sides of the input. The default is 0.
     """
 
     def calculate_input(self, synapse):
