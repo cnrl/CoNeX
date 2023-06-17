@@ -67,6 +67,7 @@ input_layer = InputLayer(
         depth=1, height=SENSORY_SIZE_HEIGHT, width=SENSORY_SIZE_WIDTH
     ),
     sensory_trace=SENSORY_TRACE_TAU_S,
+    instance_duration=POISSON_TIME,
 )
 
 #############################
