@@ -23,7 +23,7 @@ class SimpleDendriticInput(Behavior):
           `I` of each synapse to apply them.
 
     Args:
-        current_coef (float): scalar coefficient that multiplies weights.
+        current_coef (float): Scalar coefficient that multiplies weights.
     """
 
     def initialize(self, synapse):
@@ -73,7 +73,7 @@ class LateralDendriticInput(SimpleDendriticInput):
           `I` of each synapse to apply them.
 
     Args:
-        current_coef (float): scalar coefficient that multiplies weights.
+        current_coef (float): Scalar coefficient that multiplies weights.
         inhibitory (bool or None): If None, connection type respect the NeuronGroup type. if True, the effect in inhibitory and False is excitatory.
     """
 
@@ -81,11 +81,7 @@ class LateralDendriticInput(SimpleDendriticInput):
         super().initialize(synapse)
         ctype = self.parameter("inhibitory", None)
 
-        have_padding = [not i == 1 for i in synapse.weights.shape[2:]]
-        self.padding = tuple(
-            have_padding[i] * ((synapse.weights.shape[i + 2] - 1) // 2)
-            for i in range(len(have_padding))
-        )
+        self.padding = tuple(((synapse.weights.shape[i] - 1) // 2) for i in range(2, 5))
         if ctype is not None:
             self.current_type = float(not (ctype))
         if synapse.src != synapse.dst:
@@ -117,9 +113,9 @@ class Conv2dDendriticInput(SimpleDendriticInput):
           `I` of each synapse to apply them.
 
     Args:
-        current_coef (float): scalar coefficient that multiplies weights.
-        stride (int): stride of the convolution. The default is 1.
-        padding (int): padding added to both sides of the input. The default is 0.
+        current_coef (float): Scalar coefficient that multiplies weights.
+        stride (int): Stride of the convolution. The default is 1.
+        padding (int): Padding added to both sides of the input. The default is 0.
     """
 
     def initialize(self, synapse):
@@ -164,9 +160,9 @@ class Local2dDendriticInput(Conv2dDendriticInput):
           `I` of each synapse to apply them.
 
     Args:
-        current_coef (float): scalar coefficient that multiplies weights.
-        stride (int): stride of the convolution. The default is 1.
-        padding (int): padding added to both sides of the input. The default is 0.
+        current_coef (float): Scalar coefficient that multiplies weights.
+        stride (int): Stride of the convolution. The default is 1.
+        padding (int): Padding added to both sides of the input. The default is 0.
     """
 
     def calculate_input(self, synapse):
