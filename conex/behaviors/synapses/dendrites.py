@@ -83,10 +83,16 @@ class LateralDendriticInput(SimpleDendriticInput):
 
         self.padding = tuple(((synapse.weights.shape[i] - 1) // 2) for i in range(2, 5))
         if ctype is not None:
-            self.current_type = float(not (ctype))
+            self.current_type = float(not (ctype)) * -2 + 1
+
         if synapse.src != synapse.dst:
             raise RuntimeError(
                 f"For lateral connection src and dst neuron group should be same"
+            )
+
+        if not synapse.weights.numel() % 2:
+            raise RuntimeError(
+                f"For lateral connection weight should not have any even size dimension. {synapse.weights.shape}"
             )
 
     def calculate_input(self, synapse):
@@ -96,7 +102,6 @@ class LateralDendriticInput(SimpleDendriticInput):
         spikes = spikes.view(1, *synapse.src_shape)
 
         I = F.conv3d(input=spikes, weight=synapse.weights, padding=self.padding)
-
         return I.view((-1,))
 
 
