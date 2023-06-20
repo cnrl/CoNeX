@@ -135,7 +135,7 @@ class WeightNormalization(Behavior):
         if len(synapse.weights.shape) == 1:
             self.dims = [0]
         if len(synapse.weights.shape) == 2:
-            self.dims = [2]
+            self.dims = [0]
 
     def forward(self, synapse):
         weights_sum = synapse.weights.sum(dim=self.dims, keepdim=True)
@@ -158,7 +158,7 @@ class CurrentNormalization(Behavior):
         if len(synapse.weights.shape) == 1:
             self.dims = [0]
         if len(synapse.weights.shape) == 2:
-            self.dims = [2]
+            self.dims = [0]
 
     def forward(self, synapse):
         weights_sum = synapse.weights.sum(dim=self.dims).view(
