@@ -6,15 +6,16 @@ from pymonntorch import Behavior
 import torch
 import torch.nn.functional as F
 
+
 # TODO not priming neurons with over threshold potential.
 # TODO lower than threshold nonPriming
 # TODO Priming inhibitory neurons???? by inhibitory neurons
 
 
-class SimpleDendriticInput(Behavior):
+class BaseDendriticInput(Behavior):
     """
-    Base dendrite behavior. It checks for excitatory/inhibitory attributes
-    of pre-synaptic neurons and sets a coefficient, accordingly.
+    Base behavior for turning pre-synaptic spikes to post-synaptic current. It checks for excitatory/inhibitory attributes
+    of pre-synaptic neurons and sets a coefficient accordingly.
 
     Note: weights must be initialize by others behaviors.
           Also, Axon paradigm should be added to the neurons.
@@ -23,7 +24,7 @@ class SimpleDendriticInput(Behavior):
           `I` of each synapse to apply them.
 
     Args:
-        current_coef (float): scalar coefficient that multiplies weights.
+        current_coef (float): Scalar coefficient that multiplies weights.
     """
 
     def initialize(self, synapse):
@@ -40,23 +41,11 @@ class SimpleDendriticInput(Behavior):
             -1 if ("GABA" in synapse.src.tags) or ("inh" in synapse.src.tags) else 1
         )
 
-        self.def_dtype = (
-            torch.float32
-            if not hasattr(synapse.network, "def_dtype")
-            else synapse.network.def_dtype
-        )
-
+        self.def_dtype = synapse.def_dtype
         synapse.I = synapse.dst.vector(0)
 
-        if (
-            not synapse.network.transposed_synapse_matrix_mode
-            and self.__class__.__name__ == "SimpleDendriticInput"
-        ):
-            raise RuntimeError(f"Network should've made with SxD mode for synapses")
-
     def calculate_input(self, synapse):
-        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay)
-        return torch.sum(synapse.weights[spikes], axis=0)
+        ...
 
     def forward(self, synapse):
         synapse.I = (
@@ -64,15 +53,92 @@ class SimpleDendriticInput(Behavior):
         )
 
 
-class Conv2dDendriticInput(SimpleDendriticInput):
+class SimpleDendriticInput(BaseDendriticInput):
     """
-    2D convolutional dendrite behavior.
+    Fully connected dendrite behavior. It checks for excitatory/inhibitory attributes
+    of pre-synaptic neurons and sets a coefficient, accordingly.
 
-    Note: Weight shape = (out_channel, in_channel, kernel_height, kernel_width)
+    Note: weights must be initialize by others behaviors.
+          Also, Axon paradigm should be added to the neurons.
+          Connection type (Proximal, Distal, Apical) should be specified by the tag
+          of the synapse. and Dendrite behavior of the neurons group should access the
+          `I` of each synapse to apply them.
 
     Args:
-        stride (int): stride of the convolution. The default is 1.
-        padding (int): padding added to both sides of the input. The default is 0.
+        current_coef (float): Scalar coefficient that multiplies weights.
+    """
+
+    def initialize(self, synapse):
+        super().initialize(synapse)
+
+        if not synapse.network.transposed_synapse_matrix_mode:
+            raise RuntimeError(f"Network should've made with SxD mode for synapses")
+
+    def calculate_input(self, synapse):
+        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay)
+        return torch.sum(synapse.weights[spikes], axis=0)
+
+
+class LateralDendriticInput(BaseDendriticInput):
+    """
+    Lateral dendrite behavior.
+
+    Note: weight shape = (1, 1, kernel_depth, kernel_height, kernel_width)
+          weights must be initialize by others behaviors.
+          Also, Axon paradigm should be added to the neurons.
+          Connection type (Proximal, Distal, Apical) should be specified by the tag
+          of the synapse. and Dendrite behavior of the neurons group should access the
+          `I` of each synapse to apply them.
+
+    Args:
+        current_coef (float): Scalar coefficient that multiplies weights.
+        inhibitory (bool or None): If None, connection type respect the NeuronGroup type. if True, the effect in inhibitory and False is excitatory.
+    """
+
+    def initialize(self, synapse):
+        super().initialize(synapse)
+        ctype = self.parameter("inhibitory", None)
+
+        self.padding = tuple(((synapse.weights.shape[i] - 1) // 2) for i in range(2, 5))
+        if ctype is not None:
+            self.current_type = ctype * -2 + 1
+
+        if synapse.src != synapse.dst:
+            raise RuntimeError(
+                f"Synapse {synapse.src.tags[0]}=>{synapse.dst.tags[0]}: For lateral connection src and dst neuron group should be same"
+            )
+
+        if not synapse.weights.numel() % 2:
+            raise RuntimeError(
+                f"Synapse {synapse.src.tags[0]}=>{synapse.dst.tags[0]}: For lateral connection weight should not have any even size dimension. {synapse.weights.shape}"
+            )
+
+    def calculate_input(self, synapse):
+        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay).to(
+            self.def_dtype
+        )
+        spikes = spikes.view(1, *synapse.src_shape)
+
+        I = F.conv3d(input=spikes, weight=synapse.weights, padding=self.padding)
+        return I.view((-1,))
+
+
+class Conv2dDendriticInput(BaseDendriticInput):
+    """
+    2D convolutional dendrite behavior. It checks for excitatory/inhibitory attributes
+    of pre-synaptic neurons and sets a coefficient, accordingly.
+
+    Note: Weight shape = (out_channel, in_channel, kernel_height, kernel_width)
+          weights must be initialize by others behaviors.
+          Also, Axon paradigm should be added to the neurons.
+          Connection type (Proximal, Distal, Apical) should be specified by the tag
+          of the synapse. and Dendrite behavior of the neurons group should access the
+          `I` of each synapse to apply them.
+
+    Args:
+        current_coef (float): Scalar coefficient that multiplies weights.
+        stride (int): Stride of the convolution. The default is 1.
+        padding (int): Padding added to both sides of the input. The default is 0.
     """
 
     def initialize(self, synapse):
@@ -80,6 +146,57 @@ class Conv2dDendriticInput(SimpleDendriticInput):
 
         synapse.stride = self.parameter("stride", 1)
         synapse.padding = self.parameter("padding", 0)
+
+        padding = (
+            synapse.padding
+            if isinstance(synapse.padding, tuple)
+            else (synapse.padding, synapse.padding)
+        )
+        stride = (
+            synapse.stride
+            if isinstance(synapse.stride, tuple)
+            else (synapse.stride, synapse.stride)
+        )
+
+        if synapse.src.depth != synapse.weights.size(1):
+            raise RuntimeError(
+                f"Synapse {synapse.src.tags[0]}=>{synapse.dst.tags[0]}: Convolution's weight input channel size({synapse.weights.size(1)}) should be same as the depht of source neurongroup ({synapse.src.tags[0]}: {synapse.src.depth})."
+            )
+
+        if synapse.dst.depth != synapse.weights.size(0):
+            raise RuntimeError(
+                f"Synapse {synapse.src.tags[0]}=>{synapse.dst.tags[0]}: Convolution's weight output channel size({synapse.weights.size(0)}) should be same as the depht of destination neurongroup ({synapse.dst.tags[0]}: {synapse.dst.depth})."
+            )
+
+        if not (
+            synapse.dst.height
+            <= (
+                (
+                    (synapse.src.height + 2 * padding[0] - synapse.weights.size(2))
+                    / stride[0]
+                )
+                + 1
+            )
+            < synapse.dst.height + 1
+        ):
+            raise RuntimeError(
+                f"Synapse {synapse.src.tags[0]}=>{synapse.dst.tags[0]}: Convolution's height size is not constistent."
+            )
+
+        if not (
+            synapse.dst.width
+            <= (
+                (
+                    (synapse.src.width + 2 * padding[1] - synapse.weights.size(3))
+                    / stride[1]
+                )
+                + 1
+            )
+            < synapse.dst.width + 1
+        ):
+            raise RuntimeError(
+                f"Synapse {synapse.src.tags[0]}=>{synapse.dst.tags[0]}: Convolution's width size is not constistent."
+            )
 
     def calculate_input(self, synapse):
         spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay).to(
@@ -102,14 +219,101 @@ class Conv2dDendriticInput(SimpleDendriticInput):
         return I.view((-1,))
 
 
-class Local2dDendriticInput(Conv2dDendriticInput):
+class Local2dDendriticInput(BaseDendriticInput):
     """
-    2D local dendrite behavior.
+    2D local dendrite behavior. It checks for excitatory/inhibitory attributes
+    of pre-synaptic neurons and sets a coefficient, accordingly.
 
-    Note: Weight shape = (out_channel, out_size, connection_size)
-                    out_size = out_height * out_width,
-                    connection_size = input_channel * connection_height * connection_width
+    Note: Weight shape = (out_channel, out_size, connection_size);
+          where out_size = out_height * out_width,
+          and connection_size = input_channel * connection_height * connection_width.
+          weights must be initialize by others behaviors.
+          Also, Axon paradigm should be added to the neurons.
+          Connection type (Proximal, Distal, Apical) should be specified by the tag
+          of the synapse. and Dendrite behavior of the neurons group should access the
+          `I` of each synapse to apply them.
+
+    Args:
+        current_coef (float): Scalar coefficient that multiplies weights.
+        stride (int): Stride of the convolution. The default is 1.
+        padding (int): Padding added to both sides of the input. The default is 0.
     """
+
+    def initialize(self, synapse):
+        super().initialize(synapse)
+
+        synapse.stride = self.parameter("stride", 1)
+        synapse.padding = self.parameter("padding", 0)
+
+        padding = (
+            synapse.padding
+            if isinstance(synapse.padding, tuple)
+            else (synapse.padding, synapse.padding)
+        )
+        stride = (
+            synapse.stride
+            if isinstance(synapse.stride, tuple)
+            else (synapse.stride, synapse.stride)
+        )
+
+        if (
+            synapse.kernel_shape[0] != synapse.weights.size(0)
+            or synapse.kernel_shape[1] * synapse.kernel_shape[2]
+            != synapse.weights.size(1)
+            or synapse.kernel_shape[3]
+            * synapse.kernel_shape[4]
+            * synapse.kernel_shape[5]
+            != synapse.weights.size(2)
+        ):
+            raise RuntimeError(
+                f"Synapse {synapse.src.tags[0]}=>{synapse.dst.tags[0]}: Local connetion's weight shape({synapse.weights.shape}) is not consitant with its logical shape({synapse.kernel_shape})."
+            )
+
+        if synapse.src.depth != synapse.kernel_shape[3]:
+            raise RuntimeError(
+                f"Synapse {synapse.src.tags[0]}=>{synapse.dst.tags[0]}: Local connetion's weight input channel size({synapse.kernel_shape[3]}) should be same as the depht of source neurongroup ({synapse.src.tags[0]}: {synapse.src.depth})."
+            )
+
+        if synapse.dst.depth != synapse.kernel_shape[0]:
+            raise RuntimeError(
+                f"Synapse {synapse.src.tags[0]}=>{synapse.dst.tags[0]}: Local connetion's weight output channel size({synapse.kernel_shape[0]}) should be same as the depht of destination neurongroup ({synapse.dst.tags[0]}: {synapse.dst.depth})."
+            )
+
+        if (
+            not (
+                synapse.dst.height
+                <= (
+                    (
+                        (synapse.src.height + 2 * padding[0] - synapse.kernel_shape[4])
+                        / stride[0]
+                    )
+                    + 1
+                )
+                < synapse.dst.height + 1
+            )
+            or synapse.kernel_shape[1] != synapse.dst.height
+        ):
+            raise RuntimeError(
+                f"Synapse {synapse.src.tags[0]}=>{synapse.dst.tags[0]}: Local connetion's height size is not constistent."
+            )
+
+        if (
+            not (
+                synapse.dst.width
+                <= (
+                    (
+                        (synapse.src.width + 2 * padding[1] - synapse.kernel_shape[5])
+                        / stride[1]
+                    )
+                    + 1
+                )
+                < synapse.dst.width + 1
+            )
+            or synapse.kernel_shape[2] != synapse.dst.width
+        ):
+            raise RuntimeError(
+                f"Synapse {synapse.src.tags[0]}=>{synapse.dst.tags[0]}: Local connetion's width size is not constistent."
+            )
 
     def calculate_input(self, synapse):
         spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay).to(
