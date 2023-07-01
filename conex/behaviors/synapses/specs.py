@@ -132,9 +132,7 @@ class WeightNormalization(Behavior):
     def initialize(self, synapse):
         self.norm = self.parameter("norm", 1)
         self.dims = [x for x in range(1, len(synapse.weights.shape))]
-        if len(synapse.weights.shape) == 1:
-            self.dims = [0]
-        if len(synapse.weights.shape) == 2:
+        if len(synapse.weights.shape) in [1, 2]:
             self.dims = [0]
 
     def forward(self, synapse):
@@ -155,9 +153,7 @@ class CurrentNormalization(Behavior):
     def initialize(self, synapse):
         self.norm = self.parameter("norm", 1)
         self.dims = [x for x in range(1, len(synapse.weights.shape))]
-        if len(synapse.weights.shape) == 1:
-            self.dims = [0]
-        if len(synapse.weights.shape) == 2:
+        if len(synapse.weights.shape) in [1, 2]:
             self.dims = [0]
 
     def forward(self, synapse):
