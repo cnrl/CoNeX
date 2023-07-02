@@ -16,6 +16,9 @@ class InherentNoise(Behavior):
         offset (function): An offset value to be added to the tensor. Default is 0.0.
     """
 
+    def __init__(self, *args, mode="rand", scale=1, offset=0, **kwargs):
+        super().__init__(*args, mode=mode, scale=scale, offset=offset, **kwargs)
+
     def initialize(self, neurons):
         self.mode = self.parameter("mode", "rand")
         self.scale = self.parameter("scale", 1)
@@ -34,6 +37,9 @@ class SpikeTrace(Behavior):
     Args:
         tau_s (float): decay term for spike trace. The default is None.
     """
+
+    def __init__(self, tau_s, *args, **kwargs):
+        super().__init__(*args, tau_s=tau_s, **kwargs)
 
     def initialize(self, neurons):
         """
@@ -73,10 +79,13 @@ class KWTA(Behavior):
         dimension (int, optional): K-WTA on specific dimension. defaults to None.
     """
 
+    def __init__(self, k, *args, dimension=None, **kwargs):
+        super().__init__(*args, k=k, dimension=dimension, **kwargs)
+
     def initialize(self, neurons):
         self.k = self.parameter("k", None, required=True)
         self.dimension = self.parameter("dimension", None)
-        self.shape = (1, 1, neurons.size)
+        self.shape = (neurons.size, 1, 1)
         if hasattr(neurons, "depth"):
             self.shape = (neurons.depth, neurons.height, neurons.width)
 

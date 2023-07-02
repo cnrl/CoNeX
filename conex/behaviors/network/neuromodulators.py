@@ -17,6 +17,16 @@ class Dopamine(Behavior):
         initial_dopamine_concentration (float, optional): Initial dopamine concentration
     """
 
+    def __init__(
+        self, *args, tau_dopamine=0.0, initial_dopamine_concentration=None, **kwargs
+    ):
+        super().__init__(
+            *args,
+            tau_dopamine=tau_dopamine,
+            initial_dopamine_concentration=initial_dopamine_concentration,
+            **kwargs
+        )
+
     def initialize(self, network):
         """
         Set initial dopamine concentration value based on initial payoff value.
@@ -41,7 +51,6 @@ class Dopamine(Behavior):
             network (Network): Network object.
         """
         dd_dt = (
-            -(network.dopamine_concentration /
-              network.tau_dopamine) + network.payoff
+            -(network.dopamine_concentration / network.tau_dopamine) + network.payoff
         )
         network.dopamine_concentration += dd_dt

@@ -40,6 +40,28 @@ class SimpleSTDP(Behavior):
         negative_bound (str or function): Bounding mechanism for negative learning. Accepting "no_bound", "hard_bound" and "soft_bound". The default is "no_bound". "weights", "w_min" and "w_max" pass as arguments for a bounding function.
     """
 
+    def __init__(
+        self,
+        a_plus,
+        a_minus,
+        *args,
+        w_min=0.0,
+        w_max=1.0,
+        positive_bound=None,
+        negative_bound=None,
+        **kwargs
+    ):
+        super().__init__(
+            *args,
+            a_plus=a_plus,
+            a_minus=a_minus,
+            w_min=w_min,
+            w_max=w_max,
+            positive_bound=positive_bound,
+            negative_bound=negative_bound,
+            **kwargs
+        )
+
     def initialize(self, synapse):
         self.w_min = self.parameter("w_min", 0.0)
         self.w_max = self.parameter("w_max", 1.0)
@@ -225,6 +247,32 @@ class SimpleRSTDP(SimpleSTDP):
         tau_c (float): Time constant for the eligibility trace. The default is None.
         init_c_mode (int): Initialization mode for the eligibility trace. The default is 0.
     """
+
+    def __init__(
+        self,
+        a_plus,
+        a_minus,
+        tau_c,
+        *args,
+        init_c_mode=0,
+        w_min=0.0,
+        w_max=1.0,
+        positive_bound=None,
+        negative_bound=None,
+        **kwargs
+    ):
+        super().__init__(
+            *args,
+            a_plus=a_plus,
+            a_minus=a_minus,
+            tau_c=tau_c,
+            init_c_mode=init_c_mode,
+            w_min=w_min,
+            w_max=w_max,
+            positive_bound=positive_bound,
+            negative_bound=negative_bound,
+            **kwargs
+        )
 
     def initialize(self, synapse):
         super().initialize(synapse)

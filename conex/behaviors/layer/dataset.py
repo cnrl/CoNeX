@@ -24,6 +24,34 @@ class SpikeNdDataset(Behavior):
         loop (bool): If True, dataloader repeats.
     """
 
+    def __init__(
+        self,
+        dataloader,
+        instance_duration,
+        *args,
+        ndim_sensory=2,
+        ndim_location=2,
+        have_location=False,
+        have_sensory=True,
+        have_label=True,
+        silent_interval=0,
+        loop=True,
+        **kwargs
+    ):
+        super().__init__(
+            *args,
+            dataloader=dataloader,
+            ndim_sensory=ndim_sensory,
+            ndim_location=ndim_location,
+            have_location=have_location,
+            have_sensory=have_sensory,
+            have_label=have_label,
+            silent_interval=silent_interval,
+            instance_duration=instance_duration,
+            loop=loop,
+            **kwargs
+        )
+
     def initialize(self, layer):
         self.dataloader = self.parameter("dataloader", None, required=True)
         self.sensory_dimension = self.parameter("ndim_sensory", 2)

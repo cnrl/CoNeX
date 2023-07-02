@@ -13,12 +13,32 @@ class NeuronAxon(Behavior):
     Note: should be added after fire and trace behavior.
 
     Args:
-        max_delay (int): maximum delay of all dendrites connected to the neurons. This value determines the delay buffer size.
-        proximal_min_delay (int): minimum delay of proximal dendrites. The default is 0.
-        distal_min_delay (int): minimum delay of distal dendrites. The default is 0.
-        apical_min_delay (int): minimum delay of apical dendrites. The default is 0.
-        have_trace (boolean): wether to calculate trace or not. default False.
+        max_delay (int): Maximum delay of all dendrites connected to the neurons. This value determines the delay buffer size.
+        proximal_min_delay (int): Minimum delay of proximal dendrites. The default is 0.
+        distal_min_delay (int): Minimum delay of distal dendrites. The default is 0.
+        apical_min_delay (int): Minimum delay of apical dendrites. The default is 0.
+        have_trace (boolean): whether to calculate trace or not. None checks if trace is available.
     """
+
+    def __init__(
+        self,
+        *args,
+        max_delay=1,
+        proximal_min_delay=0,
+        distal_min_delay=0,
+        apical_min_delay=0,
+        have_trace=None,
+        **kwargs,
+    ):
+        super().__init__(
+            *args,
+            max_delay=max_delay,
+            proximal_min_delay=proximal_min_delay,
+            distal_min_delay=distal_min_delay,
+            apical_min_delay=apical_min_delay,
+            have_trace=have_trace,
+            **kwargs,
+        )
 
     def initialize(self, neurons):
         self.max_delay = self.parameter("max_delay", 1)

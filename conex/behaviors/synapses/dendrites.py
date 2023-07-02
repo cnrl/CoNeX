@@ -27,6 +27,9 @@ class BaseDendriticInput(Behavior):
         current_coef (float): Scalar coefficient that multiplies weights.
     """
 
+    def __init__(self, *args, current_coef=1, **kwargs):
+        super().__init__(*args, current_coef=current_coef, **kwargs)
+
     def initialize(self, synapse):
         """
         Sets the current_type to -1 if the pre-synaptic neurons are inhibitory.
@@ -95,6 +98,11 @@ class LateralDendriticInput(BaseDendriticInput):
         inhibitory (bool or None): If None, connection type respect the NeuronGroup type. if True, the effect in inhibitory and False is excitatory.
     """
 
+    def __init__(self, *args, current_coef=1, inhibitory=None, **kwargs):
+        super().__init__(
+            *args, current_coef=current_coef, inhibitory=inhibitory, **kwargs
+        )
+
     def initialize(self, synapse):
         super().initialize(synapse)
         ctype = self.parameter("inhibitory", None)
@@ -140,6 +148,11 @@ class Conv2dDendriticInput(BaseDendriticInput):
         stride (int): Stride of the convolution. The default is 1.
         padding (int): Padding added to both sides of the input. The default is 0.
     """
+
+    def __init__(self, *args, current_coef=1, stride=1, padding=0, **kwargs):
+        super().__init__(
+            *args, current_coef=current_coef, stride=stride, padding=padding, **kwargs
+        )
 
     def initialize(self, synapse):
         super().initialize(synapse)
@@ -238,6 +251,11 @@ class Local2dDendriticInput(BaseDendriticInput):
         stride (int): Stride of the convolution. The default is 1.
         padding (int): Padding added to both sides of the input. The default is 0.
     """
+
+    def __init__(self, *args, current_coef=1, stride=1, padding=0, **kwargs):
+        super().__init__(
+            *args, current_coef=current_coef, stride=stride, padding=padding, **kwargs
+        )
 
     def initialize(self, synapse):
         super().initialize(synapse)

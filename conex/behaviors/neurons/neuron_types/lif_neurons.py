@@ -31,6 +31,30 @@ class LIF(Behavior):
         v_rest (float): neuron membrane potential in absent of input.
     """
 
+    def __init__(
+        self,
+        R,
+        threshold,
+        tau,
+        v_reset,
+        v_rest,
+        *args,
+        init_v=None,
+        init_s=None,
+        **kwargs
+    ):
+        super().__init__(
+            *args,
+            R=R,
+            tau=tau,
+            threshold=threshold,
+            v_reset=v_reset,
+            v_rest=v_rest,
+            init_v=init_v,
+            init_s=init_s,
+            **kwargs
+        )
+
     def initialize(self, neurons):
         """
         Set neuron attributes. and adds Fire function as attribute to population.
@@ -47,8 +71,7 @@ class LIF(Behavior):
         neurons.v_rest = self.parameter("v_rest", None, required=True)
 
         neurons.v = self.parameter("init_v", neurons.vector())
-        neurons.spikes = self.parameter(
-            "init_s", neurons.v >= neurons.threshold)
+        neurons.spikes = self.parameter("init_s", neurons.v >= neurons.threshold)
 
         neurons.spiking_neuron = self
 
@@ -80,8 +103,9 @@ class LIF(Behavior):
         Args:
             neurons (NeuronGroup): the neural population.
         """
-        neurons.v += (self._Fu(neurons) + self._RIu(neurons)) * \
-            neurons.network.dt / neurons.tau
+        neurons.v += (
+            (self._Fu(neurons) + self._RIu(neurons)) * neurons.network.dt / neurons.tau
+        )
 
 
 class ELIF(LIF):
@@ -104,6 +128,34 @@ class ELIF(LIF):
         delta (float): the constant defining the sharpness of exponential curve.
         theta_rh (float): The boosting threshold. (rheobase)
     """
+
+    def __init__(
+        self,
+        R,
+        threshold,
+        tau,
+        v_reset,
+        v_rest,
+        delta,
+        theta_rh,
+        *args,
+        init_v=None,
+        init_s=None,
+        **kwargs
+    ):
+        super().__init__(
+            *args,
+            R=R,
+            tau=tau,
+            threshold=threshold,
+            v_reset=v_reset,
+            v_rest=v_rest,
+            delta=delta,
+            theta_rh=theta_rh,
+            init_v=init_v,
+            init_s=init_s,
+            **kwargs
+        )
 
     def initialize(self, neurons):
         """
@@ -150,6 +202,42 @@ class AELIF(ELIF):
         beta (float): spike-triggered adaptation parameter.
         w_tau (float): time constant of adaptation decay.
     """
+
+    def __init__(
+        self,
+        R,
+        threshold,
+        tau,
+        v_reset,
+        v_rest,
+        delta,
+        theta_rh,
+        alpha,
+        beta,
+        w_tau,
+        *args,
+        init_v=None,
+        init_s=None,
+        omega=None,
+        **kwargs
+    ):
+        super().__init__(
+            *args,
+            R=R,
+            tau=tau,
+            threshold=threshold,
+            v_reset=v_reset,
+            v_rest=v_rest,
+            delta=delta,
+            theta_rh=theta_rh,
+            alpha=alpha,
+            beta=beta,
+            w_tau=w_tau,
+            init_v=init_v,
+            init_s=init_s,
+            omega=omega,
+            **kwargs
+        )
 
     def initialize(self, neurons):
         """
