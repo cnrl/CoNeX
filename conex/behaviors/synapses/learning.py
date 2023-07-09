@@ -282,7 +282,7 @@ class SimpleRSTDP(SimpleSTDP):
 
     def forward(self, synapse):
         computed_stdp = self.compute_dw(synapse)
-        synapse.c += (synapse.c / self.tau_c) + computed_stdp
+        synapse.c += (-synapse.c / self.tau_c) + computed_stdp
         synapse.weights += synapse.c * synapse.network.dopamine_concentration
 
 
