@@ -19,6 +19,28 @@ class SimpleDendriteStructure(Behavior):
         apical_min_delay (int): Minimum delay of apical dendrites. The default is `distal_min_delay + 1`.
     """
 
+    def __init__(
+        self,
+        *args,
+        Proximal_max_delay=1,
+        Distal_max_delay=1,
+        Apical_max_delay=None,
+        proximal_min_delay=0,
+        distal_min_delay=0,
+        apical_min_delay=None,
+        **kwargs,
+    ):
+        super().__init__(
+            *args,
+            Proximal_max_delay=Proximal_max_delay,
+            Distal_max_delay=Distal_max_delay,
+            Apical_max_delay=Apical_max_delay,
+            proximal_min_delay=proximal_min_delay,
+            distal_min_delay=distal_min_delay,
+            apical_min_delay=apical_min_delay,
+            **kwargs,
+        )
+
     def initialize(self, neurons):
         self.proximal_max_delay = self.parameter("Proximal_max_delay", 1)
         self.distal_max_delay = self.parameter("Distal_max_delay", 1)
@@ -117,6 +139,22 @@ class SimpleDendriteComputation(Behavior):
         distal_provocativeness (float): The strength of the distal dendrites. The default is None.
         I_tau (float): Decaying factor to current. If None, at each step, current falls to zero.
     """
+
+    def __init__(
+        self,
+        *args,
+        I_tau=None,
+        apical_provocativeness=None,
+        distal_provocativeness=None,
+        **kwargs,
+    ):
+        super().__init__(
+            *args,
+            I_tau=I_tau,
+            apical_provocativeness=apical_provocativeness,
+            distal_provocativeness=distal_provocativeness,
+            **kwargs,
+        )
 
     def initialize(self, neurons):
         self.apical_provocativeness = self.parameter("apical_provocativeness", None)

@@ -54,6 +54,26 @@ class DelayInitializer(Behavior):
         destination (boolean): True for destination neurons. defaults to False.
     """
 
+    def __init__(
+        self,
+        *args,
+        mode=None,
+        scale=1,
+        offset=0,
+        destination=False,
+        delays=None,
+        **kwargs,
+    ):
+        super().__init__(
+            *args,
+            mode=mode,
+            scale=scale,
+            offset=offset,
+            destination=destination,
+            delays=delays,
+            **kwargs,
+        )
+
     def initialize(self, synapse):
         """
         Makes index for the Synapse delay.
@@ -99,6 +119,30 @@ class WeightInitializer(Behavior):
         kernel_shape (tuple): Optional parameter to specify the shape of the kernel.
     """
 
+    def __init__(
+        self,
+        *args,
+        mode=None,
+        scale=1,
+        offset=0,
+        function=None,
+        weight_shape=None,
+        kernel_shape=None,
+        weights=None,
+        **kwargs,
+    ):
+        super().__init__(
+            *args,
+            mode=mode,
+            scale=scale,
+            offset=offset,
+            function=function,
+            weight_shape=weight_shape,
+            kernel_shape=kernel_shape,
+            weights=weights,
+            **kwargs,
+        )
+
     def initialize(self, synapse):
         init_mode = self.parameter("mode", None)
         scale = self.parameter("scale", 1)
@@ -129,6 +173,9 @@ class WeightNormalization(Behavior):
         norm (int): Desired sum of weights for each neuron.
     """
 
+    def __init__(self, *args, norm=1, **kwargs):
+        super().__init__(*args, norm=norm, **kwargs)
+
     def initialize(self, synapse):
         self.norm = self.parameter("norm", 1)
         self.dims = [x for x in range(1, len(synapse.weights.shape))]
@@ -151,6 +198,9 @@ class CurrentNormalization(Behavior):
     Args:
         norm (int): Desired maximum of current for each neuron.
     """
+
+    def __init__(self, *args, norm=1, **kwargs):
+        super().__init__(*args, norm=norm, **kwargs)
 
     def initialize(self, synapse):
         self.norm = self.parameter("norm", 1)
@@ -179,6 +229,9 @@ class WeightClip(Behavior):
         w_min (float): Minimum weight constraint.
         w_max (float): Maximum weight constraint.
     """
+
+    def __init__(self, *args, w_min=0, w_max=1, **kwargs):
+        super().__init__(*args, w_min=w_min, w_max=w_max, **kwargs)
 
     def initialize(self, synapse):
         """

@@ -106,5 +106,7 @@ class SpikingNeuronGroup(NeuronGroup):
 
         if user_defined is not None:
             behavior.update(user_defined)
+        
+        self.dendrites = {}
 
         super().__init__(size, behavior, net, tag)
