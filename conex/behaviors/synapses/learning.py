@@ -121,6 +121,53 @@ class SimpleSTDP(Behavior):
         synapse.weights += self.compute_dw(synapse)
 
 
+
+
+class iSTDP(Behavior):
+    """
+    Implementation of inhibitory Spike-Time Dependent Plasticity (iSTDP).
+
+    Note: The implementation uses local variables (spike trace).
+          The implementation assumes that tau is in milliseconds.
+    
+    Args:
+        lr (float): Learning rate. The Default is 1e-5.
+        rho (float): Constant that determines the fire rate of target neurons. The Default is 5.0 Hz.
+    """
+
+    def __init__(
+        self,
+        *args,
+        lr=1e-5,
+        rho=5.,
+        **kwargs
+    ):
+        super().__init__(
+            *args,
+            lr=lr,
+            rho=rho,
+            **kwargs
+        )
+
+    def compute_alpha(self, synapse):
+        return 2 * self.rho * synapse.tau / 1000
+    
+    def initialize(self, synapse):
+        self.lr = self.parameter('lr', 1e-5)
+        self.rho = self.parameter('rho', 5.)
+        self.alpha = self.compute_alpha(synapse) 
+
+    def compute_dw(self, synapse):
+        pre_spike_changes = self.lr * (torch.outer(synapse.dst.trace, synapse.src.spikes) - self.alpha) 
+        post_spike_changes = self.lr * torch.outer(synapse.dst.spikes, synapse.src.trace)
+        return pre_spike_changes + post_spike_changes
+
+
+    def forward(self, synapse):
+        synapse.weights += self.compute_dw(synapse)
+
+
+
 class Conv2dSTDP(SimpleSTDP):
     """
     Spike-Timing Dependent Plasticity (STDP) rule for 2D convolutional connections.
