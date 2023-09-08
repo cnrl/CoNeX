@@ -10,7 +10,7 @@ with open('README.md') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = ['numpy>=1.23.4', 'torch>=1.13.1', ]
+requirements = ['numpy>=1.23.4', 'torch>=1.13.1', 'pymonntorch>=0.1.0']
 
 test_requirements = ['pytest>=3', ]
 
