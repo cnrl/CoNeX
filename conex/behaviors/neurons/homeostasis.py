@@ -20,9 +20,9 @@ class ActivityBaseHomeostasis(Behavior):
     ):
         super().__init__(
             *args,
-            activity_rate,
-            window_size,
-            updating_rate,
+            activity_rate=activity_rate,
+            window_size=window_size,
+            updating_rate=updating_rate,
             decay_rate=decay_rate,
             **kwargs
         )
