@@ -1,15 +1,37 @@
 import torch
 from pymonntorch import Behavior
 
-# TODO init, doc, test
-
 
 class ActivityBaseHomeostasis(Behavior):
+    """
+    Homeostasis Based on the target activity of neurons.
+
+    Note: Threshold of neurons should be a population size tensor.
+
+    Args:
+        window_size (int): The simulation steps to accumulate spikes.
+        activity_rate (int):  The expected number of spikes in a window.
+        updating_rate (float): A scaler to change update effect with.
+        decay_rate (float): A scaler to change updating_rate after each applied homeostasis. The default is 1.0
+    """
+
+    def __init__(
+        self, activity_rate, window_size, updating_rate, *args, decay_rate=1.0, **kwargs
+    ):
+        super().__init__(
+            *args,
+            activity_rate,
+            window_size,
+            updating_rate,
+            decay_rate=decay_rate,
+            **kwargs
+        )
+
     def initialize(self, neurons):
-        activity_rate = self.parameter("activity_rate", 5)
-        self.window_size = self.parameter("window_size", 50)
-        self.updating_rate = self.parameter("updating_rate", 8)
-        self.decay_rate = self.parameter("decay_rate", 0.9)
+        activity_rate = self.parameter("activity_rate", required=True)
+        self.window_size = self.parameter("window_size", required=True)
+        self.updating_rate = self.parameter("updating_rate", required=True)
+        self.decay_rate = self.parameter("decay_rate", 1.0)
 
         self.firing_reward = 1
         self.non_firing_penalty = -activity_rate / (self.window_size - activity_rate)
@@ -31,8 +53,37 @@ class ActivityBaseHomeostasis(Behavior):
 
 
 class VoltageBaseHomeostasis(Behavior):
+    """
+    Homeostasis base on the voltage rate of Neurons.
+
+    Args:
+        target_voltage (float): The expected voltage of neuron. Defaults to None.
+        max_ta (float): The desired maximum voltage for a neuron. If not provided, the value of target_voltage is used.
+        min_ta (float): The desired minimum voltage for a neuron. If not provided, the value of target_voltage is used.
+        eta_ip (flaot): The updating speed of the homeostasis process. The default is 0.001.
+
+    """
+
+    def __init__(
+        self,
+        *args,
+        target_voltage=None,
+        max_ta=None,
+        min_ta=None,
+        eta_ip=0.001,
+        **kwargs
+    ):
+        super().__init__(
+            *args,
+            target_voltage=target_voltage,
+            max_ta=max_ta,
+            min_ta=min_ta,
+            eta_ip=eta_ip,
+            **kwargs
+        )
+
     def initialize(self, neurons):
-        target_act = self.parameter("target_voltage", 0.05)
+        target_act = self.parameter("target_voltage")
         self.max_ta = self.parameter("max_ta", target_act)
         self.min_ta = self.parameter("min_ta", target_act)
         self.adj_strength = self.parameter("eta_ip", 0.001)
