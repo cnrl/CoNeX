@@ -136,3 +136,6 @@ dmypy.json
 
 # vscode
 .vscode/
+
+# STUPID APPLE. GO TO HEll
+.DS_Store

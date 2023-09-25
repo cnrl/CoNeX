@@ -42,12 +42,13 @@ class Poisson(torch.nn.Module):
         # https://github.com/BindsNET/bindsnet/blob/master/bindsnet/encoding/encodings.py
         original_shape, original_size = img.shape, img.numel()
         flat_img = img.view((-1,)) * self.ratio
+        non_zero_mask = flat_img != 0
 
-        flat_img[flat_img != 0] = 1 / flat_img[flat_img != 0]
+        flat_img[non_zero_mask] = 1 / flat_img[non_zero_mask]
 
         dist = torch.distributions.Poisson(rate=flat_img, validate_args=False)
         intervals = dist.sample(sample_shape=torch.Size([self.time_window]))
-        intervals[:, flat_img != 0] += (intervals[:, flat_img != 0] == 0).float()
+        intervals[:, non_zero_mask] += (intervals[:, non_zero_mask] == 0).float()
 
         times = torch.cumsum(intervals, dim=0).long()
         times[times >= self.time_window + 1] = 0
