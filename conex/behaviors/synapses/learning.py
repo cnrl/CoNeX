@@ -7,6 +7,8 @@ from pymonntorch import Behavior
 import torch
 import torch.nn.functional as F
 
+from conex.behaviors.neurons.specs import SpikeTrace
+
 # TODO docstring for bound functions
 
 
@@ -25,7 +27,25 @@ def no_bound(w, w_min, w_max):
 BOUNDS = {"soft_bound": soft_bound, "hard_bound": hard_bound, "no_bound": no_bound}
 
 
-class SimpleSTDP(Behavior):
+class BaseLearning(Behavior):
+    def get_spike_and_trace(self, synapse):
+        src_spike = synapse.src.axon.get_spike(synapse.src, synapse.src_delay)
+        dst_spike = synapse.dst.axon.get_spike(synapse.dst, synapse.dst_delay)
+
+        src_spike_trace = synapse.src.axon.get_spike_trace(
+            synapse.src, synapse.src_delay
+        )
+        dst_spike_trace = synapse.dst.axon.get_spike_trace(
+            synapse.dst, synapse.dst_delay
+        )
+
+        return src_spike, dst_spike, src_spike_trace, dst_spike_trace
+
+    def forward(self, synapse):
+        synapse.weights += self.compute_dw(synapse)
+
+
+class SimpleSTDP(BaseLearning):
     """
     Spike-Timing Dependent Plasticity (STDP) rule for simple connections.
 
@@ -49,7 +69,7 @@ class SimpleSTDP(Behavior):
         w_max=1.0,
         positive_bound=None,
         negative_bound=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             *args,
@@ -59,7 +79,7 @@ class SimpleSTDP(Behavior):
             w_max=w_max,
             positive_bound=positive_bound,
             negative_bound=negative_bound,
-            **kwargs
+            **kwargs,
         )
 
     def initialize(self, synapse):
@@ -83,19 +103,6 @@ class SimpleSTDP(Behavior):
             else synapse.network.def_dtype
         )
 
-    def get_spike_and_trace(self, synapse):
-        src_spike = synapse.src.axon.get_spike(synapse.src, synapse.src_delay)
-        dst_spike = synapse.dst.axon.get_spike(synapse.dst, synapse.dst_delay)
-
-        src_spike_trace = synapse.src.axon.get_spike_trace(
-            synapse.src, synapse.src_delay
-        )
-        dst_spike_trace = synapse.dst.axon.get_spike_trace(
-            synapse.dst, synapse.dst_delay
-        )
-
-        return src_spike, dst_spike, src_spike_trace, dst_spike_trace
-
     def compute_dw(self, synapse):
         (
             src_spike,
@@ -117,55 +124,64 @@ class SimpleSTDP(Behavior):
 
         return dw_plus - dw_minus
 
-    def forward(self, synapse):
-        synapse.weights += self.compute_dw(synapse)
 
-
-
-
-class iSTDP(Behavior):
+class iSTDP(BaseLearning):
     """
-    Implementation of inhibitory Spike-Time Dependent Plasticity (iSTDP).
+    Implementation of symmetric inhibitory Spike-Time Dependent Plasticity (iSTDP).
+    DOI: 10.1126/science.1211095
 
     Note: The implementation uses local variables (spike trace).
           The implementation assumes that tau is in milliseconds.
-    
+
     Args:
         lr (float): Learning rate. The Default is 1e-5.
-        rho (float): Constant that determines the fire rate of target neurons. The Default is 5.0 Hz.
+        rho (float): Constant that determines the fire rate of target neurons.
     """
 
     def __init__(
         self,
+        rho,
         *args,
         lr=1e-5,
-        rho=5.,
-        **kwargs
+        **kwargs,
     ):
-        super().__init__(
-            *args,
-            lr=lr,
-            rho=rho,
-            **kwargs
-        )
+        super().__init__(*args, lr=lr, rho=rho, **kwargs)
 
-    def compute_alpha(self, synapse):
-        return 2 * self.rho * synapse.tau / 1000
-    
     def initialize(self, synapse):
-        self.lr = self.parameter('lr', 1e-5)
-        self.rho = self.parameter('rho', 5.)
-        self.alpha = self.compute_alpha(synapse) 
+        self.lr = self.parameter("lr", 1e-5)
+        self.rho = self.parameter("rho", None)
+
+        # messy till I move trace to synapse.
+        pre_tau = [
+            synapse.src.behavior[key_behavior]
+            for key_behavior in synapse.src.behavior
+            if isinstance(synapse.src.behavior[key_behavior], SpikeTrace)
+        ][0].tau_s
+        post_tau = [
+            synapse.dst.behavior[key_behavior]
+            for key_behavior in synapse.dst.behavior
+            if isinstance(synapse.dst.behavior[key_behavior], SpikeTrace)
+        ][0].tau_s
+
+        assert (
+            pre_tau == post_tau
+        ), "for Symmetric iSTDP, pre and post trace decay should be equal."
+
+        self.alpha = 2 * self.rho * pre_tau / 1000
 
     def compute_dw(self, synapse):
-        pre_spike_changes = self.lr * (torch.outer(synapse.dst.trace, synapse.src.spikes) - self.alpha) 
-        post_spike_changes = self.lr * torch.outer(synapse.dst.spikes, synapse.src.trace)
+        (
+            src_spike,
+            dst_spike,
+            src_spike_trace,
+            dst_spike_trace,
+        ) = self.get_spike_and_trace(synapse)
+
+        pre_spike_changes = self.lr * torch.outer(
+            src_spike, (dst_spike_trace - self.alpha)
+        )
+        post_spike_changes = self.lr * torch.outer(src_spike_trace, dst_spike)
         return pre_spike_changes + post_spike_changes
-
-
-    def forward(self, synapse):
-        synapse.weights += self.compute_dw(synapse)
-
 
 
 class Conv2dSTDP(SimpleSTDP):
@@ -306,7 +322,7 @@ class SimpleRSTDP(SimpleSTDP):
         w_max=1.0,
         positive_bound=None,
         negative_bound=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             *args,
@@ -318,7 +334,7 @@ class SimpleRSTDP(SimpleSTDP):
             w_max=w_max,
             positive_bound=positive_bound,
             negative_bound=negative_bound,
-            **kwargs
+            **kwargs,
         )
 
     def initialize(self, synapse):
