@@ -53,7 +53,7 @@ dl = DataLoader(dataset, batch_size=16)
 #############################
 # initializing neocortex
 #############################
-net = Neocortex(settings={"device": DEVICE, "dtype": DTYPE})
+net = Neocortex(device=DEVICE, dtype=DTYPE)
 #############################
 
 
