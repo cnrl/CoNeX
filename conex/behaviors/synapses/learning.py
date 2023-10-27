@@ -143,6 +143,7 @@ class iSTDP(BaseLearning):
         rho,
         *args,
         lr=1e-5,
+        is_inhibitory=True,
         **kwargs,
     ):
         super().__init__(*args, lr=lr, rho=rho, **kwargs)
@@ -150,6 +151,7 @@ class iSTDP(BaseLearning):
     def initialize(self, synapse):
         self.lr = self.parameter("lr", 1e-5)
         self.rho = self.parameter("rho", None)
+        self.change_sign = 1 - self.parameter("is_inhibitory", True) * 2 
 
         # messy till I move trace to synapse.
         pre_tau = [
@@ -178,7 +180,7 @@ class iSTDP(BaseLearning):
         ) = self.get_spike_and_trace(synapse)
 
         pre_spike_changes = self.lr * torch.outer(
-            src_spike, (dst_spike_trace - self.alpha)
+            src_spike, (self.alpha - dst_spike_trace) * self.change_sign
         )
         post_spike_changes = self.lr * torch.outer(src_spike_trace, dst_spike)
         return pre_spike_changes + post_spike_changes
