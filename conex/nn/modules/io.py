@@ -65,7 +65,7 @@ class InputLayer(NetworkObject):
 
         sensory_tag = "Sensory" if sensory_tag is None else "Sensory," + sensory_tag
 
-        if have_sensory:
+        if have_sensory and sensory_size is not None:
             self.sensory_pop = self.__get_ng(
                 net=net,
                 size=sensory_size,
@@ -83,7 +83,7 @@ class InputLayer(NetworkObject):
             "Location" if location_tag is None else "Location," + location_tag
         )
 
-        if have_location:
+        if have_location and location_size is not None:
             self.location_pop = self.__get_ng(
                 net=net,
                 size=location_size,

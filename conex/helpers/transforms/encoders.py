@@ -17,6 +17,9 @@ class SimplePoisson(torch.nn.Module):
         self.ratio = ratio
 
     def __call__(self, img):
+        if type(img) is tuple:
+            return tuple([self(sub_inp) for sub_inp in img])
+
         random_probability = torch.rand(size=(self.time_window, *img.shape))
         intensity = img.unsqueeze(dim=0).expand(self.time_window, *img.shape)
         spike_probability = intensity * self.ratio
@@ -39,6 +42,9 @@ class Poisson(torch.nn.Module):
         self.ratio = ratio
 
     def __call__(self, img):
+        if type(img) is tuple:
+            return tuple([self(sub_inp) for sub_inp in img])
+
         # https://github.com/BindsNET/bindsnet/blob/master/bindsnet/encoding/encodings.py
         original_shape, original_size = img.shape, img.numel()
         flat_img = img.view((-1,)) * self.ratio
@@ -95,6 +101,9 @@ class Intensity2Latency(torch.nn.Module):
         self.lower_trim = lower_trim
 
     def __call__(self, img):
+        if type(img) is tuple:
+            return tuple([self(sub_inp) for sub_inp in img])
+
         self.threshold = (
             img.quantile(1 - self.sparsity)
             if self.sparsity is not None

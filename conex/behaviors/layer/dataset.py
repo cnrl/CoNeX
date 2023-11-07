@@ -75,6 +75,10 @@ class SpikeNdDataset(Behavior):
                 batch_loc = batch[self.have_sensory] if self.have_location else None
                 batch_y = batch[-1] if self.have_label else None
 
+                if type(batch_x) is list:
+                    batch_x =  batch[0][0]
+                    batch_loc = batch[0][1]
+
                 if batch_x is not None:
                     batch_x = batch_x.to(self.device)
                     batch_x = batch_x.view(
@@ -88,7 +92,7 @@ class SpikeNdDataset(Behavior):
                         (-1, *batch_loc.shape[-self.location_dimension :])
                     )
                     num_instance = batch_loc.size(0)
-                    if batch_x:
+                    if batch_x is not None:
                         assert (
                             batch_x.size(0) == num_instance
                         ), "sensory and location should have same number of instances."
