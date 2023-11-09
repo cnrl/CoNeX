@@ -136,22 +136,25 @@ class iSTDP(BaseLearning):
     Args:
         lr (float): Learning rate. The Default is 1e-5.
         rho (float): Constant that determines the fire rate of target neurons.
+        alpha (float): Manual constant for target trace, which replace rho value. 
     """
 
     def __init__(
         self,
-        rho,
         *args,
+        rho=None,
+        alpha=None,
         lr=1e-5,
         is_inhibitory=True,
         **kwargs,
     ):
-        super().__init__(*args, lr=lr, rho=rho, **kwargs)
+        super().__init__(*args, lr=lr, rho=rho, alpha=alpha, is_inhibitory=is_inhibitory, **kwargs)
 
     def initialize(self, synapse):
         self.lr = self.parameter("lr", 1e-5)
         self.rho = self.parameter("rho", None)
         self.change_sign = 1 - self.parameter("is_inhibitory", True) * 2 
+        self.alpha = self.parameter("alpha", None)
 
         # messy till I move trace to synapse.
         pre_tau = [
@@ -169,7 +172,8 @@ class iSTDP(BaseLearning):
             pre_tau == post_tau
         ), "for Symmetric iSTDP, pre and post trace decay should be equal."
 
-        self.alpha = 2 * self.rho * pre_tau / 1000
+        if self.alpha is None:
+            self.alpha = 2 * self.rho * pre_tau / 1000
 
     def compute_dw(self, synapse):
         (
