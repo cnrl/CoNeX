@@ -1,8 +1,10 @@
+import torch
+
 from conex.behaviors.network.time_resolution import TimeResolution
 from conex.nn.priorities import NETWORK_PRIORITIES
 from conex.nn.config.base_config import BaseConfig
 
-from pymonntorch import Network, SxD, DxS
+from pymonntorch import Network
 
 import warnings
 
@@ -113,7 +115,16 @@ class Neocortex(Network):
         # Now you can simulate your network using net.simulate_iterations(...)
     """
 
-    def __init__(self, dt=1, payoff=None, neuromodulators=None, settings=None):
+    def __init__(
+        self,
+        dt=1,
+        payoff=None,
+        neuromodulators=None,
+        dtype=torch.float32,
+        device="cpu",
+        synapse_mode="SxD",
+        index=True,
+    ):
         behavior = {NETWORK_PRIORITIES["TimeResolution"]: TimeResolution(dt=dt)}
         if payoff:
             behavior[NETWORK_PRIORITIES["Payoff"]] = payoff
@@ -122,11 +133,14 @@ class Neocortex(Network):
             for i, neuromodulator in enumerate(neuromodulators):
                 behavior[NETWORK_PRIORITIES["NeuroModulator"] + i] = neuromodulator
 
-        settings = settings if settings is not None else {}
-        settings.setdefault("synapse_mode", SxD)
-        settings.setdefault("index", False)
-
-        super().__init__(tag="Neocortex", behavior=behavior, settings=settings)
+        super().__init__(
+            tag="Neocortex",
+            behavior=behavior,
+            dtype=dtype,
+            device=device,
+            synapse_mode=synapse_mode,
+            index=index,
+        )
         self.dt = dt
         self.columns = []
         self.input_layers = []
