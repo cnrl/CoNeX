@@ -240,6 +240,7 @@ class Local2dDendriticInput(BaseDendriticInput):
     Note: Weight shape = (out_channel, out_size, connection_size);
           where out_size = out_height * out_width,
           and connection_size = input_channel * connection_height * connection_width.
+          Kernel shape = (out_channel, out_height, out_width, in_channel, connection_height, connection_width)
           weights must be initialize by others behaviors.
           Also, Axon paradigm should be added to the neurons.
           Connection type (Proximal, Distal, Apical) should be specified by the tag
