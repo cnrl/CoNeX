@@ -82,6 +82,35 @@ class SimpleDendriticInput(BaseDendriticInput):
         return torch.sum(synapse.weights[spikes], axis=0)
 
 
+class AveragePool2D(BaseDendriticInput):
+    """
+    Average Pooling on Source population spikes.
+
+    Note: Axon paradigm should be added to the neurons.
+          Connection type (Proximal, Distal, Apical) should be specified by the tag
+          of the synapse. and Dendrite behavior of the neurons group should access the
+          `I` of each synapse to apply them.
+
+    Args:
+        current_coef (float): Scalar coefficient that multiplies weights.
+    """
+
+    def initialize(self, synapse):
+        super().initialize(synapse)
+        self.output_shape = (synapse.dst.height, synapse.dst.width)
+
+        if synapse.src.depth != synapse.dst.depth:
+            raise RuntimeError(
+                f"For pooling, source({synapse.src.depht}) and destionation({synapse.dst.depth}) should have same depth."
+            )
+
+    def calculate_input(self, synapse):
+        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay)
+        spikes = spikes.view(synapse.src_shape).to(self.def_dtype)
+        I = F.adaptive_avg_pool2d(spikes, self.output_shape)
+        return I.view((-1,))
+
+
 class LateralDendriticInput(BaseDendriticInput):
     """
     Lateral dendrite behavior.
