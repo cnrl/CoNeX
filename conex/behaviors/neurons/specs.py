@@ -91,22 +91,22 @@ class KWTA(Behavior):
 
     def forward(self, neurons):
         will_spike = neurons.v >= neurons.threshold
-        will_spike_v = will_spike * (neurons.v - neurons.threshold)
+        v_values = neurons.v
 
         dim = 0
         if self.dimension is not None:
-            will_spike_v = will_spike_v.view(self.shape)
+            v_values = v_values.view(self.shape)
             will_spike = will_spike.view(self.shape)
             dim = self.dimension
 
         if (will_spike.sum(axis=dim) <= self.k).all():
             return
 
-        k_values, k_winners_indices = torch.topk(
-            will_spike_v, self.k, dim=dim, sorted=False
+        _, k_winners_indices = torch.topk(
+            v_values, self.k, dim=dim, sorted=False
         )
-        min_values = k_values.min(dim=0).values
-        winners = will_spike_v >= min_values.expand(will_spike_v.size())
-        ignored = will_spike * (~winners)
+
+        ignored = will_spike
+        ignored.scatter_(dim, k_winners_indices, False)
 
         neurons.v[ignored.view((-1,))] = neurons.v_reset
