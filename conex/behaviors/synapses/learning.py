@@ -28,6 +28,10 @@ BOUNDS = {"soft_bound": soft_bound, "hard_bound": hard_bound, "no_bound": no_bou
 
 
 class BaseLearning(Behavior):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.add_tag("weight_learning")
+
     def get_spike_and_trace(self, synapse):
         src_spike = synapse.src.axon.get_spike(synapse.src, synapse.src_delay)
         dst_spike = synapse.dst.axon.get_spike(synapse.dst, synapse.dst_delay)
