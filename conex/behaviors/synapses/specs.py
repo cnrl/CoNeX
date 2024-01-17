@@ -156,7 +156,7 @@ class WeightInitializer(Behavior):
         offset = self.parameter("offset", 0)
         function = self.parameter("function", None)
         density = self.parameter("density", 1)
-        true_sparsity = self.parameter("true_sparsity")
+        true_sparsity = self.parameter("true_sparsity", True)
         synapse.weights = self.parameter("weights", None)
         weight_shape = self.parameter("weight_shape", None)
         synapse.kernel_shape = self.parameter("kernel_shape", None)
