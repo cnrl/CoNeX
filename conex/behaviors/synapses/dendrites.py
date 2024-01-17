@@ -100,9 +100,9 @@ class One2OneDendriticInput(BaseDendriticInput):
     def initialize(self, synapse):
         super().initialize(synapse)
 
-        if not synapse.src.size != synapse.dst.size:
+        if synapse.src.size != synapse.dst.size:
             raise RuntimeError(
-                "The sieze of pre and post synaptice neuron groups is not equal."
+                "The size of pre and post synaptice neuron groups is not equal."
             )
 
     def calculate_input(self, synapse):
