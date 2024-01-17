@@ -3,6 +3,7 @@ Synapse-related behaviors.
 """
 
 from pymonntorch import Behavior
+import random
 import torch
 
 
@@ -114,8 +115,10 @@ class WeightInitializer(Behavior):
         scale (float): Scaling factor to apply on the weight.
         offset (float): An offset to add to the weight.
         function (callable): A function to apply on weight.
+        density (flaot): The sparsity of weights. default is one.
+        true_sparsity (bool) : If false, weights are created but have zero value. Defaults to True.
         weights (tensor): Optional parameter to specify the weights matrix directly.
-        weight_shape (tuple): Optional parameter to specify the shape of the weights matrix.
+        weight_shape (tuple): Optional parameter to specify the shape of the weights tensor.
         kernel_shape (tuple): Optional parameter to specify the shape of the kernel.
     """
 
@@ -126,6 +129,8 @@ class WeightInitializer(Behavior):
         scale=1,
         offset=0,
         function=None,
+        density=1,
+        true_sparsity=True,
         weight_shape=None,
         kernel_shape=None,
         weights=None,
@@ -137,6 +142,8 @@ class WeightInitializer(Behavior):
             scale=scale,
             offset=offset,
             function=function,
+            density=density,
+            true_sparsity=true_sparsity,
             weight_shape=weight_shape,
             kernel_shape=kernel_shape,
             weights=weights,
@@ -148,20 +155,44 @@ class WeightInitializer(Behavior):
         scale = self.parameter("scale", 1)
         offset = self.parameter("offset", 0)
         function = self.parameter("function", None)
-        weight_shape = self.parameter("weight_shape", None)
+        density = self.parameter("density", 1)
+        true_sparsity = self.parameter("true_sparsity", True)
         synapse.weights = self.parameter("weights", None)
+        weight_shape = self.parameter("weight_shape", None)
         synapse.kernel_shape = self.parameter("kernel_shape", None)
 
+        weight_shape = (
+            weight_shape if weight_shape is not None else synapse.matrix_dim()
+        )
         if init_mode is not None and synapse.weights is None:
-            if weight_shape is None:
-                synapse.weights = synapse.matrix(mode=init_mode)
+            if not true_sparsity or density == 1:
+                synapse.weights = synapse.tensor(
+                    mode=init_mode, dim=weight_shape, density=density
+                )
             else:
-                synapse.weights = synapse.tensor(mode=init_mode, dim=weight_shape)
+                n_row, n_col = synapse.matrix_dim()
+                nnz = int(n_row * n_col * density)
+                both_indices = torch.tensor(
+                    random.sample(range(n_row * n_col), nnz), device=synapse.device
+                )  # TODO pytorch alternative
+                synapse.dst_idx = both_indices % n_col
+                synapse.src_idx = both_indices // n_col
+                indices = torch.stack([synapse.src_idx, synapse.dst_idx])
+                values = synapse.tensor(mode=init_mode, dim=(nnz,))
+                synapse.weights = torch.sparse_coo_tensor(
+                    indices, values, synapse.matrix_dim()
+                )
+                synapse.weights = synapse.weights.coalesce()
+                synapse.weights = synapse.weights.to_sparse_csc()
 
             if function is not None:
                 synapse.weights = function(synapse.weights)
 
-            synapse.weights = synapse.weights * scale + offset
+            synapse.weights = synapse.weights * scale
+            if synapse.weights.layout != torch.strided:  # Pytorch should fix is_sparse
+                synapse.weights.values()[:] += offset
+            else:
+                synapse.weights += offset
 
 
 class WeightNormalization(Behavior):
