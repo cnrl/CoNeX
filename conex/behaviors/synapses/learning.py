@@ -274,11 +274,9 @@ class SimpleiSTDP(BaseLearning):
             dst_spike_trace,
         ) = self.get_spike_and_trace(synapse)
 
-        pre_spike_changes = self.lr * torch.outer(
-            src_spike, (self.alpha - dst_spike_trace) * self.change_sign
-        )
-        post_spike_changes = self.lr * torch.outer(src_spike_trace, dst_spike)
-        return pre_spike_changes + post_spike_changes
+        pre_spike_changes torch.outer(src_spike, (self.alpha - dst_spike_trace) * self.change_sign)
+        post_spike_changes = torch.outer(src_spike_trace, dst_spike)
+        return self.lr * (pre_spike_changes + post_spike_changes)
 
 
 class One2OneiSTDP(SimpleiSTDP):
@@ -303,11 +301,9 @@ class One2OneiSTDP(SimpleiSTDP):
             dst_spike_trace,
         ) = self.get_spike_and_trace(synapse)
 
-        pre_spike_changes = (
-            self.lr * src_spike * (self.alpha - dst_spike_trace) * self.change_sign
-        )
-        post_spike_changes = self.lr * src_spike_trace * dst_spike
-        return pre_spike_changes + post_spike_changes
+        pre_spike_changes = src_spike * (self.alpha - dst_spike_trace) * self.change_sign
+        post_spike_changes = src_spike_trace * dst_spike
+        return self.lr * (pre_spike_changes + post_spike_changes)
 
 
 class SparseiSTDP(SimpleiSTDP):
@@ -334,16 +330,9 @@ class SparseiSTDP(SimpleiSTDP):
 
         weight_data = synapse.weights.values()[:]
 
-        pre_spike_changes = (
-            self.lr
-            * src_spike[synapse.src_idx]
-            * (self.alpha - dst_spike_trace)[synapse.dst_idx]
-            * self.change_sign
-        )
-        post_spike_changes = (
-            self.lr * src_spike_trace[synapse.src_idx] * dst_spike[synapse.dst_idx]
-        )
-        return pre_spike_changes + post_spike_changes
+        pre_spike_changes = src_spike[synapse.src_idx] * (self.alpha - dst_spike_trace)[synapse.dst_idx] * self.change_sign
+        post_spike_changes = src_spike_trace[synapse.src_idx] * dst_spike[synapse.dst_idx]
+        return self.lr * (pre_spike_changes + post_spike_changes)
 
     def forward(self, synapse):
         synapse.weights.values()[:] += self.compute_dw(synapse)
