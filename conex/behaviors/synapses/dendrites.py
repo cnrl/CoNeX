@@ -56,6 +56,60 @@ class BaseDendriticInput(Behavior):
         )
 
 
+class SparseDendriticInput(BaseDendriticInput):
+    """
+    Sparsely connected dendrite behavior. It checks for excitatory/inhibitory attributes
+    of pre-synaptic neurons and sets a coefficient, accordingly.
+
+    Note: weights must be initialize by others behaviors.
+          Also, Axon paradigm should be added to the neurons.
+          Connection type (Proximal, Distal, Apical) should be specified by the tag
+          of the synapse. and Dendrite behavior of the neurons group should access the
+          `I` of each synapse to apply them.
+
+    Args:
+        current_coef (float): Scalar coefficient that multiplies weights.
+    """
+
+    def initialize(self, synapse):
+        super().initialize(synapse)
+
+        if not synapse.network.transposed_synapse_matrix_mode:
+            raise RuntimeError("Network should've made with SxD mode for synapses")
+
+    def calculate_input(self, synapse):
+        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay)
+        return torch.matmul(spikes.to(synapse.wights.dtype), synapse.weights)
+
+
+class One2OneDendriticInput(BaseDendriticInput):
+    """
+    One 2 One connection dendrite behavior. It checks for excitatory/inhibitory attributes
+    of pre-synaptic neurons and sets a coefficient, accordingly.
+
+    Note: weights must be initialize by others behaviors.
+          Also, Axon paradigm should be added to the neurons.
+          Connection type (Proximal, Distal, Apical) should be specified by the tag
+          of the synapse. and Dendrite behavior of the neurons group should access the
+          `I` of each synapse to apply them.
+
+    Args:
+        current_coef (float): Scalar coefficient that multiplies weights.
+    """
+
+    def initialize(self, synapse):
+        super().initialize(synapse)
+
+        if not synapse.src.size != synapse.dst.size:
+            raise RuntimeError(
+                "The sieze of pre and post synaptice neuron groups is not equal."
+            )
+
+    def calculate_input(self, synapse):
+        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay)
+        return spikes * synapse.weights
+
+
 class SimpleDendriticInput(BaseDendriticInput):
     """
     Fully connected dendrite behavior. It checks for excitatory/inhibitory attributes
