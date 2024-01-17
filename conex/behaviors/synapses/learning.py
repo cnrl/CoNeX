@@ -171,6 +171,9 @@ class SparseSTDP(SimpleSTDP):
 
         return dw_plus - dw_minus
 
+    def forward(self, synapse):
+        synapse.weights.values()[:] += self.compute_dw(synapse)
+
 
 class One2OneSTDP(SimpleSTDP):
     """
@@ -342,6 +345,9 @@ class SparseiSTDP(SimpleiSTDP):
         )
         return pre_spike_changes + post_spike_changes
 
+    def forward(self, synapse):
+        synapse.weights.values()[:] += self.compute_dw(synapse)
+
 
 class Conv2dSTDP(SimpleSTDP):
     """
@@ -500,12 +506,7 @@ class SimpleRSTDP(SimpleSTDP):
         super().initialize(synapse)
         self.tau_c = self.parameter("tau_c", None, required=True)
         mode = self.parameter("init_c_mode", 0)
-        dim = (
-            synapse.weights.shape
-            if not synapse.weights.is_sparse
-            else synapse.weights._nnz()
-        )
-        synapse.c = synapse.tensor(mode=mode, dim=dim)
+        synapse.c = synapse.tensor(mode=mode, dim=synapse.weights.shape)
 
     def forward(self, synapse):
         computed_stdp = self.compute_dw(synapse)
@@ -529,7 +530,7 @@ class One2OneRSTDP(One2OneSTDP, SimpleRSTDP):
     pass
 
 
-class SparseRSTDP(SparseSTDP, SimpleRSTDP):
+class SparseRSTDP(SparseSTDP):
     """
     Reward-modulated Spike-Timing Dependent Plasticity (RSTDP) rule for sparse connections.
 
@@ -542,7 +543,44 @@ class SparseRSTDP(SparseSTDP, SimpleRSTDP):
         init_c_mode (int): Initialization mode for the eligibility trace. The default is 0.
     """
 
-    pass
+    def __init__(
+        self,
+        a_plus,
+        a_minus,
+        tau_c,
+        *args,
+        init_c_mode=0,
+        w_min=0.0,
+        w_max=1.0,
+        positive_bound=None,
+        negative_bound=None,
+        **kwargs,
+    ):
+        super().__init__(
+            *args,
+            a_plus=a_plus,
+            a_minus=a_minus,
+            tau_c=tau_c,
+            init_c_mode=init_c_mode,
+            w_min=w_min,
+            w_max=w_max,
+            positive_bound=positive_bound,
+            negative_bound=negative_bound,
+            **kwargs,
+        )
+
+    def initialize(self, synapse):
+        super().initialize(synapse)
+        self.tau_c = self.parameter("tau_c", None, required=True)
+        mode = self.parameter("init_c_mode", 0)
+        synapse.c = synapse.tensor(mode=mode, dim=(synapse.weights._nnz(),))
+
+    def forward(self, synapse):
+        computed_stdp = self.compute_dw(synapse)
+        synapse.c += (-synapse.c / self.tau_c) + computed_stdp
+        synapse.weights.values()[:] += (
+            synapse.c * synapse.network.dopamine_concentration
+        )
 
 
 class Conv2dRSTDP(Conv2dSTDP, SimpleRSTDP):

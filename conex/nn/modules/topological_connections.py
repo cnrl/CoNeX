@@ -39,7 +39,7 @@ class StructuredSynapseGroup(SynapseGroup):
                                                 In numeric case the post-synaptic delays will be filled with that number.
         w_min (float): The minimum possible weight. The default is 0.0.
         w_max (float): The maximum possible weight. The default is 1.0.
-        weight_norm (float): If not None, enables wight normalization with the specified norm factor.
+        weight_norm (float): If not None, enables weight normalization with the specified norm factor.
         tag (str): The tag(s) of the synapses.
         delay_init_params (dict): Parameters (other than `mode`) for `DelayInitializer`.
         weight_init_params (dict): Parameters for `WeightInitializer`.

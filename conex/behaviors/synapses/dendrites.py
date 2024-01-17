@@ -79,7 +79,7 @@ class SparseDendriticInput(BaseDendriticInput):
 
     def calculate_input(self, synapse):
         spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay)
-        return torch.matmul(spikes.to(synapse.wights.dtype), synapse.weights)
+        return torch.matmul(spikes.to(synapse.weights.dtype), synapse.weights)
 
 
 class One2OneDendriticInput(BaseDendriticInput):

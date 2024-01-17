@@ -156,39 +156,43 @@ class WeightInitializer(Behavior):
         offset = self.parameter("offset", 0)
         function = self.parameter("function", None)
         density = self.parameter("density")
-        true_density = self.parameter("true_density")
+        true_sparsity = self.parameter("true_sparsity")
         synapse.weights = self.parameter("weights", None)
         weight_shape = self.parameter("weight_shape", None)
         synapse.kernel_shape = self.parameter("kernel_shape", None)
 
+        weight_shape = (
+            weight_shape if weight_shape is not None else synapse.matrix_dim()
+        )
         if init_mode is not None and synapse.weights is None:
-            if weight_shape is None:
-                synapse.weights = synapse.matrix(mode=init_mode)
+            if not true_sparsity or density == 1:
+                synapse.weights = synapse.tensor(
+                    mode=init_mode, dim=weight_shape, density=density
+                )
             else:
-                if not true_density or density == 1:
-                    synapse.weights = synapse.tensor(
-                        mode=init_mode, dim=weight_shape, density=density
-                    )
-                else:
-                    n_row, n_col = synapse.matrix_dim()
-                    nnz = int(n_row * n_col * density)
-                    both_indices = torch.tensor(
-                        random.sample(range(n_row * n_col), nnz), device=synapse.device
-                    )  # TODO pytorch alternative
-                    synapse.dst_idx = both_indices % n_col
-                    synapse.src_idx = both_indices // n_col
-                    indices = torch.stack([synapse.src_idx, synapse.dst_idx])
-                    values = synapse.tensor(mode=init_mode, dim=(nnz,))
-                    synapse.weights = torch.sparse_coo_tensor(
-                        indices, values, synapse.matrix_dim()
-                    )
-                    synapse.weights = synapse.weights.coalesce()
-                    synapse.weights = synapse.weights.to_sparse_csc()
+                n_row, n_col = synapse.matrix_dim()
+                nnz = int(n_row * n_col * density)
+                both_indices = torch.tensor(
+                    random.sample(range(n_row * n_col), nnz), device=synapse.device
+                )  # TODO pytorch alternative
+                synapse.dst_idx = both_indices % n_col
+                synapse.src_idx = both_indices // n_col
+                indices = torch.stack([synapse.src_idx, synapse.dst_idx])
+                values = synapse.tensor(mode=init_mode, dim=(nnz,))
+                synapse.weights = torch.sparse_coo_tensor(
+                    indices, values, synapse.matrix_dim()
+                )
+                synapse.weights = synapse.weights.coalesce()
+                synapse.weights = synapse.weights.to_sparse_csc()
 
             if function is not None:
                 synapse.weights = function(synapse.weights)
 
-            synapse.weights = synapse.weights * scale + offset
+            synapse.weights = synapse.weights * scale
+            if synapse.weights.layout != torch.strided:  # Pytorch should fix is_sparse
+                synapse.weights.values()[:] += offset
+            else:
+                synapse.weights += offset
 
 
 class WeightNormalization(Behavior):
