@@ -175,15 +175,19 @@ class WeightInitializer(Behavior):
                 both_indices = torch.tensor(
                     random.sample(range(n_row * n_col), nnz), device=synapse.device
                 )  # TODO pytorch alternative
-                synapse.dst_idx = both_indices % n_col
-                synapse.src_idx = both_indices // n_col
-                indices = torch.stack([synapse.src_idx, synapse.dst_idx])
+                dst_idx = both_indices % n_col
+                src_idx = both_indices // n_col
+                indices = torch.stack([src_idx, dst_idx])
                 values = synapse.tensor(mode=init_mode, dim=(nnz,))
                 synapse.weights = torch.sparse_coo_tensor(
                     indices, values, synapse.matrix_dim()
                 )
                 synapse.weights = synapse.weights.coalesce()
                 synapse.weights = synapse.weights.to_sparse_csc()
+                synapse.dst_idx = torch.arange(
+                    n_col, device=synapse.device
+                ).repeat_interleave(synapse.weights.ccol_indices().diff())
+                synapse.src_idx = synapse.weights.row_indices()
 
             if function is not None:
                 synapse.weights = function(synapse.weights)
