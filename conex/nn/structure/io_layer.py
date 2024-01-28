@@ -1,51 +1,44 @@
-"""
-Module of input and output neuronal populations.
-"""
-
-from pymonntorch import NeuronGroup, NetworkObject
-
-from conex.behaviors.neurons.setters import LocationSetter, SensorySetter
-from conex.behaviors.neurons.dendrite import SimpleDendriteStructure
+from pymonntorch import NetworkObject, Network, NeuronDimension, Behavior, NeuronGroup
 from conex.behaviors.neurons.axon import NeuronAxon
+from conex.behaviors.neurons.setters import SensorySetter, LocationSetter
 from conex.behaviors.neurons.specs import SpikeTrace
+from conex.behaviors.neurons.dendrite import SimpleDendriteStructure
+from torch.utils.data.dataloader import DataLoader
+from typing import Union, Dict, Callable
+from conex.nn.priority import LAYER_PRIORITIES, NEURON_PRIORITIES
 from conex.behaviors.layer.dataset import SpikeNdDataset
-
-from conex.nn.priorities import NEURON_PRIORITIES, LAYER_PRIORITIES
-
-# TODO: Define spike analysis behaviors for output neuron groups
-# TODO: Docstring
 
 
 class InputLayer(NetworkObject):
     def __init__(
         self,
-        net,
-        input_dataloader,
-        have_sensory=True,
-        have_location=False,
-        have_label=True,
-        sensory_size=None,
-        location_size=None,
-        sensory_axon=NeuronAxon,
-        sensory_axon_params=None,
-        location_axon=NeuronAxon,
-        location_axon_params=None,
-        silent_interval=0,
-        instance_duration=0,
-        sensory_trace=None,
-        location_trace=None,
-        sensory_data_dim=2,
-        location_data_dim=2,
-        tag=None,
-        behavior=None,
-        sensory_tag=None,
-        location_tag=None,
-        sensory_user_defined=None,
-        location_user_defined=None,
+        net: Network,
+        input_dataloader: DataLoader,
+        have_sensory: bool = True,
+        have_location: bool = False,
+        have_label: bool = True,
+        sensory_size: Union[int, NeuronDimension] = None,
+        location_size: Union[int, NeuronDimension] = None,
+        sensory_axon: Behavior = NeuronAxon,
+        sensory_axon_params: dict = None,
+        location_axon: Behavior = NeuronAxon,
+        location_axon_params: dict = None,
+        silent_interval: int = 0,
+        instance_duration: int = 0,
+        sensory_trace: float = None,
+        location_trace: float = None,
+        sensory_data_dim: int = 2,
+        location_data_dim: int = 2,
+        tag: str = None,
+        behavior: Dict[int, Behavior] = None,
+        sensory_tag: str = None,
+        location_tag: str = None,
+        sensory_user_defined: Dict[int, Behavior] = None,
+        location_user_defined: Dict[int, Behavior] = None,
     ):
         behavior = {} if behavior is None else behavior
 
-        if LAYER_PRIORITIES["InputDataset"] not in behavior:
+        if LAYER_PRIORITIES["SpikeNdDataset"] not in behavior:
             behavior[LAYER_PRIORITIES["InputDataset"]] = SpikeNdDataset(
                 dataloader=input_dataloader,
                 ndim_sensory=sensory_data_dim,
@@ -78,6 +71,7 @@ class InputLayer(NetworkObject):
             )
 
             self.sensory_pop.layer = self
+            self.add_sub_structure(self.sensory_pop)
 
         location_tag = (
             "Location" if location_tag is None else "Location," + location_tag
@@ -96,53 +90,19 @@ class InputLayer(NetworkObject):
             )
 
             self.location_pop.layer = self
-
-    def connect(
-        self,
-        cortical_column,
-        sensory_L4_syn_config=None,
-        sensory_L6_syn_config=None,
-        location_L6_syn_config=None,
-    ):
-        synapses = {}
-
-        if sensory_L4_syn_config:
-            if hasattr(self, "sensory_pop") and hasattr(cortical_column, "L4"):
-                synapses[
-                    "sensory_L4_synapse"
-                ] = cortical_column._add_synaptic_connection(
-                    self.sensory_pop, cortical_column.L4, sensory_L4_syn_config
-                )
-
-        if sensory_L6_syn_config:
-            if hasattr(self, "sensory_pop") and hasattr(cortical_column, "L6"):
-                synapses[
-                    "sensory_L6_synapse"
-                ] = cortical_column._add_synaptic_connection(
-                    self.sensory_pop, cortical_column.L6, sensory_L6_syn_config
-                )
-
-        if location_L6_syn_config:
-            if hasattr(self, "location_pop") and hasattr(cortical_column, "L6"):
-                synapses[
-                    "location_L6_synapse"
-                ] = cortical_column._add_synaptic_connection(
-                    self.location_pop, cortical_column.L6, sensory_L6_syn_config
-                )
-
-        return synapses
+            self.add_sub_structure(self.location_pop)
 
     def __get_ng(
         self,
-        net,
-        size,
-        tag,
-        trace,
-        setter,
-        axon=NeuronAxon,
-        axon_params=None,
-        user_defined=None,
-    ):
+        net: Network,
+        size: Union[int, NeuronDimension],
+        tag: Union[str, None],
+        trace: Union[float, None],
+        setter: Callable,
+        axon: Behavior = NeuronAxon,
+        axon_params: dict = None,
+        user_defined: Dict[int, Behavior] = None,
+    ) -> NeuronGroup:
         behavior = {
             NEURON_PRIORITIES["Fire"]: setter(),
         }
@@ -157,27 +117,42 @@ class InputLayer(NetworkObject):
         if user_defined is not None:
             behavior.update(user_defined)
 
-        return NeuronGroup(size, behavior, net, tag)
+        return NeuronGroup(size=size, behavior=behavior, net=net, tag=tag)
+
+    def __repr__(self) -> str:
+        result = (
+            self.__class__.__name__
+            + "("
+            + f"Sensory Population {self.sensory_pop.tags[0](self.sensory_pop.size)}"
+            if hasattr(self, "sensory_pop")
+            else ""
+            + f"Location Population {self.location_pop.tags[0](self.location_pop.size)}"
+            if hasattr(self, "location_pop")
+            else "" + "){"
+        )
+        for k in sorted(list(self.behavior.keys())):
+            result += str(k) + ":" + str(self.behavior[k])
+        return result + "}"
 
 
 class OutputLayer(NetworkObject):
     def __init__(
         self,
-        net,
-        representation_size=None,
-        motor_size=None,
-        representation_trace=None,
-        motor_trace=None,
-        representation_dendrite_structure=SimpleDendriteStructure,
-        representation_dendrite_structure_params=None,
-        motor_dendrite_structure=SimpleDendriteStructure,
-        motor_dendrite_structure_params=None,
-        tag=None,
-        behavior=None,
-        representation_tag=None,
-        motor_tag=None,
-        representation_user_defined=None,
-        motor_user_defined=None,
+        net: Network,
+        representation_size: Union[int, NeuronDimension] = None,
+        motor_size: Union[int, NeuronDimension] = None,
+        representation_trace: Union[float, None] = None,
+        motor_trace: Union[float, None] = None,
+        representation_dendrite_structure: Callable = SimpleDendriteStructure,
+        representation_dendrite_structure_params: dict = None,
+        motor_dendrite_structure: Callable = SimpleDendriteStructure,
+        motor_dendrite_structure_params: dict = None,
+        tag: str = None,
+        behavior: Dict[int, Behavior] = None,
+        representation_tag: str = None,
+        motor_tag: str = None,
+        representation_user_defined: Dict[int, Behavior] = None,
+        motor_user_defined: Dict[int, Behavior] = None,
     ):
         behavior = {} if behavior is None else behavior
         super().__init__(tag=tag, network=net, behavior=behavior, device=net.device)
@@ -202,6 +177,7 @@ class OutputLayer(NetworkObject):
             )
 
             self.representation_pop.layer = self
+            self.add_sub_structure(self.representation_pop)
 
         motor_tag = "Motor" if motor_tag is None else "Motor," + motor_tag
 
@@ -217,19 +193,20 @@ class OutputLayer(NetworkObject):
             )
 
             self.motor_pop.layer = self
+            self.add_sub_structure(self.motor_pop)
 
         self.add_tag(self.__class__.__name__)
 
     def __get_ng(
         self,
-        net,
-        size,
-        tag,
-        trace=None,
-        dendrite_structure=SimpleDendriteStructure,
-        dendrite_structure_params=None,
-        user_defined=None,
-    ):
+        net: Network,
+        size: Union[int, NeuronDimension],
+        tag: Union[str, None],
+        trace: Union[float, None] = None,
+        dendrite_structure: Callable = SimpleDendriteStructure,
+        dendrite_structure_params: dict = None,
+        user_defined: Dict[int, Behavior] = None,
+    ) -> NeuronGroup:
         dendrite_structure_params = (
             dendrite_structure_params if dendrite_structure_params is not None else {}
         )
@@ -247,3 +224,17 @@ class OutputLayer(NetworkObject):
             behavior.update(user_defined)
 
         return NeuronGroup(size, behavior, net, tag)
+
+    def __repr__(self) -> str:
+        result = (
+            self.__class__.__name__
+            + "("
+            + f"representation Population {self.representation_pop.tags[0](self.representation_pop.size)}"
+            if hasattr(self, "representation_pop")
+            else "" + f"Motor Population {self.motor_pop.tags[0](self.motor_pop.size)}"
+            if hasattr(self, "motor_pop")
+            else "" + "){"
+        )
+        for k in sorted(list(self.behavior.keys())):
+            result += str(k) + ":" + str(self.behavior[k])
+        return result + "}"

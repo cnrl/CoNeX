@@ -15,6 +15,4 @@ from conex.behaviors.synapses.specs import *
 
 from conex.behaviors.layer.dataset import *
 
-from conex.nn.structure import *
-from conex.nn.modules import *
-from conex.nn.config import *
+from conex.nn import *
