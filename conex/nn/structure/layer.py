@@ -1,18 +1,33 @@
 from .container import Container
-from typing import Dict, Union
+from typing import Dict, Union, List
 from pymonntorch import Network, NeuronGroup, SynapseGroup, Behavior, NetworkObject
 from .port import Port
 import torch
 
 
 class Layer(Container):
+    """The Layer structure.
+
+    Layer structure can have multiple neurongroups, it also contains the synapsegroup between them.
+
+    Args:
+        net (Network): The network of the layer.
+        neurongroups (list): The list of containting neurongroups.
+        synapsegroups (list):  The list of containting synapsegroups.
+        input_ports (dictionary): a dictionary of lables into the list of ports.
+        output_ports (dictionary): a dictionary of lables into the list of ports.
+        behavior (dictionary): a dictionary of keys and behaviors attached to the Layer.
+        tag (str): tag of the Layer divided by ",".
+        device (device): device of the Layer. defaults to the netowrk device.
+    """
+
     def __init__(
         self,
         net: Network,
-        neurongroups: list[NeuronGroup] = None,
-        synapsegroups: list[SynapseGroup] = None,
-        input_ports: Dict[str, list[Port]] = None,
-        output_ports: Dict[str, list[Port]] = None,
+        neurongroups: List[NeuronGroup] = None,
+        synapsegroups: List[SynapseGroup] = None,
+        input_ports: Dict[str, List[Port]] = None,
+        output_ports: Dict[str, List[Port]] = None,
         behavior: Dict[int, Behavior] = None,
         tag: str = None,
         device: Union[torch.device, int, str] = None,
@@ -44,7 +59,7 @@ class Layer(Container):
             result += str(k) + ":" + str(self.behavior[k])
         return result + "}"
 
-    def save_helper(self, all_structures: list[NetworkObject]) -> dict:
+    def save_helper(self, all_structures: List[NetworkObject]) -> dict:
         """A function to help saving the structures. into a dictionary.
 
         If tag and behavior parameters are not provided, they be handled by higher saving paradigm.
@@ -67,7 +82,7 @@ class Layer(Container):
 
     @staticmethod
     def build_helper(
-        parameter_dic: dict, built_structures: dict[int, NetworkObject]
+        parameter_dic: dict, built_structures: Dict[int, NetworkObject]
     ) -> dict:
         """Function to edit the parameter dictionary into acceptable argument of the class constructor.
 
@@ -89,14 +104,30 @@ class Layer(Container):
 
 
 class CorticalLayer(Layer):
+    """The Cortical Layer structure.
+
+    Cortical Layer structure can have two neurongroups one excitatory and one inhibitory , it also contains the synapsegroup between them.
+
+    Args:
+        net (Network): The network of the layer.
+        excitatory_neurongroup (NeuronGroup): The excitatory neurongroup of layer.
+        inhibitory_neurongroup (NeuronGroup): The inhibitory neurongroup of layer.
+        synapsegroups (list):  The list of containting synapsegroups.
+        input_ports (dictionary): a dictionary of lables into the list of ports.
+        output_ports (dictionary): a dictionary of lables into the list of ports.
+        behavior (dictionary): a dictionary of keys and behaviors attached to the Layer.
+        tag (str): tag of the Layer divided by ",".
+        device (device): device of the Layer. defaults to the netowrk device.
+    """
+
     def __init__(
         self,
         net: Network,
         excitatory_neurongroup: NeuronGroup = None,
         inhibitory_neurongroup: NeuronGroup = None,
-        synapsegroups: list[SynapseGroup] = None,
-        input_ports: Dict[str, list[Port]] = None,
-        output_ports: Dict[str, list[Port]] = None,
+        synapsegroups: List[SynapseGroup] = None,
+        input_ports: Dict[str, List[Port]] = None,
+        output_ports: Dict[str, List[Port]] = None,
         behavior: Dict[int, Behavior] = None,
         tag: str = None,
         device: Union[torch.device, int, str] = None,
@@ -114,7 +145,7 @@ class CorticalLayer(Layer):
             device=device,
         )
 
-    def save_helper(self, all_structures: list[NetworkObject]) -> dict:
+    def save_helper(self, all_structures: List[NetworkObject]) -> dict:
         """A function to help saving the structures. into a dictionary.
 
         If tag and behavior parameters are not provided, they be handled by higher saving paradigm.
@@ -136,7 +167,7 @@ class CorticalLayer(Layer):
 
     @staticmethod
     def build_helper(
-        parameter_dic: dict, built_structures: dict[int, NetworkObject]
+        parameter_dic: dict, built_structures: Dict[int, NetworkObject]
     ) -> dict:
         """Function to edit the parameter dictionary into acceptable argument of the class constructor.
 

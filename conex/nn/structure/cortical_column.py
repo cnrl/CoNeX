@@ -1,20 +1,33 @@
 from .container import Container
 from pymonntorch import Network, Behavior, NetworkObject
 from .layer import CorticalLayer
-from typing import Union, Dict
+from typing import Union, Dict, List, Tuple
 from .cortical_layer_connection import CorticalLayerConnection
 from .port import Port
 import torch
 
 
 class CorticalColumn(Container):
+    """The Implementation of CorticalColumn.
+
+    Args:
+        net (Network): The network of the Cortical Column.
+        layers (dictionary): a dictionary with key as layers' name and value as corticallayers which will be cortical column's layers.
+        layer_connections (list): a list of tuple with values as (source layer name, destination layer name, corticallayerconnection). to connect inner layers.
+        input_ports (dictionary): a dictionary of lables into the list of ports.
+        output_ports (dictionary): a dictionary of lables into the list of ports.
+        behavior (dictionary): a dictionary of keys and behaviors attached to the container.
+        tag (str): tag of the container divided by ",".
+        device (device): device of the structure. defaults to the netowrk device.
+    """
+
     def __init__(
         self,
         net: Network,
         layers: Dict[str, CorticalLayer] = None,
-        layer_connections: list[tuple[str, str, CorticalLayerConnection]] = None,
-        input_ports: Dict[str, list[Port]] = None,
-        output_ports: Dict[str, list[Port]] = None,
+        layer_connections: List[Tuple[str, str, CorticalLayerConnection]] = None,
+        input_ports: Dict[str, List[Port]] = None,
+        output_ports: Dict[str, List[Port]] = None,
         behavior: Dict[int, Behavior] = None,
         tag: str = None,
         device: Union[torch.device, int, str] = None,
@@ -63,14 +76,14 @@ class CorticalColumn(Container):
             result += str(k) + ":" + str(self.behavior[k])
         return result + "}"
 
-    def required_helper(self) -> list[NetworkObject]:
+    def required_helper(self) -> List[NetworkObject]:
         """A function to find required structures.
 
         This function should return a list of structures required in time of creating the instance.
         """
         return self.sub_structures
 
-    def save_helper(self, all_structures: list[NetworkObject]) -> dict:
+    def save_helper(self, all_structures: List[NetworkObject]) -> dict:
         """A function to help saving the structures. into a dictionary.
 
         If tag and behavior parameters are not provided, they be handled by higher saving paradigm.
@@ -83,17 +96,19 @@ class CorticalColumn(Container):
             "input_ports": Container.ports_helper(self.input_ports, all_structures),
             "output_ports": Container.ports_helper(self.output_ports, all_structures),
             "layers": [
-                all_structures.index(struc) for struc in self.sub_structures if isinstance(struc, CorticalLayer)
+                all_structures.index(struc)
+                for struc in self.sub_structures
+                if isinstance(struc, CorticalLayer)
             ],
             "layers_connections": [
-                (x[0],x[1],all_structures.index(x[2])) for x in self.layer_connections
+                (x[0], x[1], all_structures.index(x[2])) for x in self.layer_connections
             ],
         }
         return result_parameters
 
     @staticmethod
     def build_helper(
-        parameter_dic: dict, built_structures: dict[int, NetworkObject]
+        parameter_dic: dict, built_structures: Dict[int, NetworkObject]
     ) -> dict:
         """Function to edit the parameter dictionary into acceptable argument of the class constructor.
 

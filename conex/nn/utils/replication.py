@@ -1,14 +1,14 @@
 import copy
 from pymonntorch import NeuronGroup, SynapseGroup, NetworkObject, Behavior, Network
-from typing import Dict
+from typing import Dict, List
 from conex.nn.structure.port import Port
 from conex.nn.structure.io_layer import InputLayer, OutputLayer
 
-CREATION_ORDER = [NeuronGroup, SynapseGroup]
 ELEMENTAL_STRUCTURE = [NeuronGroup, SynapseGroup, InputLayer, OutputLayer]
 
 
-def get_all_required_structures(struc: NetworkObject) -> list[NetworkObject]:
+def get_all_required_structures(struc: NetworkObject) -> List[NetworkObject]:
+    net = struc.network
     all_required_sub_structures = [struc.required_helper()]
     while all_required_sub_structures[-1]:
         current_struc = []
@@ -17,27 +17,11 @@ def get_all_required_structures(struc: NetworkObject) -> list[NetworkObject]:
                 current_struc.extend(current_struc.required_helper())
         all_required_sub_structures.append(current_struc)
 
-    # sort all required  sub stuctures.
-    all_required_sub_structures.reverse()
-    for i in range(len(all_required_sub_structures)):
-        sub_result = []
-        for cl in CREATION_ORDER:
-            sub_result.extend(
-                [x for x in all_required_sub_structures[i] if isinstance(x, cl)]
-            )
-        non_order = {
-            struc.network.Structures.index(x): x
-            for x in all_required_sub_structures[i]
-            if x not in sub_result
-        }
-        sub_result.extend([non_order[x] for x in sorted(non_order.keys())])
-        all_required_sub_structures[i] = sub_result
-
     flatten = [x for xs in all_required_sub_structures for x in xs]
     if len(flatten) != len(set(flatten)):
         print("ERROR: duplicate elements returned by required_helpers")
 
-    return flatten
+    return sorted(flatten, key=lambda x: net.Structures.index(x))
 
 
 def save_ports(ports, save_behavior_tag: bool, save_behavior_priority: bool) -> dict:
@@ -58,7 +42,7 @@ def save_ports(ports, save_behavior_tag: bool, save_behavior_priority: bool) -> 
     return result
 
 
-def build_ports(ports: Dict[str, list[Port]]) -> dict[str, tuple]:
+def build_ports(ports: Dict[str, List[Port]]) -> Dict[str, tuple]:
     result = {}
     for key, value in ports.items():
         result[key] = [(x[0], x[1], build_behavior_dict(x[2])) for x in value]
@@ -74,7 +58,6 @@ def save_structure(
     save_behavior_priority: bool = True,
     all_structures_required: list = None,
 ) -> dict:
-
     result = {"tag": None}
     result["class"] = struc.__class__
     result["behavior"] = behaviors_to_list(
@@ -128,10 +111,10 @@ def save_structure(
 
 
 def behaviors_to_list(
-    behavior: dict[int, Behavior],
+    behavior: Dict[int, Behavior],
     save_behavior_tag: bool = True,
     save_behavior_priority: bool = True,
-) -> list[dict]:
+) -> List[dict]:
     result = []
     for key, value in behavior.items():
         behave_dict = {}
@@ -154,7 +137,7 @@ def behaviors_to_list(
     return result
 
 
-def build_behavior_dict(behavior_list: list[dict]) -> dict[int, Behavior]:
+def build_behavior_dict(behavior_list: List[dict]) -> Dict[int, Behavior]:
     result = {}
     for i, beh_dict in enumerate(behavior_list):
         key = i if "key" not in beh_dict else beh_dict["key"]
@@ -232,5 +215,7 @@ def replicate(obj: NetworkObject, net: Network) -> NetworkObject:
         all_structures_required=None,
     )
     new_dict = copy.deepcopy(save_dict)
-    struc = create_structure_from_dict(net=net, structure_dict=new_dict, built_structures=None)
+    struc = create_structure_from_dict(
+        net=net, structure_dict=new_dict, built_structures=None
+    )
     return struc, save_dict

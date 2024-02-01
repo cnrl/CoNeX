@@ -1,5 +1,5 @@
 from .container import Container
-from typing import Union, Dict
+from typing import Union, Dict, List
 from pymonntorch import Network, Behavior, NetworkObject, SynapseGroup, NeuronGroup
 import torch
 import copy
@@ -7,6 +7,23 @@ from conex.nn.utils.replication import behaviors_to_list, build_behavior_dict
 
 
 class Synapsis(Container):
+    """Synapsis structure
+
+    This structure connects two ports, and connects all the possible synapsegroups between them.
+
+    Args:
+        net (Network): The network of the layer.
+        src (NetworkObject): The source of synpsis object.
+        dst (NetworkObject): The destination of synpsis object.
+        input_port (str): The input label of source port.
+        output_port (str): The output label of destination port.
+        synapsis_behavior (dict): the behavior of synapses created.
+        synapstic_tag (str): The tag of the synapses created.
+        behavior (dictionary): A dictionary of keys and behaviors attached to the container.
+        tag (str): tag of the container divided by ",".
+        device (device): device of the structure. defaults to the netowrk device.
+    """
+
     def __init__(
         self,
         net: Network,
@@ -35,20 +52,22 @@ class Synapsis(Container):
         if self.src is not None and self.dst is not None:
             self.create_synapses(self)
 
-    def connect_src(self, src: NeuronGroup):
-        self.src = src
-        if self.src is not None and self.dst is not None:
+    def connect_src(self, src: NetworkObject):
+        if self.src is None and src is not None:
+            self.src = src
+        if self.dst is not None:
             self.create_synapses()
 
-    def connect_dst(self, dst: NeuronGroup):
-        self.dst = dst
-        if self.src is not None and self.dst is not None:
+    def connect_dst(self, dst: NetworkObject):
+        if self.dst is None and dst is not None:
+            self.dst = dst
+        if self.src is not None:
             self.create_synapses()
 
     @staticmethod
     def _port2ng(
         label: Union[str, None], object: NetworkObject, src_port: bool = True
-    ) -> list[list[NeuronGroup, Dict[int, Behavior]]]:
+    ) -> List[List[NeuronGroup, Dict[int, Behavior]]]:
         if isinstance(object, NeuronGroup):
             return [[object, {}]]
         elif isinstance(object, Container):
@@ -77,7 +96,7 @@ class Synapsis(Container):
                             src=x[0],
                             dst=y[0],
                             behavior={**x[1], **y[1], **self.synapsis_behavior},
-                            tag=self.synaptic_tag
+                            tag=self.synaptic_tag,
                         )
                     )
 
@@ -93,14 +112,14 @@ class Synapsis(Container):
             result += str(k) + ":" + str(self.behavior[k])
         return result + "}"
 
-    def required_helper(self) -> list[NetworkObject]:
+    def required_helper(self) -> List[NetworkObject]:
         """A function to find required structures.
 
         This function should return a list of structures required in time of creating the instance.
         """
         return []
 
-    def save_helper(self, all_structures: list[NetworkObject]) -> dict:
+    def save_helper(self, all_structures: List[NetworkObject]) -> dict:
         """A function to help saving the structures. into a dictionary.
 
         If tag and behavior parameters are not provided, they be handled by higher saving paradigm.
@@ -125,7 +144,7 @@ class Synapsis(Container):
 
     @staticmethod
     def build_helper(
-        parameter_dic: dict, built_structures: dict[int, NetworkObject]
+        parameter_dic: dict, built_structures: Dict[int, NetworkObject]
     ) -> dict:
         """Function to edit the parameter dictionary into acceptable argument of the class constructor.
 

@@ -10,6 +10,33 @@ from conex.behaviors.layer.dataset import SpikeNdDataset
 
 
 class InputLayer(NetworkObject):
+    """A sample input layer.
+
+    Args:
+        input_dataloader (torch dataloader): The dataloader of input layer.
+        have_sensory (bool): Whether dataloader return sensory data or not.
+        have_location (bool): Whether dataloader location data or not.
+        have_label (bool): Whether dataloader label or not.
+        sensory_size (int or behavior): The size of each sensory neurongroup.
+        location_size (int or behavior): The size of each location neurongroup.
+        sensory_axon (behavior): The behavior class for axon paradigm of sensory neurongroup.
+        sensory_axon_params (dict): Parameters for axon class of sensory neurongroup.
+        location_axon (behavior): The behavior class for axon paradigm of location neurongroup.
+        location_axon_params (dict): Parameters for axon class of location neurongroup.
+        silent_interval (int): Empty interval between two samples.
+        instance_duration (int): Each sample duraiton
+        sensory_trace (float): The spike trace of sensory neurongroup.
+        location_trace (float): The spike trace of location neurongroup.
+        sensory_data_dim (int): The number of dimension of sensory data.
+        location_data_dim (int): The number of dimension of location data.
+        behavior (dict): The behavior for the InputLayer itself.
+        tag (str): tag of the InputLayer divided by ",".
+        sensory_tag (str): tag of the sensory population divided by ",".
+        location_tag (ste): tag of the location population divided by ",".
+        sensory_user_defined (dict): Additional behavior for sensory neurongroup.
+        location_user_defined (dict): Additional behavior for location neurongroup.
+    """
+
     def __init__(
         self,
         net: Network,
@@ -136,6 +163,25 @@ class InputLayer(NetworkObject):
 
 
 class OutputLayer(NetworkObject):
+    """A sample output layer.
+
+    Args:
+        representation_size (int or behavior): The size of each representation neurongroup.
+        motor_size (int or behavior): The size of each motor neurongroup.
+        representation_trace (float): The spike trace of representation neurongroup.
+        motor_trace (float): The spike trace of motor neurongroup.
+        representation_dendrite_structure (Callable): Dendrite structure for representation population.
+        representation_dendrite_structure_params (dict): The parameters for dendrite structure of representation population.
+        motor_dendrite_structure (Callable): Dendrite structure for motor population.
+        motor_dendrite_structure_params (dict): The parameters for dendrite structure of representation population.
+        behavior (dict): The behavior for the InputLayer itself.
+        tag (str): tag of the InputLayer divided by ",".
+        representation_tag (str): tag of the representation population divided by ",".
+        motor_tag (str): tag of the motor population divided by ",".
+        representation_user_defined (dict): Additional behavior for representation neurongroup.
+        motor_user_defined (dict): Additional behavior for motor neurongroup.
+    """
+
     def __init__(
         self,
         net: Network,

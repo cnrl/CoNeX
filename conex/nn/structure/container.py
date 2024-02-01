@@ -3,18 +3,20 @@ Implementation of Base Container.
 """
 from pymonntorch import NetworkObject, Network, Behavior
 from .port import Port
-from typing import Dict, Union
+from typing import Dict, Union, List
 import torch
 
 
 class Container(NetworkObject):
     """The container Structute.
 
+    Note: All the children should override required_helper, save_helper and build_helper.
+
     Args:
         net (Network): The network of the layer.
         sub_structures (list of NetworkObjects): The list of NetworkObject to be part of the container.
-        input_ports (dictionary): A dictionary of lables into the tuple (sub structures, label or None).
-        output_ports (dictionary): A dictionary of lables into the tuple (sub structures, label or None).
+        input_ports (dictionary): a dictionary of lables into the list of ports.
+        output_ports (dictionary): a dictionary of lables into the list of ports.
         behavior (dictionary): A dictionary of keys and behaviors attached to the container.
         tag (str): tag of the container divided by ",".
         device (device): device of the structure. defaults to the netowrk device.
@@ -23,9 +25,9 @@ class Container(NetworkObject):
     def __init__(
         self,
         net: Network,
-        sub_structures: list[NetworkObject],
-        input_ports: Dict[str, list[Port]] = None,
-        output_ports: Dict[str, list[Port]] = None,
+        sub_structures: List[NetworkObject],
+        input_ports: Dict[str, List[Port]] = None,
+        output_ports: Dict[str, List[Port]] = None,
         behavior: Dict[int, Behavior] = None,
         tag: str = None,
         device: Union[torch.device, int, str] = None,
@@ -35,7 +37,7 @@ class Container(NetworkObject):
         self.input_ports = input_ports if input_ports is not None else {}
         self.output_ports = output_ports if output_ports is not None else {}
 
-    def add_sub_structures(self, structure_list: list[NetworkObject]):
+    def add_sub_structures(self, structure_list: List[NetworkObject]):
         for struc in structure_list:
             self.add_sub_structure(struc)
 
@@ -51,14 +53,14 @@ class Container(NetworkObject):
             result += str(k) + ":" + str(self.behavior[k])
         return result + "}"
 
-    def required_helper(self) -> list[NetworkObject]:
+    def required_helper(self) -> List[NetworkObject]:
         """A function to find required structures.
 
         This function should return a list of structures required in time of creating the instance.
         """
         return self.sub_structures
 
-    def save_helper(self, all_structures: list[NetworkObject]) -> dict:
+    def save_helper(self, all_structures: List[NetworkObject]) -> dict:
         """A function to help saving the structures. into a dictionary.
 
         If tag and behavior parameters are not provided, they be handled by higher saving paradigm.
@@ -77,7 +79,9 @@ class Container(NetworkObject):
         return result_parameters
 
     @staticmethod
-    def ports_helper(ports: Dict[str, list[Port]], helper_struc: Union[list, dict]) -> dict:
+    def ports_helper(
+        ports: Dict[str, List[Port]], helper_struc: Union[list, dict]
+    ) -> dict:
         """Transforms the port dictionary to use objects or indexes.
 
         Args:
@@ -90,7 +94,9 @@ class Container(NetworkObject):
                 result[key] = [(helper_struc[x[0]], x[1], x[2]) for x in ports]
         else:
             for key in ports:
-                result[key] = [(helper_struc.index(x.object), x.label, x.behavior) for x in ports]
+                result[key] = [
+                    (helper_struc.index(x.object), x.label, x.behavior) for x in ports
+                ]
         return result
 
     @staticmethod

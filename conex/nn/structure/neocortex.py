@@ -6,6 +6,20 @@ import torch
 
 
 class Neocortex(Network):
+    """Neocortex.
+
+    Neocortex structure is the network equivalent. it also contains the all the structures..
+
+    Args:
+        dt (float): The time resolution of the simulation.
+        behavior (dictionary): a dictionary of keys and behaviors attached to the Layer.
+        dtype (torch dtype): The precision of floating point compuation.
+        device (device): device of the Layer. defaults to the netowrk device.
+        synapse_mode (str): The synapse structure in simulation, possible values: "SxD", "DxS".
+        index (bool): Add the index vector to neuron populations.
+        tag (str): tag of the Layer divided by ",".
+    """
+
     def __init__(
         self,
         dt: Union[float, None] = 1,

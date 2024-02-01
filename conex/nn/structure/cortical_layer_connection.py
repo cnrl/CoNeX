@@ -1,5 +1,5 @@
 from .container import Container
-from typing import Dict, Union
+from typing import Dict, Union, List
 from pymonntorch import Network, Behavior, SynapseGroup, NetworkObject
 import torch
 import copy
@@ -7,12 +7,23 @@ from conex.nn.utils.replication import behaviors_to_list, build_behavior_dict
 
 
 class CorticalLayerConnection(Container):
+    """Connection scheme between two layers.
+
+    Args:
+        src (NetworkObject): The source network object such as a layer with neurongroups as attribute.
+        dst (NetworkObject): The destination network object such as a layer with neurongroups as attribute.
+        connections: (list): The list of connection created between two objects. Each connection is defined with quaduple of source neurongroup's attribute name, destinations' attribute name, behavior dictionary, and synapse tag.
+        behavior (dict): The behavior for the CorticalLayerConnection itself.
+        tag (str): tag of the CorticalLayerConnection divided by ",".
+        device (device): device of the structure. Defaults to the netowrk device.
+    """
+
     def __init__(
         self,
         net: Network,
         src: NetworkObject = None,
         dst: NetworkObject = None,
-        connections: list[list[str, str, Dict[int, Behavior], str]] = None,
+        connections: List[List[str, str, Dict[int, Behavior], str]] = None,
         behavior: Dict[int, Behavior] = None,
         tag: str = None,
         device: Union[torch.device, int, str] = None,
@@ -30,13 +41,15 @@ class CorticalLayerConnection(Container):
             self.create_synapses(self)
 
     def connect_src(self, src: NetworkObject):
-        self.src = src
+        if self.src is None and src is not None:
+            self.src = src
         if self.src is not None and self.dst is not None:
             self.create_synapses()
 
     def connect_dst(self, dst: NetworkObject):
-        self.dst = dst
-        if self.src is not None and self.dst is not None:
+        if self.dst is None and dst is not None:
+            self.dst = dst
+        if self.dst is not None and self.dst is not None:
             self.create_synapses()
 
     def create_synapses(self):
@@ -67,14 +80,14 @@ class CorticalLayerConnection(Container):
             result += str(k) + ":" + str(self.behavior[k])
         return result + "}"
 
-    def required_helper(self) -> list[NetworkObject]:
+    def required_helper(self) -> List[NetworkObject]:
         """A function to find required structures.
 
         This function should return a list of structures required in time of creating the instance.
         """
         return []
 
-    def save_helper(self, all_structures: list[NetworkObject]) -> dict:
+    def save_helper(self, all_structures: List[NetworkObject]) -> dict:
         """A function to help saving the structures. into a dictionary.
 
         If tag and behavior parameters are not provided, they be handled by higher saving paradigm.
