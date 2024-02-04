@@ -89,7 +89,7 @@ class Container(NetworkObject):
             helper_struc (list or dictionary): dictionary of saved structures or a list of structures.
         """
         result = {}
-        if type(helper_struc) is dict:
+        if isinstance(helper_struc, dict):
             for key in ports:
                 result[key] = [(helper_struc[x[0]], x[1], x[2]) for x in ports]
         else:
