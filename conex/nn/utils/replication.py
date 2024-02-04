@@ -140,7 +140,7 @@ def behaviors_to_list(
 def build_behavior_dict(behavior_list: List[dict]) -> Dict[int, Behavior]:
     result = {}
     for i, beh_dict in enumerate(behavior_list):
-        key = i if "key" not in beh_dict else beh_dict["key"]
+        key = beh_dict.get("key", i)
         value = beh_dict["class"](
             *beh_dict["parameters_args"], **beh_dict["parameters_kwargs"]
         )
