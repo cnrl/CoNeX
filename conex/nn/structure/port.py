@@ -1,10 +1,10 @@
-from typing import Dict
+from typing import Dict, NamedTuple
 from dataclasses import dataclass
 from pymonntorch import NetworkObject, Behavior
 
 
 @dataclass
-class Port:
+class Port(NamedTuple):
     """Container's Port dataclass
 
     Args:

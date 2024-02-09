@@ -1,5 +1,5 @@
 from .container import Container
-from typing import Dict, Union, List
+from typing import Dict, Union, List, Tuple
 from pymonntorch import Network, NeuronGroup, SynapseGroup, Behavior, NetworkObject
 from .port import Port
 import torch
@@ -26,8 +26,8 @@ class Layer(Container):
         net: Network,
         neurongroups: List[NeuronGroup] = None,
         synapsegroups: List[SynapseGroup] = None,
-        input_ports: Dict[str, List[Port]] = None,
-        output_ports: Dict[str, List[Port]] = None,
+        input_ports: Dict[str, Tuple[dict, List[Port]]] = None,
+        output_ports: Dict[str, Tuple[dict, List[Port]]] = None,
         behavior: Dict[int, Behavior] = None,
         tag: str = None,
         device: Union[torch.device, int, str] = None,

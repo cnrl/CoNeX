@@ -1,6 +1,6 @@
 import copy
 from pymonntorch import NeuronGroup, SynapseGroup, NetworkObject, Behavior, Network
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from conex.nn.structure.port import Port
 from conex.nn.structure.io_layer import InputLayer, OutputLayer
 
@@ -24,28 +24,39 @@ def get_all_required_structures(struc: NetworkObject) -> List[NetworkObject]:
     return sorted(flatten, key=lambda x: net.Structures.index(x))
 
 
-def save_ports(ports, save_behavior_tag: bool, save_behavior_priority: bool) -> dict:
-    result = {}
-    for key, value in ports.items():
-        result[key] = [
-            (
-                x[0],
-                x[1],
-                behaviors_to_list(
-                    x[2],
-                    save_behavior_priority=save_behavior_priority,
-                    save_behavior_tag=save_behavior_tag,
-                ),
-            )
-            for x in value
-        ]
+def save_ports(
+    ports: Dict[str, Tuple[dict, List[Port]]],
+    save_behavior_tag: bool,
+    save_behavior_priority: bool,
+) -> dict:
+    result = {
+        k: (
+            v[0],
+            [
+                (
+                    x[0],
+                    x[1],
+                    behaviors_to_list(
+                        x[2],
+                        save_behavior_priority=save_behavior_priority,
+                        save_behavior_tag=save_behavior_tag,
+                    ),
+                )
+                for x in v[1]
+            ],
+        )
+        for k, v in ports.items()
+    }
     return result
 
 
-def build_ports(ports: Dict[str, List[Port]]) -> Dict[str, tuple]:
+def build_ports(ports: Dict[str, Tuple[dict, List[Port]]]) -> Dict[str, tuple]:
     result = {}
-    for key, value in ports.items():
-        result[key] = [(x[0], x[1], build_behavior_dict(x[2])) for x in value]
+    for key, v in ports.items():
+        result[key] = (
+            v[0],
+            [Port(x[0], x[1], build_behavior_dict(x[2])) for x in v[1]],
+        )
     return result
 
 
@@ -100,9 +111,9 @@ def save_structure(
                     save_behavior_priority=save_behavior_priority,
                     save_device=save_device,
                 )
-                built_structures[
-                    all_structures_required.index(sub_struc)
-                ] = built_sub_struc
+                built_structures[all_structures_required.index(sub_struc)] = (
+                    built_sub_struc
+                )
 
         helper_dictionary = struc.save_helper(all_structures_required)
         result.update(helper_dictionary)
@@ -164,12 +175,16 @@ def create_structure_from_dict(
         print(built_structures)
         return SynapseGroup(
             net=net,
-            src=struc_dict["src"]
-            if struc_dict["src"] is None
-            else built_structures[struc_dict["src"]],
-            dst=struc_dict["dst"]
-            if struc_dict["dst"] is None
-            else built_structures[struc_dict["dst"]],
+            src=(
+                struc_dict["src"]
+                if struc_dict["src"] is None
+                else built_structures[struc_dict["src"]]
+            ),
+            dst=(
+                struc_dict["dst"]
+                if struc_dict["dst"] is None
+                else built_structures[struc_dict["dst"]]
+            ),
             behavior=build_behavior_dict(struc_dict["behavior"]),
             tag=struc_dict["tag"],
         )

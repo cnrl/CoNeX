@@ -1,9 +1,10 @@
 """
 Implementation of Base Container.
 """
+
 from pymonntorch import NetworkObject, Network, Behavior
 from .port import Port
-from typing import Dict, Union, List
+from typing import Dict, Union, List, Tuple
 import torch
 
 
@@ -26,8 +27,8 @@ class Container(NetworkObject):
         self,
         net: Network,
         sub_structures: List[NetworkObject],
-        input_ports: Dict[str, List[Port]] = None,
-        output_ports: Dict[str, List[Port]] = None,
+        input_ports: Dict[str, Tuple[dict, List[Port]]] = None,
+        output_ports: Dict[str, Tuple[dict, List[Port]]] = None,
         behavior: Dict[int, Behavior] = None,
         tag: str = None,
         device: Union[torch.device, int, str] = None,
@@ -88,15 +89,19 @@ class Container(NetworkObject):
             ports (dictionary): The dictionary of desired ports to transform.
             helper_struc (list or dictionary): dictionary of saved structures or a list of structures.
         """
-        result = {}
         if isinstance(helper_struc, dict):
-            for key in ports:
-                result[key] = [(helper_struc[x[0]], x[1], x[2]) for x in ports]
+            result = {
+                k: (v[0], [(helper_struc[x[0]], x[1], x[2]) for x in v[1]])
+                for k, v in ports.items()
+            }
         else:
-            for key in ports:
-                result[key] = [
-                    (helper_struc.index(x.object), x.label, x.behavior) for x in ports
-                ]
+            result = {
+                k: (
+                    v[0],
+                    [(helper_struc.index(x.object), x.label, x.behavior) for x in v[1]],
+                )
+                for k, v in ports.items()
+            }
         return result
 
     @staticmethod
