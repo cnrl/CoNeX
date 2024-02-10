@@ -98,7 +98,7 @@ class Container(NetworkObject):
             result = {
                 k: (
                     v[0],
-                    [(helper_struc.index(x.object), x.label, x.behavior) for x in v[1]],
+                    [(helper_struc.index(x[0]), x[1], x[2]) for x in v[1]],
                 )
                 for k, v in ports.items()
             }

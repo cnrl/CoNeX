@@ -1,5 +1,5 @@
 from .container import Container
-from typing import Dict, Union, List
+from typing import Dict, Union, List, Tuple
 from pymonntorch import Network, Behavior, SynapseGroup, NetworkObject
 import torch
 import copy
@@ -23,22 +23,22 @@ class CorticalLayerConnection(Container):
         net: Network,
         src: NetworkObject = None,
         dst: NetworkObject = None,
-        connections: List[List[str, str, Dict[int, Behavior], str]] = None,
+        connections: List[Tuple[str, str, Dict[int, Behavior], str]] = None,
         behavior: Dict[int, Behavior] = None,
         tag: str = None,
         device: Union[torch.device, int, str] = None,
     ):
-        self.src = src
-        self.dst = dst
-        self.connections = connections
-
         super().__init__(
             net=net, sub_structures=[], behavior=behavior, tag=tag, device=device
         )
 
+        self.src = src
+        self.dst = dst
+        self.connections = connections
+
         self.synapses = self.sub_structures
         if self.src is not None and self.dst is not None:
-            self.create_synapses(self)
+            self.create_synapses()
 
     def connect_src(self, src: NetworkObject):
         if self.src is None and src is not None:
@@ -60,7 +60,7 @@ class CorticalLayerConnection(Container):
                 dst = getattr(self.dst, dst_str)
                 self.synapses.append(
                     SynapseGroup(
-                        net=self.net,
+                        net=self.network,
                         src=src,
                         dst=dst,
                         behavior=copy.deepcopy(beh),
@@ -127,8 +127,8 @@ class CorticalLayerConnection(Container):
             if parameter_dic["dst"] is not None
             else None
         )
-        parameter_dic["synapsis_behavior"] = [
+        parameter_dic["connections"] = [
             [x[0], x[1], build_behavior_dict(x[2]), x[3]]
-            for x in built_structures["synapsis_behavior"]
+            for x in parameter_dic["connections"]
         ]
         return parameter_dic

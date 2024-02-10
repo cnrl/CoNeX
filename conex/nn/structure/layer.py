@@ -132,11 +132,9 @@ class CorticalLayer(Layer):
         tag: str = None,
         device: Union[torch.device, int, str] = None,
     ):
-        self.exc_pop = excitatory_neurongroup
-        self.inh_pop = inhibitory_neurongroup
         super().__init__(
             net=net,
-            neurongroups=[self.exc_pop, self.inh_pop],
+            neurongroups=[excitatory_neurongroup, inhibitory_neurongroup],
             synapsegroups=synapsegroups,
             input_ports=input_ports,
             output_ports=output_ports,
@@ -144,6 +142,8 @@ class CorticalLayer(Layer):
             tag=tag,
             device=device,
         )
+        self.exc_pop = excitatory_neurongroup
+        self.inh_pop = inhibitory_neurongroup
 
     def save_helper(self, all_structures: List[NetworkObject]) -> dict:
         """A function to help saving the structures. into a dictionary.

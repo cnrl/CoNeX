@@ -4,9 +4,10 @@ from conex.behaviors.neurons.setters import SensorySetter, LocationSetter
 from conex.behaviors.neurons.specs import SpikeTrace
 from conex.behaviors.neurons.dendrite import SimpleDendriteStructure
 from torch.utils.data.dataloader import DataLoader
-from typing import Union, Dict, Callable
+from typing import Union, Dict, Callable, Tuple, List
 from conex.nn.priority import LAYER_PRIORITIES, NEURON_PRIORITIES
 from conex.behaviors.layer.dataset import SpikeNdDataset
+from conex.nn.structure.port import Port
 
 
 class InputLayer(NetworkObject):
@@ -60,13 +61,16 @@ class InputLayer(NetworkObject):
         behavior: Dict[int, Behavior] = None,
         sensory_tag: str = None,
         location_tag: str = None,
+        output_ports: Dict[
+            str, Tuple[Union[Tuple, None], List[Tuple[str, Dict[int, Behavior]]]]
+        ] = None,
         sensory_user_defined: Dict[int, Behavior] = None,
         location_user_defined: Dict[int, Behavior] = None,
     ):
         behavior = {} if behavior is None else behavior
 
         if LAYER_PRIORITIES["SpikeNdDataset"] not in behavior:
-            behavior[LAYER_PRIORITIES["InputDataset"]] = SpikeNdDataset(
+            behavior[LAYER_PRIORITIES["SpikeNdDataset"]] = SpikeNdDataset(
                 dataloader=input_dataloader,
                 ndim_sensory=sensory_data_dim,
                 ndim_location=location_data_dim,
@@ -119,6 +123,9 @@ class InputLayer(NetworkObject):
             self.location_pop.layer = self
             self.add_sub_structure(self.location_pop)
 
+        self.output_ports = _create_port(output_ports, self)
+        self.input_ports = {}
+
     def __get_ng(
         self,
         net: Network,
@@ -139,7 +146,7 @@ class InputLayer(NetworkObject):
             behavior[NEURON_PRIORITIES["NeuronAxon"]] = axon(**params)
 
         if trace is not None:
-            behavior[NEURON_PRIORITIES["Trace"]] = SpikeTrace(tau_s=trace)
+            behavior[NEURON_PRIORITIES["SpikeTrace"]] = SpikeTrace(tau_s=trace)
 
         if user_defined is not None:
             behavior.update(user_defined)
@@ -150,10 +157,10 @@ class InputLayer(NetworkObject):
         result = (
             self.__class__.__name__
             + "("
-            + f"Sensory Population {self.sensory_pop.tags[0](self.sensory_pop.size)}"
+            + f"Sensory Population {self.sensory_pop.tags[0]}({self.sensory_pop.size})"
             if hasattr(self, "sensory_pop")
             else ""
-            + f"Location Population {self.location_pop.tags[0](self.location_pop.size)}"
+            + f"Location Population {self.location_pop.tags[0]}({self.location_pop.size})"
             if hasattr(self, "location_pop")
             else "" + "){"
         )
@@ -197,6 +204,9 @@ class OutputLayer(NetworkObject):
         behavior: Dict[int, Behavior] = None,
         representation_tag: str = None,
         motor_tag: str = None,
+        input_ports: Dict[
+            str, Tuple[Union[Tuple, None], List[Tuple[str, Dict[int, Behavior]]]]
+        ] = None,
         representation_user_defined: Dict[int, Behavior] = None,
         motor_user_defined: Dict[int, Behavior] = None,
     ):
@@ -243,6 +253,9 @@ class OutputLayer(NetworkObject):
 
         self.add_tag(self.__class__.__name__)
 
+        self.input_ports = _create_port(input_ports, self)
+        self.output_ports = {}
+
     def __get_ng(
         self,
         net: Network,
@@ -259,7 +272,7 @@ class OutputLayer(NetworkObject):
         behavior = {}
 
         if dendrite_structure:
-            behavior[NEURON_PRIORITIES["DendriteStructure"]] = dendrite_structure(
+            behavior[NEURON_PRIORITIES["SimpleDendriteStructure"]] = dendrite_structure(
                 **dendrite_structure_params
             )
 
@@ -275,12 +288,28 @@ class OutputLayer(NetworkObject):
         result = (
             self.__class__.__name__
             + "("
-            + f"representation Population {self.representation_pop.tags[0](self.representation_pop.size)}"
+            + f"representation Population {self.representation_pop.tags[0]}({self.representation_pop.size})"
             if hasattr(self, "representation_pop")
-            else "" + f"Motor Population {self.motor_pop.tags[0](self.motor_pop.size)}"
+            else ""
+            + f"Motor Population {self.motor_pop.tags[0]}({self.motor_pop.size})"
             if hasattr(self, "motor_pop")
             else "" + "){"
         )
         for k in sorted(list(self.behavior.keys())):
             result += str(k) + ":" + str(self.behavior[k])
         return result + "}"
+
+
+def _create_port(
+    port_dict: Dict[
+        str, Tuple[Union[Tuple, None], List[Tuple[str, Dict[int, Behavior]]]]
+    ],
+    obj: Union[InputLayer, OutputLayer],
+):
+    result = {}
+    if port_dict is not None:
+        result = {
+            k: (v[0], [Port(object=getattr(obj, sp[0]), behavior=sp[1]) for sp in v[1]])
+            for k, v in port_dict.items()
+        }
+    return result

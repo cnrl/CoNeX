@@ -1,9 +1,10 @@
 from .container import Container
-from typing import Union, Dict, List
+from typing import Union, Dict, List, Tuple
 from pymonntorch import Network, Behavior, NetworkObject, SynapseGroup, NeuronGroup
 import torch
 import copy
 from conex.nn.utils.replication import behaviors_to_list, build_behavior_dict
+from .io_layer import InputLayer, OutputLayer
 
 
 class Synapsis(Container):
@@ -37,6 +38,10 @@ class Synapsis(Container):
         tag: str = None,
         device: Union[torch.device, int, str] = None,
     ):
+        super().__init__(
+            net=net, sub_structures=[], behavior=behavior, tag=tag, device=device
+        )
+
         self.input_port = input_port
         self.output_port = output_port
         self.synapsis_behavior = synapsis_behavior
@@ -44,13 +49,9 @@ class Synapsis(Container):
         self.src = src
         self.dst = dst
 
-        super().__init__(
-            net=net, sub_structures=[], behavior=behavior, tag=tag, device=device
-        )
-
         self.synapses = self.sub_structures
         if self.src is not None and self.dst is not None:
-            self.create_synapses(self)
+            self.create_synapses()
 
     def connect_src(self, src: NetworkObject):
         if self.src is None and src is not None:
@@ -67,18 +68,20 @@ class Synapsis(Container):
     @staticmethod
     def _port2ng(
         label: Union[str, None], object: NetworkObject, src_port: bool = True
-    ) -> List[List[NeuronGroup, Dict[int, Behavior]]]:
+    ) -> List[Tuple[NeuronGroup, Dict[int, Behavior]]]:
         if isinstance(object, NeuronGroup):
             return [[object, {}]]
-        elif isinstance(object, Container):
+        elif isinstance(object, (Container, InputLayer, OutputLayer)):
             result = []
             search_port = object.output_ports if src_port else object.input_ports
-            for port in search_port[label]:
-                port_result = Synapsis._port2ng(port.label, port.object)
-                port_result = [
-                    [x[0], x[1].update(copy.deepcopy(port.behavior))]
-                    for x in port_result
-                ]
+            for port in search_port.get(label, [[], []])[1]:
+                p_behavior = port.behavior if port.behavior is not None else {}
+                port_result = Synapsis._port2ng(port.label, port.object, src_port)
+                for i, x in enumerate(port_result):
+                    x[1] = {
+                        **copy.deepcopy(p_behavior),
+                        **copy.deepcopy(x[1] if x[1] is not None else {}),
+                    }
                 result.extend(port_result)
             return result
         else:
@@ -87,12 +90,12 @@ class Synapsis(Container):
     def create_synapses(self):
         if not self.synapses:
             src_ng = Synapsis._port2ng(self.input_port, self.src)
-            dst_ng = Synapsis._port2ng(self.output_port, self.dst)
+            dst_ng = Synapsis._port2ng(self.output_port, self.dst, src_port=False)
             for x in src_ng:
                 for y in dst_ng:
                     self.synapses.append(
                         SynapseGroup(
-                            net=self.net,
+                            net=self.network,
                             src=x[0],
                             dst=y[0],
                             behavior={**x[1], **y[1], **self.synapsis_behavior},

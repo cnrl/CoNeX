@@ -30,11 +30,15 @@ class Neocortex(Network):
         index: bool = False,
         tag: str = None,
     ):
+        behavior = behavior if behavior is not None else {}
         behavior = {
             **behavior,
             NETWORK_PRIORITIES["TimeResolution"]: TimeResolution(dt=dt),
         }
         tag = tag if tag is not None else "Neocortex"
+        self.input_layers = []
+        self.output_layers = []
+        self.cortical_columns = []
         super().__init__(
             tag=tag,
             behavior=behavior,

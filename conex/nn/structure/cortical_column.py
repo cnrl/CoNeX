@@ -46,12 +46,12 @@ class CorticalColumn(Container):
             device=device,
         )
 
-        def create_layer_connections(self):
-            for x in self.layer_connections:
-                src_str, dst_str, clc = x
-                if clc.src is None and clc.dst is None:
-                    clc.connect_src(self.layers[src_str])
-                    clc.connect_dst(self.layers[dst_str])
+    def create_layer_connections(self):
+        for x in self.layer_connections:
+            src_str, dst_str, clc = x
+            if clc.src is None and clc.dst is None:
+                clc.connect_src(self.layers[src_str])
+                clc.connect_dst(self.layers[dst_str])
 
     def __repr__(self) -> str:
         result = (

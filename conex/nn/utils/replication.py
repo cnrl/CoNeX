@@ -1,11 +1,31 @@
 import copy
 from pymonntorch import NeuronGroup, SynapseGroup, NetworkObject, Behavior, Network
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Callable
 from conex.nn.structure.port import Port
 from conex.nn.structure.io_layer import InputLayer, OutputLayer
+import json
 
 ELEMENTAL_STRUCTURE = [NeuronGroup, SynapseGroup, InputLayer, OutputLayer]
 
+def object_hook(json_dict):
+    def load_python_callables(raw_dict):
+        for k, v in raw_dict.items():
+            if isinstance(v, dict):
+                load_python_callables(v)
+            if isinstance(v, list) and len(v) > 0 and v[0] == "python_callable":
+                import_string = f"import {v[1]}"
+                exec(import_string)
+                raw_dict[k] = eval(f"{v[1]}.{v[2]}")
+
+    load_python_callables(json_dict)
+    return json_dict
+
+
+class ExtraCallableJSONEncoder(json.JSONEncoder):
+    def default(self, object):
+        if isinstance(object, Callable):
+            return ("python_callable", object.__module__, object.__name__)
+        super().default(object)
 
 def get_all_required_structures(struc: NetworkObject) -> List[NetworkObject]:
     net = struc.network
@@ -172,7 +192,6 @@ def create_structure_from_dict(
         )
 
     if struc_dict["class"] == SynapseGroup:
-        print(built_structures)
         return SynapseGroup(
             net=net,
             src=(
@@ -234,3 +253,14 @@ def replicate(obj: NetworkObject, net: Network) -> NetworkObject:
         net=net, structure_dict=new_dict, built_structures=None
     )
     return struc, save_dict
+
+def save_structure_dict_to_json(struc_dict: dict, filename:str):
+    with open(filename, "a+") as output_file:
+        json.dump(copy.deepcopy(struc_dict), output_file, cls=ExtraCallableJSONEncoder, indent=2)
+
+
+def load_structure_dict_from_json(filename: str):
+    with open(filename, "r") as input_file:
+        struc_dict = json.load(input_file, object_hook=object_hook)
+        struc_dict["built_structures"] = {int(k):v for k,v in struc_dict["built_structures"].items()}
+    return struc_dict

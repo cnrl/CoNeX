@@ -1,0 +1,446 @@
+{
+  "tag": "CorticalLayer_9,CorticalLayer",
+  "class": [
+    "python_callable",
+    "conex.nn.structure.layer",
+    "CorticalLayer"
+  ],
+  "behavior": [],
+  "device": "cpu",
+  "built_structures": {
+    "0": {
+      "tag": "NeuronGroup_2,NeuronGroup,ng",
+      "class": [
+        "python_callable",
+        "pymonntorch.NetworkCore.NeuronGroup",
+        "NeuronGroup"
+      ],
+      "behavior": [
+        {
+          "key": 220,
+          "class": [
+            "python_callable",
+            "conex.behaviors.neurons.dendrite",
+            "SimpleDendriteStructure"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {
+            "Proximal_max_delay": 1,
+            "Distal_max_delay": 1,
+            "Apical_max_delay": null,
+            "proximal_min_delay": 0,
+            "distal_min_delay": 0,
+            "apical_min_delay": null
+          }
+        },
+        {
+          "key": 240,
+          "class": [
+            "python_callable",
+            "conex.behaviors.neurons.dendrite",
+            "SimpleDendriteComputation"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {
+            "I_tau": null,
+            "apical_provocativeness": null,
+            "distal_provocativeness": null
+          }
+        },
+        {
+          "key": 260,
+          "class": [
+            "python_callable",
+            "conex.behaviors.neurons.neuron_types.lif_neurons",
+            "LIF"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {
+            "R": 5.0,
+            "tau": 10.0,
+            "threshold": 0.0,
+            "v_reset": 0.0,
+            "v_rest": 0.0,
+            "init_v": null,
+            "init_s": null
+          }
+        },
+        {
+          "key": 360,
+          "class": [
+            "python_callable",
+            "conex.behaviors.neurons.specs",
+            "SpikeTrace"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {
+            "tau_s": 10.0
+          }
+        },
+        {
+          "key": 380,
+          "class": [
+            "python_callable",
+            "conex.behaviors.neurons.axon",
+            "NeuronAxon"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {
+            "max_delay": 1,
+            "proximal_min_delay": 0,
+            "distal_min_delay": 0,
+            "apical_min_delay": 0,
+            "have_trace": null
+          }
+        },
+        {
+          "key": 0,
+          "class": [
+            "python_callable",
+            "pymonntorch.NetworkBehavior.Structure.Structure",
+            "NeuronDimension"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {
+            "depth": 4,
+            "height": 24,
+            "width": 24,
+            "input_patterns": null
+          }
+        }
+      ],
+      "device": "cpu",
+      "size": 2304
+    },
+    "1": {
+      "tag": "inh,NeuronGroup,ng",
+      "class": [
+        "python_callable",
+        "pymonntorch.NetworkCore.NeuronGroup",
+        "NeuronGroup"
+      ],
+      "behavior": [
+        {
+          "key": 220,
+          "class": [
+            "python_callable",
+            "conex.behaviors.neurons.dendrite",
+            "SimpleDendriteStructure"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {
+            "Proximal_max_delay": 1,
+            "Distal_max_delay": 1,
+            "Apical_max_delay": null,
+            "proximal_min_delay": 0,
+            "distal_min_delay": 0,
+            "apical_min_delay": null
+          }
+        },
+        {
+          "key": 240,
+          "class": [
+            "python_callable",
+            "conex.behaviors.neurons.dendrite",
+            "SimpleDendriteComputation"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {
+            "I_tau": null,
+            "apical_provocativeness": null,
+            "distal_provocativeness": null
+          }
+        },
+        {
+          "key": 260,
+          "class": [
+            "python_callable",
+            "conex.behaviors.neurons.neuron_types.lif_neurons",
+            "LIF"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {
+            "R": 5.0,
+            "tau": 10.0,
+            "threshold": 0.0,
+            "v_reset": 0.0,
+            "v_rest": 0.0,
+            "init_v": null,
+            "init_s": null
+          }
+        },
+        {
+          "key": 360,
+          "class": [
+            "python_callable",
+            "conex.behaviors.neurons.specs",
+            "SpikeTrace"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {
+            "tau_s": 10.0
+          }
+        },
+        {
+          "key": 380,
+          "class": [
+            "python_callable",
+            "conex.behaviors.neurons.axon",
+            "NeuronAxon"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {
+            "max_delay": 1,
+            "proximal_min_delay": 0,
+            "distal_min_delay": 0,
+            "apical_min_delay": 0,
+            "have_trace": null
+          }
+        }
+      ],
+      "device": "cpu",
+      "size": 576
+    },
+    "2": {
+      "tag": "Proximal,SynapseGroup,syn,NeuronGroup_2 => NeuronGroup_2",
+      "class": [
+        "python_callable",
+        "pymonntorch.NetworkCore.SynapseGroup",
+        "SynapseGroup"
+      ],
+      "behavior": [
+        {
+          "key": 2,
+          "class": [
+            "python_callable",
+            "conex.behaviors.synapses.specs",
+            "SynapseInit"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {}
+        },
+        {
+          "key": 3,
+          "class": [
+            "python_callable",
+            "conex.behaviors.synapses.specs",
+            "WeightInitializer"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {
+            "mode": "random",
+            "scale": 1,
+            "offset": 0,
+            "function": null,
+            "density": 1,
+            "true_sparsity": true,
+            "weight_shape": null,
+            "kernel_shape": null,
+            "weights": null
+          }
+        },
+        {
+          "key": 180,
+          "class": [
+            "python_callable",
+            "conex.behaviors.synapses.dendrites",
+            "SimpleDendriticInput"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {
+            "current_coef": 1
+          }
+        }
+      ],
+      "device": "cpu",
+      "src": 0,
+      "dst": 0
+    },
+    "3": {
+      "tag": "Proximal,SynapseGroup,syn,NeuronGroup_2 => inh",
+      "class": [
+        "python_callable",
+        "pymonntorch.NetworkCore.SynapseGroup",
+        "SynapseGroup"
+      ],
+      "behavior": [
+        {
+          "key": 2,
+          "class": [
+            "python_callable",
+            "conex.behaviors.synapses.specs",
+            "SynapseInit"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {}
+        },
+        {
+          "key": 3,
+          "class": [
+            "python_callable",
+            "conex.behaviors.synapses.specs",
+            "WeightInitializer"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {
+            "mode": "random",
+            "scale": 1,
+            "offset": 0,
+            "function": null,
+            "density": 1,
+            "true_sparsity": true,
+            "weight_shape": null,
+            "kernel_shape": null,
+            "weights": null
+          }
+        },
+        {
+          "key": 180,
+          "class": [
+            "python_callable",
+            "conex.behaviors.synapses.dendrites",
+            "SimpleDendriticInput"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {
+            "current_coef": 1
+          }
+        }
+      ],
+      "device": "cpu",
+      "src": 0,
+      "dst": 1
+    },
+    "4": {
+      "tag": "Proximal,inh,SynapseGroup,syn,inh => NeuronGroup_2",
+      "class": [
+        "python_callable",
+        "pymonntorch.NetworkCore.SynapseGroup",
+        "SynapseGroup"
+      ],
+      "behavior": [
+        {
+          "key": 2,
+          "class": [
+            "python_callable",
+            "conex.behaviors.synapses.specs",
+            "SynapseInit"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {}
+        },
+        {
+          "key": 3,
+          "class": [
+            "python_callable",
+            "conex.behaviors.synapses.specs",
+            "WeightInitializer"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {
+            "mode": "random",
+            "scale": 1,
+            "offset": 0,
+            "function": null,
+            "density": 1,
+            "true_sparsity": true,
+            "weight_shape": null,
+            "kernel_shape": null,
+            "weights": null
+          }
+        },
+        {
+          "key": 180,
+          "class": [
+            "python_callable",
+            "conex.behaviors.synapses.dendrites",
+            "SimpleDendriticInput"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {
+            "current_coef": 1
+          }
+        }
+      ],
+      "device": "cpu",
+      "src": 1,
+      "dst": 0
+    },
+    "5": {
+      "tag": "Proximal,inh,SynapseGroup,syn,inh => inh",
+      "class": [
+        "python_callable",
+        "pymonntorch.NetworkCore.SynapseGroup",
+        "SynapseGroup"
+      ],
+      "behavior": [
+        {
+          "key": 2,
+          "class": [
+            "python_callable",
+            "conex.behaviors.synapses.specs",
+            "SynapseInit"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {}
+        },
+        {
+          "key": 3,
+          "class": [
+            "python_callable",
+            "conex.behaviors.synapses.specs",
+            "WeightInitializer"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {
+            "mode": "random",
+            "scale": 1,
+            "offset": 0,
+            "function": null,
+            "density": 1,
+            "true_sparsity": true,
+            "weight_shape": null,
+            "kernel_shape": null,
+            "weights": null
+          }
+        },
+        {
+          "key": 180,
+          "class": [
+            "python_callable",
+            "conex.behaviors.synapses.dendrites",
+            "SimpleDendriticInput"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {
+            "current_coef": 1
+          }
+        }
+      ],
+      "device": "cpu",
+      "src": 1,
+      "dst": 1
+    }
+  },
+  "input_ports": {
+    "input": [
+      null,
+      [
+        [
+          0,
+          null,
+          null
+        ]
+      ]
+    ]
+  },
+  "output_ports": {},
+  "excitatory_neurongroup": 0,
+  "inhibitory_neurongroup": 1,
+  "synapsegroups": [
+    2,
+    3,
+    5,
+    4
+  ]
+}

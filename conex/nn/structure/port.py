@@ -1,9 +1,7 @@
 from typing import Dict, NamedTuple
-from dataclasses import dataclass
 from pymonntorch import NetworkObject, Behavior
 
 
-@dataclass
 class Port(NamedTuple):
     """Container's Port dataclass
 
@@ -14,5 +12,5 @@ class Port(NamedTuple):
     """
 
     object: NetworkObject
-    label: str or None
-    behavior: Dict[int, Behavior]
+    label: str or None = None
+    behavior: Dict[int, Behavior] = None
