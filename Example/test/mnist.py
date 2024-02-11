@@ -41,7 +41,7 @@ from torch.utils.data import DataLoader
 
 import torch
 
-from visualisation import visualise_network_structure
+from visualisation import visualize_network_structure
 
 ##################################################
 # parameters
@@ -369,4 +369,4 @@ synapsis_input_cc1 = Synapsis(
 net.initialize()
 net.simulate_iterations(100)
 
-visualise_network_structure(net)
+visualize_network_structure(net)
