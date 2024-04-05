@@ -16,7 +16,10 @@ class SensorySetter(Behavior):
         neurons.spikes = neurons.vector(dtype=torch.bool)
 
     def forward(self, neurons):
-        neurons.spikes = self.layer.x
+        if self.layer.x is not None:
+            neurons.spikes = self.layer.x
+        else:
+            neurons.spikes = neurons.vector("zeros", dtype=torch.bool)
 
 
 class LocationSetter(Behavior):
@@ -29,4 +32,7 @@ class LocationSetter(Behavior):
         neurons.spikes = neurons.vector(dtype=torch.bool)
 
     def forward(self, neurons):
-        neurons.spikes = self.layer.loc
+        if self.layer.loc is not None:
+            neurons.spikes = self.layer.loc
+        else:
+            neurons.spikes = neurons.vector("zeros", dtype=torch.bool)
