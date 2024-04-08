@@ -12,7 +12,7 @@ class SensorySetter(Behavior):
     """
 
     def initialize(self, neurons):
-        self.layer = neurons.layer
+        self.layer = neurons.parent_structure
         neurons.spikes = neurons.vector(dtype=torch.bool)
 
     def forward(self, neurons):
@@ -28,7 +28,7 @@ class LocationSetter(Behavior):
     """
 
     def initialize(self, neurons):
-        self.layer = neurons.layer
+        self.layer = neurons.parent_structure
         neurons.spikes = neurons.vector(dtype=torch.bool)
 
     def forward(self, neurons):

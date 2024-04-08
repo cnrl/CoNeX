@@ -32,11 +32,11 @@ class Layer(Container):
         tag: str = None,
         device: Union[torch.device, int, str] = None,
     ):
-        self.neurongroups = neurongroups
-        self.synapsegroups = synapsegroups
+        self.neurongroups = neurongroups if neurongroups is not None else []
+        self.synapsegroups = synapsegroups if synapsegroups is not None else []
         super().__init__(
             net=net,
-            sub_structures=[*neurongroups, *synapsegroups],
+            sub_structures=[*self.neurongroups, *self.synapsegroups],
             input_ports=input_ports,
             output_ports=output_ports,
             behavior=behavior,
