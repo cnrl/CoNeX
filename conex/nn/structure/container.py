@@ -1,22 +1,24 @@
-from .container import Container
-from pymonntorch import Network, Behavior, NetworkObject
-from .layer import CorticalLayer
-from typing import Union, Dict, List, Tuple
-from .cortical_layer_connection import CorticalLayerConnection
+"""
+Implementation of Base Container.
+"""
+
+from pymonntorch import NetworkObject, Network, Behavior
 from .port import Port
+from typing import Dict, Union, List, Tuple
 import torch
 
 
-class CorticalColumn(Container):
-    """The Implementation of CorticalColumn.
+class Container(NetworkObject):
+    """The container Structute.
+
+    Note: All the children should override required_helper, save_helper and build_helper.
 
     Args:
-        net (Network): The network of the Cortical Column.
-        layers (dictionary): a dictionary with key as layers' name and value as corticallayers which will be cortical column's layers.
-        layer_connections (list): a list of tuple with values as (source layer name, destination layer name, corticallayerconnection). to connect inner layers.
+        net (Network): The network of the layer.
+        sub_structures (list of NetworkObjects): The list of NetworkObject to be part of the container.
         input_ports (dictionary): a dictionary of lables into the list of ports.
         output_ports (dictionary): a dictionary of lables into the list of ports.
-        behavior (dictionary): a dictionary of keys and behaviors attached to the container.
+        behavior (dictionary): A dictionary of keys and behaviors attached to the container.
         tag (str): tag of the container divided by ",".
         device (device): device of the structure. defaults to the netowrk device.
     """
@@ -24,52 +26,28 @@ class CorticalColumn(Container):
     def __init__(
         self,
         net: Network,
-        layers: Dict[str, CorticalLayer] = None,
-        layer_connections: List[Tuple[str, str, CorticalLayerConnection]] = None,
+        sub_structures: List[NetworkObject],
         input_ports: Dict[str, Tuple[dict, List[Port]]] = None,
         output_ports: Dict[str, Tuple[dict, List[Port]]] = None,
         behavior: Dict[int, Behavior] = None,
         tag: str = None,
         device: Union[torch.device, int, str] = None,
     ):
-        self.layers = layers
-        self.layer_connections = layer_connections
-        self.create_layer_connections()
-        super().__init__(
-            net=net,
-            sub_structures=list(self.layers.values())
-            + [x[2] for x in layer_connections],
-            input_ports=input_ports,
-            output_ports=output_ports,
-            behavior=behavior,
-            tag=tag,
-            device=device,
-        )
+        super().__init__(network=net, tag=tag, behavior=behavior, device=device)
+        self.add_sub_structures(sub_structures)
+        self.input_ports = input_ports if input_ports is not None else {}
+        self.output_ports = output_ports if output_ports is not None else {}
 
-    def create_layer_connections(self):
-        for x in self.layer_connections:
-            src_str, dst_str, clc = x
-            if clc.src is None and clc.dst is None:
-                clc.connect_src(self.layers[src_str])
-                clc.connect_dst(self.layers[dst_str])
+    def add_sub_structures(self, structure_list: List[NetworkObject]):
+        for struc in structure_list:
+            self.add_sub_structure(struc)
 
     def __repr__(self) -> str:
         result = (
             self.__class__.__name__
             + str(self.tags)
             + f"(SubStructures({len(self.sub_structures)}):"
-            + f"CorticalLayers({sum([isinstance(x, CorticalLayer) for x in self.sub_structures])}):"
-            + str(
-                [x.tags[0] for x in self.sub_structures if isinstance(x, CorticalLayer)]
-            )
-            + f"CorticalLayerConnections({sum([isinstance(x, CorticalLayerConnection) for x in self.sub_structures])}):"
-            + str(
-                [
-                    x.tags[0]
-                    for x in self.sub_structures
-                    if isinstance(x, CorticalLayerConnection)
-                ]
-            )
+            + str([value.tags[0] for value in self.sub_structures])
             + "){"
         )
         for k in sorted(list(self.behavior.keys())):
@@ -95,16 +73,36 @@ class CorticalColumn(Container):
         result_parameters = {
             "input_ports": Container.ports_helper(self.input_ports, all_structures),
             "output_ports": Container.ports_helper(self.output_ports, all_structures),
-            "layers": [
-                all_structures.index(struc)
-                for struc in self.sub_structures
-                if isinstance(struc, CorticalLayer)
-            ],
-            "layers_connections": [
-                (x[0], x[1], all_structures.index(x[2])) for x in self.layer_connections
+            "sub_structures": [
+                all_structures.index(struc) for struc in self.sub_structures
             ],
         }
         return result_parameters
+
+    @staticmethod
+    def ports_helper(
+        ports: Dict[str, List[Port]], helper_struc: Union[list, dict]
+    ) -> dict:
+        """Transforms the port dictionary to use objects or indexes.
+
+        Args:
+            ports (dictionary): The dictionary of desired ports to transform.
+            helper_struc (list or dictionary): dictionary of saved structures or a list of structures.
+        """
+        if isinstance(helper_struc, dict):
+            result = {
+                k: (v[0], [(helper_struc[x[0]], x[1], x[2]) for x in v[1]])
+                for k, v in ports.items()
+            }
+        else:
+            result = {
+                k: (
+                    v[0],
+                    [(helper_struc.index(x[0]), x[1], x[2]) for x in v[1]],
+                )
+                for k, v in ports.items()
+            }
+        return result
 
     @staticmethod
     def build_helper(
@@ -114,10 +112,7 @@ class CorticalColumn(Container):
 
         Note: behavior can also be edited in this function as thay later will be constructed.
         """
-        parameter_dic["layer"] = [
-            built_structures[idx] for idx in parameter_dic["sub_structures"]
-        ]
-        parameter_dic["layer_connections"] = [
+        parameter_dic["sub_structures"] = [
             built_structures[idx] for idx in parameter_dic["sub_structures"]
         ]
         parameter_dic["input_ports"] = Container.ports_helper(
