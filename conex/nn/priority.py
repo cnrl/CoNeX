@@ -1,5 +1,6 @@
+from typing import Dict, List
+
 from pymonntorch import Behavior
-from typing import Dict
 
 """
 This file specifies the priorities for different behaviors.
@@ -65,11 +66,14 @@ SYNAPSE_PRIORITIES = {
     "WeightClip": 440,
 }
 
-ALL_PRIORITIES = (
-    NETWORK_PRIORITIES | NEURON_PRIORITIES | LAYER_PRIORITIES | SYNAPSE_PRIORITIES
-)
+ALL_PRIORITIES = {
+    **NETWORK_PRIORITIES,
+    **NEURON_PRIORITIES,
+    **LAYER_PRIORITIES,
+    **SYNAPSE_PRIORITIES,
+}
 
 
-def prioritize_behaviors(behavior: list[Behavior]) -> Dict[int, Behavior]:
+def prioritize_behaviors(behavior: List[Behavior]) -> Dict[int, Behavior]:
     result = {ALL_PRIORITIES[x.__class__.__name__]: x for x in behavior}
     return result
