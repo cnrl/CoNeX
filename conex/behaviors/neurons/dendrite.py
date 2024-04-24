@@ -194,5 +194,7 @@ class SimpleDendriteComputation(Behavior):
         )
 
         neurons.I += neurons.I_proximal + (
-            (non_priming_apical + non_priming_distal) / getattr(neurons, "R", 1)
+            getattr(neurons, "tau", 1)
+            * (non_priming_apical + non_priming_distal)
+            / getattr(neurons, "R", 1)
         )
