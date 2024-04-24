@@ -35,7 +35,7 @@ setup(
     include_package_data=True,
     keywords="CNRL-CoNeX",
     name="CNRL-CoNeX",
-    packages=["conex"],
+    packages=find_packages(include=['conex', 'conex.*']),
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/cnrl/CoNeX",
