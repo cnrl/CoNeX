@@ -18,7 +18,7 @@ class BaseDendriticInput(Behavior):
     of pre-synaptic neurons and sets a coefficient accordingly.
 
     Note: weights must be initialize by others behaviors.
-          Also, Axon paradigm should be added to the neurons.
+          Also, Spike Catcher paradigm should be added to synapse group.
           Connection type (Proximal, Distal, Apical) should be specified by the tag
           of the synapse. and Dendrite behavior of the neurons group should access the
           `I` of each synapse to apply them.
@@ -62,7 +62,7 @@ class SparseDendriticInput(BaseDendriticInput):
     of pre-synaptic neurons and sets a coefficient, accordingly.
 
     Note: weights must be initialize by others behaviors.
-          Also, Axon paradigm should be added to the neurons.
+          Also, Spike Catcher paradigm should be added to synapse group.
           Connection type (Proximal, Distal, Apical) should be specified by the tag
           of the synapse. and Dendrite behavior of the neurons group should access the
           `I` of each synapse to apply them.
@@ -78,8 +78,7 @@ class SparseDendriticInput(BaseDendriticInput):
             raise RuntimeError("Network should've made with SxD mode for synapses")
 
     def calculate_input(self, synapse):
-        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay)
-        return torch.matmul(spikes.to(synapse.weights.dtype), synapse.weights)
+        return torch.matmul(synapse.pre_spike.to(synapse.weights.dtype), synapse.weights)
 
 
 class One2OneDendriticInput(BaseDendriticInput):
@@ -88,7 +87,7 @@ class One2OneDendriticInput(BaseDendriticInput):
     of pre-synaptic neurons and sets a coefficient, accordingly.
 
     Note: weights must be initialize by others behaviors.
-          Also, Axon paradigm should be added to the neurons.
+          Also, Spike Catcher paradigm should be added to synapse group.
           Connection type (Proximal, Distal, Apical) should be specified by the tag
           of the synapse. and Dendrite behavior of the neurons group should access the
           `I` of each synapse to apply them.
@@ -106,8 +105,7 @@ class One2OneDendriticInput(BaseDendriticInput):
             )
 
     def calculate_input(self, synapse):
-        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay)
-        return spikes * synapse.weights
+        return synapse.pre_spike * synapse.weights
 
 
 class SimpleDendriticInput(BaseDendriticInput):
@@ -116,7 +114,7 @@ class SimpleDendriticInput(BaseDendriticInput):
     of pre-synaptic neurons and sets a coefficient, accordingly.
 
     Note: weights must be initialize by others behaviors.
-          Also, Axon paradigm should be added to the neurons.
+          Also, Spike Catcher paradigm should be added to synapse group.
           Connection type (Proximal, Distal, Apical) should be specified by the tag
           of the synapse. and Dendrite behavior of the neurons group should access the
           `I` of each synapse to apply them.
@@ -132,8 +130,7 @@ class SimpleDendriticInput(BaseDendriticInput):
             raise RuntimeError(f"Network should've made with SxD mode for synapses")
 
     def calculate_input(self, synapse):
-        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay)
-        return torch.sum(synapse.weights[spikes], axis=0)
+        return torch.sum(synapse.weights[synapse.pre_spike], axis=0)
 
 
 class AveragePool2D(BaseDendriticInput):
@@ -159,8 +156,7 @@ class AveragePool2D(BaseDendriticInput):
             )
 
     def calculate_input(self, synapse):
-        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay)
-        spikes = spikes.view(synapse.src_shape).to(self.def_dtype)
+        spikes = synapse.pre_spike.view(synapse.src_shape).to(self.def_dtype)
         I = F.adaptive_avg_pool2d(spikes, self.output_shape)
         return I.view((-1,))
 
@@ -171,7 +167,7 @@ class LateralDendriticInput(BaseDendriticInput):
 
     Note: weight shape = (1, 1, kernel_depth, kernel_height, kernel_width)
           weights must be initialize by others behaviors.
-          Also, Axon paradigm should be added to the neurons.
+          Also, Spike Catcher paradigm should be added to synapse group.
           Connection type (Proximal, Distal, Apical) should be specified by the tag
           of the synapse. and Dendrite behavior of the neurons group should access the
           `I` of each synapse to apply them.
@@ -205,11 +201,7 @@ class LateralDendriticInput(BaseDendriticInput):
             )
 
     def calculate_input(self, synapse):
-        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay).to(
-            self.def_dtype
-        )
-        spikes = spikes.view(1, *synapse.src_shape)
-
+        spikes = synapse.pre_spike.to(self.def_dtype).view(1, *synapse.src_shape)
         I = F.conv3d(input=spikes, weight=synapse.weights, padding=self.padding)
         return I.view((-1,))
 
@@ -221,7 +213,7 @@ class Conv2dDendriticInput(BaseDendriticInput):
 
     Note: Weight shape = (out_channel, in_channel, kernel_height, kernel_width)
           weights must be initialize by others behaviors.
-          Also, Axon paradigm should be added to the neurons.
+          Also, Spike Catcher paradigm should be added to synapse group.
           Connection type (Proximal, Distal, Apical) should be specified by the tag
           of the synapse. and Dendrite behavior of the neurons group should access the
           `I` of each synapse to apply them.
@@ -295,10 +287,7 @@ class Conv2dDendriticInput(BaseDendriticInput):
             )
 
     def calculate_input(self, synapse):
-        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay).to(
-            self.def_dtype
-        )
-        spikes = spikes.view(synapse.src_shape)
+        spikes = synapse.pre_spike.to(self.def_dtype).view(synapse.src_shape)
 
         I = F.conv2d(
             input=spikes,
@@ -325,7 +314,7 @@ class Local2dDendriticInput(BaseDendriticInput):
           and connection_size = input_channel * connection_height * connection_width.
           Kernel shape = (out_channel, out_height, out_width, in_channel, connection_height, connection_width)
           weights must be initialize by others behaviors.
-          Also, Axon paradigm should be added to the neurons.
+          Also, Spike Catcher paradigm should be added to synapse group.
           Connection type (Proximal, Distal, Apical) should be specified by the tag
           of the synapse. and Dendrite behavior of the neurons group should access the
           `I` of each synapse to apply them.
@@ -418,10 +407,7 @@ class Local2dDendriticInput(BaseDendriticInput):
             )
 
     def calculate_input(self, synapse):
-        spikes = synapse.src.axon.get_spike(synapse.src, synapse.src_delay).to(
-            self.def_dtype
-        )
-        spikes = spikes.view(synapse.src_shape)
+        spikes = synapse.pre_spike.to(self.def_dtype).view(synapse.src_shape)
         spikes = F.unfold(
             spikes,
             kernel_size=synapse.kernel_shape[-2:],

@@ -288,3 +288,85 @@ class WeightClip(Behavior):
             synapses (SynapseGroup): The synapses whose weight should be bound.
         """
         synapses.weights = torch.clip(synapses.weights, self.w_min, self.w_max)
+
+
+class SrcSpikeCatcher(Behavior):
+    """
+    Get the spikes from pre synaptic neuron group and set as src_spike attribute for the synapse group.
+
+    Note: Axon should be added to pre synaptice neuron group
+    """
+
+    def forward(self, synapse):
+        synapse.pre_spike = synapse.src.axon.get_spike(synapse.src, synapse.src_delay)
+
+
+class DstSpikeCatcher(Behavior):
+    """
+    Get the spikes from post synaptic neuron group and set as dst_spike attribute for the synapse group.
+
+    Note: Axon should be added to post synaptice neuron group
+    """
+
+    def forward(self, synapse):
+        synapse.post_spike = synapse.dst.axon.get_spike(synapse.dst, synapse.dst_delay)
+
+
+class PreTrace(Behavior):
+    """
+    Calculates the pre synaptic spike trace.
+
+    Note : should be placed after spike catcher behavior.
+
+    Args:
+        tau_s (float): decay term for spike trace. The default is None.
+        spike_scale (float): the increase effect of spikes on the trace.
+    """
+
+    def __init__(self, tau_s, *args, spike_scale=1.0, **kwargs):
+        super().__init__(*args, tau_s=tau_s, spike_scale=spike_scale, **kwargs)
+
+    def initialize(self, synapse):
+        """
+        Sets the trace attribute for the neural population.
+        """
+        self.tau_s = self.parameter("tau_s", None, required=True)
+        self.spike_scale = self.parameter("spike_scale", 1.0)
+        synapse.pre_trace = synapse.src.vector(0.0)
+
+    def forward(self, synapse):
+        """
+        Calculates the spike trace of each neuron by adding current spike and decaying the trace so far.
+        """
+        synapse.pre_trace += synapse.src_spikes * self.spike_scale
+        synapse.pre_trace -= (synapse.pre_trace / self.tau_s) * synapse.network.dt
+
+
+class PostTrace(Behavior):
+    """
+    Calculates the post synaptic spike trace.
+
+    Note : should be placed after spike catcher behavior.
+
+    Args:
+        tau_s (float): decay term for spike trace. The default is None.
+        spike_scale (float): the increase effect of spikes on the trace.
+    """
+
+    def __init__(self, tau_s, *args, spike_scale=1.0, **kwargs):
+        super().__init__(*args, tau_s=tau_s, spike_scale=spike_scale, **kwargs)
+
+    def initialize(self, synapse):
+        """
+        Sets the trace attribute for the neural population.
+        """
+        self.tau_s = self.parameter("tau_s", None, required=True)
+        self.spike_scale = self.parameter("spike_scale", 1.0)
+        synapse.post_trace = synapse.src.vector(0.0)
+
+    def forward(self, synapse):
+        """
+        Calculates the spike trace of each neuron by adding current spike and decaying the trace so far.
+        """
+        synapse.post_trace += synapse.dst_spikes * self.spike_scale
+        synapse.post_trace -= (synapse.post_trace / self.tau_s) * synapse.network.dt
