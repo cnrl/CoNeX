@@ -7,7 +7,7 @@ from pymonntorch import Behavior
 import torch
 import torch.nn.functional as F
 
-from conex.behaviors.neurons.specs import SpikeTrace
+from conex.behaviors.synapses.specs import PreTrace, PostTrace
 
 # TODO docstring for bound functions
 
@@ -215,14 +215,14 @@ class SimpleiSTDP(BaseLearning):
 
         # messy till I move trace to synapse.
         pre_tau = [
-            synapse.src.behavior[key_behavior]
-            for key_behavior in synapse.src.behavior
-            if isinstance(synapse.src.behavior[key_behavior], SpikeTrace)
+            synapse.behavior[key_behavior]
+            for key_behavior in synapse.behavior
+            if isinstance(synapse.behavior[key_behavior], PreTrace)
         ][0].tau_s
         post_tau = [
-            synapse.dst.behavior[key_behavior]
-            for key_behavior in synapse.dst.behavior
-            if isinstance(synapse.dst.behavior[key_behavior], SpikeTrace)
+            synapse.behavior[key_behavior]
+            for key_behavior in synapse.behavior
+            if isinstance(synapse.behavior[key_behavior], PostTrace)
         ][0].tau_s
 
         assert (
