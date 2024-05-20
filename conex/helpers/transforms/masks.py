@@ -15,12 +15,14 @@ class GridEraseMask:
         m (int): The grid row size.
         n (int): The grid column size.
         random (bool): If true, shuffles the order of the masks.
+        gap (tuple(int)): left, bottom, up, right gaps for the cell.
     """
 
-    def __init__(self, m, n, random=False):
+    def __init__(self, m, n, random=False, gap=(0, 0, 0, 0)):
         self.m = m
         self.n = n
         self.random = random
+        self.gap = gap
 
     def __call__(self, img):
         _, h, w = img.shape
@@ -33,7 +35,20 @@ class GridEraseMask:
         )
         for index, ij in enumerate(product(range(self.m), range(self.n))):
             i, j = ij
-            result.append(TF.erase(img, i * h_grid, j * w_grid, h_grid, w_grid, v=0))
+            h_cor = i * h_grid + self.gap[0]
+            dh = h_cor if h_cor < 0 else 0
+            w_cor = j * w_grid + self.gap[2]
+            dw = w_cor if w_cor < 0 else 0
+            result.append(
+                TF.erase(
+                    img,
+                    max(h_cor, 0),
+                    max(w_cor, 0),
+                    h_grid - self.gap[1] - self.gap[2] + dh,
+                    w_grid - self.gap[3] - self.gap[0] + dw,
+                    v=0,
+                )
+            )
             location[index, ij[0], ij[1]] = False
 
         result = torch.stack(result)
@@ -54,12 +69,14 @@ class GridKeepMask:
         m (int): The grid row size.
         n (int): The grid column size.
         random (bool): If true, shuffles the order of the masks.
+        gap (tuple(int)): left, bottom, up, right gaps for the cell.
     """
 
-    def __init__(self, m, n, random=False):
+    def __init__(self, m, n, random=False, gap=(0, 0, 0, 0)):
         self.m = m
         self.n = n
         self.random = random
+        self.gap = gap
 
     def __call__(self, img):
         _, h, w = img.shape
@@ -73,8 +90,22 @@ class GridKeepMask:
         for index, ij in enumerate(product(range(self.m), range(self.n))):
             i, j = ij
             bg = torch.zeros_like(img)
-            bg[:, i * h_grid : (i + 1) * h_grid, j * w_grid : (j + 1) * w_grid] = img[
-                :, i * h_grid : (i + 1) * h_grid, j * w_grid : (j + 1) * w_grid
+            bg[
+                :,
+                max(i * h_grid + self.gap[0], 0) : min(
+                    (i + 1) * h_grid - self.gap[3], img.size(1)
+                ),
+                max(j * w_grid + self.gap[2], 0) : min(
+                    (j + 1) * w_grid - self.gap[1], img.size(2)
+                ),
+            ] = img[
+                :,
+                max(i * h_grid + self.gap[0], 0) : min(
+                    (i + 1) * h_grid - self.gap[3], img.size(1)
+                ),
+                max(j * w_grid + self.gap[2], 0) : min(
+                    (j + 1) * w_grid - self.gap[1], img.size(2)
+                ),
             ]
             result.append(bg)
             location[index, ij[0], ij[1]] = True
@@ -97,12 +128,14 @@ class GridCropMask:
         m (int): The grid row size.
         n (int): The grid column size.
         random (bool): If true, shuffles the order of the masks.
+        gap (tuple(int)): left, bottom, up, right gaps for the cell.
     """
 
-    def __init__(self, m, n, random=False):
+    def __init__(self, m, n, random=False, gap=(0, 0, 0, 0)):
         self.m = m
         self.n = n
         self.random = random
+        self.gap = gap
 
     def __call__(self, img):
         _, h, w = img.shape
@@ -115,7 +148,15 @@ class GridCropMask:
         )
         for index, ij in enumerate(product(range(self.m), range(self.n))):
             i, j = ij
-            result.append(TF.crop(img, i * h_grid, j * w_grid, h_grid, w_grid))
+            result.append(
+                TF.crop(
+                    img,
+                    i * h_grid + self.gap[0],
+                    j * w_grid + self.gap[2],
+                    h_grid - self.gap[1] - self.gap[2],
+                    w_grid - self.gap[3] - self.gap[0],
+                )
+            )
             location[index, ij[0], ij[1]] = True
 
         result = torch.stack(result)
