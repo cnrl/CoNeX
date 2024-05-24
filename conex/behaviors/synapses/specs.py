@@ -16,27 +16,30 @@ class SynapseInit(Behavior):
     """
 
     def initialize(self, synapse):
-        synapse.src_shape = (1, 1, synapse.src.size)
-        if hasattr(synapse.src, "depth"):
-            synapse.src_shape = (
-                synapse.src.depth,
-                synapse.src.height,
-                synapse.src.width,
-            )
-        synapse.dst_shape = (1, 1, synapse.dst.size)
-        if hasattr(synapse.dst, "depth"):
-            synapse.dst_shape = (
-                synapse.dst.depth,
-                synapse.dst.height,
-                synapse.dst.width,
-            )
+        if hasattr(synapse, "src"):
+            synapse.src_shape = (1, 1, synapse.src.size)
+            if hasattr(synapse.src, "depth"):
+                synapse.src_shape = (
+                    synapse.src.depth,
+                    synapse.src.height,
+                    synapse.src.width,
+                )
 
-        synapse.src_delay = synapse.tensor(
-            mode="zeros", dim=(1,), dtype=torch.long
-        ).expand(synapse.src.size)
-        synapse.dst_delay = synapse.tensor(
-            mode="zeros", dim=(1,), dtype=torch.long
-        ).expand(synapse.dst.size)
+            synapse.src_delay = synapse.tensor(
+                mode="zeros", dim=(1,), dtype=torch.long
+            ).expand(synapse.src.size)
+
+        if hasattr(synapse, "dst"):
+            synapse.dst_shape = (1, 1, synapse.dst.size)
+            if hasattr(synapse.dst, "depth"):
+                synapse.dst_shape = (
+                    synapse.dst.depth,
+                    synapse.dst.height,
+                    synapse.dst.width,
+                )
+            synapse.dst_delay = synapse.tensor(
+                mode="zeros", dim=(1,), dtype=torch.long
+            ).expand(synapse.dst.size)
 
 
 class DelayInitializer(Behavior):
