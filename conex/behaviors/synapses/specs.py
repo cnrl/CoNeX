@@ -16,7 +16,7 @@ class SynapseInit(Behavior):
     """
 
     def initialize(self, synapse):
-        if hasattr(synapse, "src"):
+        if synapse.src is not None:
             synapse.src_shape = (1, 1, synapse.src.size)
             if hasattr(synapse.src, "depth"):
                 synapse.src_shape = (
@@ -29,7 +29,7 @@ class SynapseInit(Behavior):
                 mode="zeros", dim=(1,), dtype=torch.long
             ).expand(synapse.src.size)
 
-        if hasattr(synapse, "dst"):
+        if synapse.dst is not None:
             synapse.dst_shape = (1, 1, synapse.dst.size)
             if hasattr(synapse.dst, "depth"):
                 synapse.dst_shape = (
