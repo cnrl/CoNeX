@@ -15,7 +15,7 @@ class GridEraseMask:
         m (int): The grid row size.
         n (int): The grid column size.
         random (bool): If true, shuffles the order of the masks.
-        gap (tuple(int)): left, bottom, up, right gaps for the cell.
+        gap (tuple(int)): left, right, up, bottom gaps for the cell.
     """
 
     def __init__(self, m, n, random=False, gap=(0, 0, 0, 0)):
@@ -28,6 +28,7 @@ class GridEraseMask:
         _, h, w = img.shape
         w_grid = math.ceil(w / self.n)
         h_grid = math.ceil(h / self.m)
+        gap_left, gap_right, gap_top, gap_bottom = self.gap
 
         result = []
         location = torch.ones(
@@ -35,17 +36,17 @@ class GridEraseMask:
         )
         for index, ij in enumerate(product(range(self.m), range(self.n))):
             i, j = ij
-            h_cor = i * h_grid + self.gap[0]
+            h_cor = i * h_grid + gap_left
             dh = h_cor if h_cor < 0 else 0
-            w_cor = j * w_grid + self.gap[2]
+            w_cor = j * w_grid + gap_top
             dw = w_cor if w_cor < 0 else 0
             result.append(
                 TF.erase(
                     img,
                     max(h_cor, 0),
                     max(w_cor, 0),
-                    h_grid - self.gap[1] - self.gap[2] + dh,
-                    w_grid - self.gap[3] - self.gap[0] + dw,
+                    h_grid - gap_bottom - gap_top + dh,
+                    w_grid - gap_right - gap_left + dw,
                     v=0,
                 )
             )
@@ -69,7 +70,7 @@ class GridKeepMask:
         m (int): The grid row size.
         n (int): The grid column size.
         random (bool): If true, shuffles the order of the masks.
-        gap (tuple(int)): left, bottom, up, right gaps for the cell.
+        gap (tuple(int)): left, right, up, bottom gaps for the cell.
     """
 
     def __init__(self, m, n, random=False, gap=(0, 0, 0, 0)):
@@ -82,6 +83,7 @@ class GridKeepMask:
         _, h, w = img.shape
         w_grid = math.ceil(w / self.n)
         h_grid = math.ceil(h / self.m)
+        gap_left, gap_right, gap_top, gap_bottom = self.gap
 
         result = []
         location = torch.zeros(
@@ -92,19 +94,19 @@ class GridKeepMask:
             bg = torch.zeros_like(img)
             bg[
                 :,
-                max(i * h_grid + self.gap[0], 0) : min(
-                    (i + 1) * h_grid - self.gap[3], img.size(1)
+                max(i * h_grid + gap_left, 0) : min(
+                    (i + 1) * h_grid - gap_right, img.size(1)
                 ),
-                max(j * w_grid + self.gap[2], 0) : min(
-                    (j + 1) * w_grid - self.gap[1], img.size(2)
+                max(j * w_grid + gap_top, 0) : min(
+                    (j + 1) * w_grid - gap_bottom, img.size(2)
                 ),
             ] = img[
                 :,
-                max(i * h_grid + self.gap[0], 0) : min(
-                    (i + 1) * h_grid - self.gap[3], img.size(1)
+                max(i * h_grid + gap_left, 0) : min(
+                    (i + 1) * h_grid - gap_right, img.size(1)
                 ),
-                max(j * w_grid + self.gap[2], 0) : min(
-                    (j + 1) * w_grid - self.gap[1], img.size(2)
+                max(j * w_grid + gap_top, 0) : min(
+                    (j + 1) * w_grid - gap_bottom, img.size(2)
                 ),
             ]
             result.append(bg)
@@ -128,7 +130,7 @@ class GridCropMask:
         m (int): The grid row size.
         n (int): The grid column size.
         random (bool): If true, shuffles the order of the masks.
-        gap (tuple(int)): left, bottom, up, right gaps for the cell.
+        gap (tuple(int)): left, right, up, bottom gaps for the cell.
     """
 
     def __init__(self, m, n, random=False, gap=(0, 0, 0, 0)):
@@ -141,6 +143,7 @@ class GridCropMask:
         _, h, w = img.shape
         w_grid = math.ceil(w / self.n)
         h_grid = math.ceil(h / self.m)
+        gap_left, gap_right, gap_top, gap_bottom = self.gap
 
         result = []
         location = torch.zeros(
@@ -151,10 +154,10 @@ class GridCropMask:
             result.append(
                 TF.crop(
                     img,
-                    i * h_grid + self.gap[0],
-                    j * w_grid + self.gap[2],
-                    h_grid - self.gap[1] - self.gap[2],
-                    w_grid - self.gap[3] - self.gap[0],
+                    i * h_grid + gap_left,
+                    j * w_grid + gap_top,
+                    h_grid - gap_bottom - gap_top,
+                    w_grid - gap_right - gap_left,
                 )
             )
             location[index, ij[0], ij[1]] = True
