@@ -39,7 +39,7 @@ class GridEraseMask:
             h_cor = i * h_grid + gap_left
             dh = min(h_cor, 0) 
             w_cor = j * w_grid + gap_top
-            dw = w_cor if w_cor < 0 else 0
+            dw = min(w_cor, 0)
             result.append(
                 TF.erase(
                     img,
