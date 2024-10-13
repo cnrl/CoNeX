@@ -7,7 +7,7 @@ from pymonntorch import Behavior
 import torch
 import torch.nn.functional as F
 
-from conex.behaviors.neurons.specs import SpikeTrace
+from conex.behaviors.synapses.specs import PreTrace, PostTrace
 
 # TODO docstring for bound functions
 
@@ -31,19 +31,6 @@ class BaseLearning(Behavior):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.add_tag("weight_learning")
-
-    def get_spike_and_trace(self, synapse):
-        src_spike = synapse.src.axon.get_spike(synapse.src, synapse.src_delay)
-        dst_spike = synapse.dst.axon.get_spike(synapse.dst, synapse.dst_delay)
-
-        src_spike_trace = synapse.src.axon.get_spike_trace(
-            synapse.src, synapse.src_delay
-        )
-        dst_spike_trace = synapse.dst.axon.get_spike_trace(
-            synapse.dst, synapse.dst_delay
-        )
-
-        return src_spike, dst_spike, src_spike_trace, dst_spike_trace
 
     def compute_dw(self, synapse):
         ...
@@ -111,20 +98,13 @@ class SimpleSTDP(BaseLearning):
         )
 
     def compute_dw(self, synapse):
-        (
-            src_spike,
-            dst_spike,
-            src_spike_trace,
-            dst_spike_trace,
-        ) = self.get_spike_and_trace(synapse)
-
         dw_minus = (
-            torch.outer(src_spike, dst_spike_trace)
+            torch.outer(synapse.pre_spike, synapse.post_trace)
             * self.a_minus
             * self.n_bound(synapse.weights, self.w_min, self.w_max)
         )
         dw_plus = (
-            torch.outer(src_spike_trace, dst_spike)
+            torch.outer(synapse.pre_trace, synapse.post_spike)
             * self.a_plus
             * self.p_bound(synapse.weights, self.w_min, self.w_max)
         )
@@ -148,23 +128,16 @@ class SparseSTDP(SimpleSTDP):
     """
 
     def compute_dw(self, synapse):
-        (
-            src_spike,
-            dst_spike,
-            src_spike_trace,
-            dst_spike_trace,
-        ) = self.get_spike_and_trace(synapse)
-
         weight_data = synapse.weights.values()[:]
         dw_minus = (
-            src_spike[synapse.src_idx]
-            * dst_spike_trace[synapse.dst_idx]
+            synapse.pre_spike[synapse.src_idx]
+            * synapse.post_trace[synapse.dst_idx]
             * self.a_minus
             * self.n_bound(weight_data, self.w_min, self.w_max)
         )
         dw_plus = (
-            src_spike_trace[synapse.src_idx]
-            * dst_spike[synapse.dst_idx]
+            synapse.pre_trace[synapse.src_idx]
+            * synapse.post_spike[synapse.dst_idx]
             * self.a_plus
             * self.p_bound(weight_data, self.w_min, self.w_max)
         )
@@ -191,22 +164,15 @@ class One2OneSTDP(SimpleSTDP):
     """
 
     def compute_dw(self, synapse):
-        (
-            src_spike,
-            dst_spike,
-            src_spike_trace,
-            dst_spike_trace,
-        ) = self.get_spike_and_trace(synapse)
-
         dw_minus = (
-            src_spike
-            * dst_spike_trace
+            synapse.pre_spike
+            * synapse.post_trace
             * self.a_minus
             * self.n_bound(synapse.weights, self.w_min, self.w_max)
         )
         dw_plus = (
-            src_spike_trace
-            * dst_spike
+            synapse.pre_trace
+            * synapse.post_spike
             * self.a_plus
             * self.p_bound(synapse.weights, self.w_min, self.w_max)
         )
@@ -249,14 +215,14 @@ class SimpleiSTDP(BaseLearning):
 
         # messy till I move trace to synapse.
         pre_tau = [
-            synapse.src.behavior[key_behavior]
-            for key_behavior in synapse.src.behavior
-            if isinstance(synapse.src.behavior[key_behavior], SpikeTrace)
+            synapse.behavior[key_behavior]
+            for key_behavior in synapse.behavior
+            if isinstance(synapse.behavior[key_behavior], PreTrace)
         ][0].tau_s
         post_tau = [
-            synapse.dst.behavior[key_behavior]
-            for key_behavior in synapse.dst.behavior
-            if isinstance(synapse.dst.behavior[key_behavior], SpikeTrace)
+            synapse.behavior[key_behavior]
+            for key_behavior in synapse.behavior
+            if isinstance(synapse.behavior[key_behavior], PostTrace)
         ][0].tau_s
 
         assert (
@@ -267,17 +233,10 @@ class SimpleiSTDP(BaseLearning):
             self.alpha = 2 * self.rho * pre_tau / 1000
 
     def compute_dw(self, synapse):
-        (
-            src_spike,
-            dst_spike,
-            src_spike_trace,
-            dst_spike_trace,
-        ) = self.get_spike_and_trace(synapse)
-
         pre_spike_changes = torch.outer(
-            src_spike, (self.alpha - dst_spike_trace) * self.change_sign
+            synapse.pre_spike, (self.alpha - synapse.post_trace) * self.change_sign
         )
-        post_spike_changes = torch.outer(src_spike_trace, dst_spike)
+        post_spike_changes = torch.outer(synapse.pre_trace, synapse.post_spike)
         return self.lr * (pre_spike_changes + post_spike_changes)
 
 
@@ -296,17 +255,10 @@ class One2OneiSTDP(SimpleiSTDP):
     """
 
     def compute_dw(self, synapse):
-        (
-            src_spike,
-            dst_spike,
-            src_spike_trace,
-            dst_spike_trace,
-        ) = self.get_spike_and_trace(synapse)
-
         pre_spike_changes = (
-            src_spike * (self.alpha - dst_spike_trace) * self.change_sign
+            synapse.pre_spike * (self.alpha - synapse.post_trace) * self.change_sign
         )
-        post_spike_changes = src_spike_trace * dst_spike
+        post_spike_changes = synapse.pre_trace * synapse.post_spike
         return self.lr * (pre_spike_changes + post_spike_changes)
 
 
@@ -325,22 +277,13 @@ class SparseiSTDP(SimpleiSTDP):
     """
 
     def compute_dw(self, synapse):
-        (
-            src_spike,
-            dst_spike,
-            src_spike_trace,
-            dst_spike_trace,
-        ) = self.get_spike_and_trace(synapse)
-
-        weight_data = synapse.weights.values()[:]
-
         pre_spike_changes = (
-            src_spike[synapse.src_idx]
-            * (self.alpha - dst_spike_trace)[synapse.dst_idx]
+            synapse.pre_spike[synapse.src_idx]
+            * (self.alpha - synapse.post_trace)[synapse.dst_idx]
             * self.change_sign
         )
         post_spike_changes = (
-            src_spike_trace[synapse.src_idx] * dst_spike[synapse.dst_idx]
+            synapse.pre_trace[synapse.src_idx] * synapse.post_spike[synapse.dst_idx]
         )
         return self.lr * (pre_spike_changes + post_spike_changes)
 
@@ -364,14 +307,7 @@ class Conv2dSTDP(SimpleSTDP):
         self.weight_divisor = synapse.dst_shape[2] * synapse.dst_shape[1]
 
     def compute_dw(self, synapse):
-        (
-            src_spike,
-            dst_spike,
-            src_spike_trace,
-            dst_spike_trace,
-        ) = self.get_spike_and_trace(synapse)
-
-        src_spike = src_spike.view(synapse.src_shape).to(self.def_dtype)
+        src_spike = synapse.pre_spike.view(synapse.src_shape).to(self.def_dtype)
         src_spike = F.unfold(
             src_spike,
             kernel_size=synapse.weights.size()[-2:],
@@ -380,13 +316,13 @@ class Conv2dSTDP(SimpleSTDP):
         )
         src_spike = src_spike.expand(synapse.dst_shape[0], *src_spike.shape)
 
-        dst_spike_trace = dst_spike_trace.view((synapse.dst_shape[0], -1, 1))
+        dst_spike_trace = synapse.post_trace.view((synapse.dst_shape[0], -1, 1))
 
         dw_minus = torch.bmm(src_spike, dst_spike_trace).view(
             synapse.weights.shape
         ) * self.n_bound(synapse.weights, self.w_min, self.w_max)
 
-        src_spike_trace = src_spike_trace.view(synapse.src_shape)
+        src_spike_trace = synapse.pre_trace.view(synapse.src_shape)
         src_spike_trace = F.unfold(
             src_spike_trace,
             kernel_size=synapse.weights.size()[-2:],
@@ -397,7 +333,9 @@ class Conv2dSTDP(SimpleSTDP):
             synapse.dst_shape[0], *src_spike_trace.shape
         )
 
-        dst_spike = dst_spike.view((synapse.dst_shape[0], -1, 1)).to(self.def_dtype)
+        dst_spike = synapse.post_spike.view((synapse.dst_shape[0], -1, 1)).to(
+            self.def_dtype
+        )
 
         dw_plus = torch.bmm(src_spike_trace, dst_spike).view(
             synapse.weights.shape
@@ -412,14 +350,7 @@ class Local2dSTDP(SimpleSTDP):
     """
 
     def compute_dw(self, synapse):
-        (
-            src_spike,
-            dst_spike,
-            src_spike_trace,
-            dst_spike_trace,
-        ) = self.get_spike_and_trace(synapse)
-
-        src_spike = src_spike.view(synapse.src_shape).to(self.def_dtype)
+        src_spike = synapse.pre_spike.view(synapse.src_shape).to(self.def_dtype)
         src_spike = F.unfold(
             src_spike,
             kernel_size=synapse.kernel_shape[-2:],
@@ -429,7 +360,7 @@ class Local2dSTDP(SimpleSTDP):
         src_spike = src_spike.transpose(0, 1)
         src_spike = src_spike.expand(synapse.dst_shape[0], *src_spike.shape)
 
-        dst_spike_trace = dst_spike_trace.view((synapse.dst_shape[0], -1, 1))
+        dst_spike_trace = synapse.post_trace.view((synapse.dst_shape[0], -1, 1))
         dst_spike_trace = dst_spike_trace.expand(synapse.weights.shape)
 
         dw_minus = (
@@ -438,7 +369,7 @@ class Local2dSTDP(SimpleSTDP):
             * self.n_bound(synapse.weights, self.w_min, self.w_max)
         )
 
-        src_spike_trace = src_spike_trace.view(synapse.src_shape)
+        src_spike_trace = synapse.pre_trace.view(synapse.src_shape)
         src_spike_trace = F.unfold(
             src_spike_trace,
             kernel_size=synapse.kernel_shape[-2:],
@@ -450,7 +381,9 @@ class Local2dSTDP(SimpleSTDP):
             synapse.dst_shape[0], *src_spike_trace.shape
         )
 
-        dst_spike = dst_spike.view((synapse.dst_shape[0], -1, 1)).to(self.def_dtype)
+        dst_spike = synapse.pre_spike.view((synapse.dst_shape[0], -1, 1)).to(
+            self.def_dtype
+        )
         dst_spike = dst_spike.expand(synapse.weights.shape)
 
         dw_plus = (

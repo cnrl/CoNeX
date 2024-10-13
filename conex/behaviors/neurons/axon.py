@@ -10,14 +10,13 @@ class NeuronAxon(Behavior):
     """
     Propagate the spikes and apply the delay mechanism.
 
-    Note: should be added after fire and trace behavior.
+    Note: should be added after fire.
 
     Args:
         max_delay (int): Maximum delay of all dendrites connected to the neurons. This value determines the delay buffer size.
         proximal_min_delay (int): Minimum delay of proximal dendrites. The default is 0.
         distal_min_delay (int): Minimum delay of distal dendrites. The default is 0.
         apical_min_delay (int): Minimum delay of apical dendrites. The default is 0.
-        have_trace (boolean): whether to calculate trace or not. None checks if trace is available.
     """
 
     def __init__(
@@ -27,7 +26,6 @@ class NeuronAxon(Behavior):
         proximal_min_delay=0,
         distal_min_delay=0,
         apical_min_delay=0,
-        have_trace=None,
         **kwargs,
     ):
         super().__init__(
@@ -36,7 +34,6 @@ class NeuronAxon(Behavior):
             proximal_min_delay=proximal_min_delay,
             distal_min_delay=distal_min_delay,
             apical_min_delay=apical_min_delay,
-            have_trace=have_trace,
             **kwargs,
         )
 
@@ -45,11 +42,8 @@ class NeuronAxon(Behavior):
         self.proximal_min_delay = self.parameter("proximal_min_delay", 0)
         self.distal_min_delay = self.parameter("distal_min_delay", 0)
         self.apical_min_delay = self.parameter("apical_min_delay", 0)
-        self.have_trace = self.parameter("have_trace", hasattr(neurons, "trace"))
 
         self.spike_history = neurons.vector_buffer(self.max_delay, dtype=torch.bool)
-        if self.have_trace:
-            self.trace_history = neurons.vector_buffer(self.max_delay)
 
         neurons.axon = self
 
@@ -70,14 +64,7 @@ class NeuronAxon(Behavior):
     def get_spike(self, neurons, delay):
         return self.spike_history.gather(0, delay.unsqueeze(0)).squeeze(0)
 
-    def get_spike_trace(self, neurons, delay):
-        return self.trace_history.gather(0, delay.unsqueeze(0)).squeeze(0)
-
     def forward(self, neurons):
         self.spike_history = neurons.buffer_roll(
             mat=self.spike_history, new=neurons.spikes
         )
-        if self.have_trace:
-            self.trace_history = neurons.buffer_roll(
-                mat=self.trace_history, new=neurons.trace
-            )

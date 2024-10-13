@@ -66,18 +66,6 @@
           }
         },
         {
-          "key": 360,
-          "class": [
-            "python_callable",
-            "conex.behaviors.neurons.specs",
-            "SpikeTrace"
-          ],
-          "parameters_args": [],
-          "parameters_kwargs": {
-            "tau_s": 10.0
-          }
-        },
-        {
           "key": 380,
           "class": [
             "python_callable",
@@ -89,8 +77,7 @@
             "max_delay": 1,
             "proximal_min_delay": 0,
             "distal_min_delay": 0,
-            "apical_min_delay": 0,
-            "have_trace": null
+            "apical_min_delay": 0
           }
         },
         {
@@ -170,18 +157,6 @@
           }
         },
         {
-          "key": 360,
-          "class": [
-            "python_callable",
-            "conex.behaviors.neurons.specs",
-            "SpikeTrace"
-          ],
-          "parameters_args": [],
-          "parameters_kwargs": {
-            "tau_s": 10.0
-          }
-        },
-        {
           "key": 380,
           "class": [
             "python_callable",
@@ -193,8 +168,7 @@
             "max_delay": 1,
             "proximal_min_delay": 0,
             "distal_min_delay": 0,
-            "apical_min_delay": 0,
-            "have_trace": null
+            "apical_min_delay": 0
           }
         }
       ],
@@ -250,6 +224,16 @@
           "parameters_kwargs": {
             "current_coef": 1
           }
+        },
+        {
+          "key": 420,
+          "class": [
+            "python_callable",
+            "conex.behaviors.synapses.specs",
+            "PreSpikeCatcher"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {}
         }
       ],
       "device": "cpu",
@@ -305,6 +289,16 @@
           "parameters_kwargs": {
             "current_coef": 1
           }
+        },
+        {
+          "key": 420,
+          "class": [
+            "python_callable",
+            "conex.behaviors.synapses.specs",
+            "PreSpikeCatcher"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {}
         }
       ],
       "device": "cpu",
@@ -360,6 +354,16 @@
           "parameters_kwargs": {
             "current_coef": 1
           }
+        },
+        {
+          "key": 420,
+          "class": [
+            "python_callable",
+            "conex.behaviors.synapses.specs",
+            "PreSpikeCatcher"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {}
         }
       ],
       "device": "cpu",
@@ -415,6 +419,16 @@
           "parameters_kwargs": {
             "current_coef": 1
           }
+        },
+        {
+          "key": 420,
+          "class": [
+            "python_callable",
+            "conex.behaviors.synapses.specs",
+            "PreSpikeCatcher"
+          ],
+          "parameters_args": [],
+          "parameters_kwargs": {}
         }
       ],
       "device": "cpu",

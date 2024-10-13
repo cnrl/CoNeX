@@ -1,7 +1,6 @@
 from pymonntorch import NetworkObject, Network, NeuronDimension, Behavior, NeuronGroup
 from conex.behaviors.neurons.axon import NeuronAxon
 from conex.behaviors.neurons.setters import SensorySetter, LocationSetter
-from conex.behaviors.neurons.specs import SpikeTrace
 from conex.behaviors.neurons.dendrite import SimpleDendriteStructure
 from torch.utils.data.dataloader import DataLoader
 from typing import Union, Dict, Callable, Tuple, List
@@ -26,8 +25,6 @@ class InputLayer(NetworkObject):
         location_axon_params (dict): Parameters for axon class of location neurongroup.
         silent_interval (int): Empty interval between two samples.
         instance_duration (int): Each sample duraiton
-        sensory_trace (float): The spike trace of sensory neurongroup.
-        location_trace (float): The spike trace of location neurongroup.
         sensory_data_dim (int): The number of dimension of sensory data.
         location_data_dim (int): The number of dimension of location data.
         behavior (dict): The behavior for the InputLayer itself.
@@ -53,8 +50,6 @@ class InputLayer(NetworkObject):
         location_axon_params: dict = None,
         silent_interval: int = 0,
         instance_duration: int = 0,
-        sensory_trace: float = None,
-        location_trace: float = None,
         sensory_data_dim: int = 2,
         location_data_dim: int = 2,
         tag: str = None,
@@ -94,7 +89,6 @@ class InputLayer(NetworkObject):
                 net=net,
                 size=sensory_size,
                 tag=sensory_tag,
-                trace=sensory_trace,
                 setter=SensorySetter,
                 axon=sensory_axon,
                 axon_params=sensory_axon_params,
@@ -113,7 +107,6 @@ class InputLayer(NetworkObject):
                 net=net,
                 size=location_size,
                 tag=location_tag,
-                trace=location_trace,
                 setter=LocationSetter,
                 axon=location_axon,
                 axon_params=location_axon_params,
@@ -131,7 +124,6 @@ class InputLayer(NetworkObject):
         net: Network,
         size: Union[int, NeuronDimension],
         tag: Union[str, None],
-        trace: Union[float, None],
         setter: Callable,
         axon: Behavior = NeuronAxon,
         axon_params: dict = None,
@@ -144,9 +136,6 @@ class InputLayer(NetworkObject):
         if axon:
             params = axon_params if axon_params is not None else {}
             behavior[NEURON_PRIORITIES["NeuronAxon"]] = axon(**params)
-
-        if trace is not None:
-            behavior[NEURON_PRIORITIES["SpikeTrace"]] = SpikeTrace(tau_s=trace)
 
         if user_defined is not None:
             behavior.update(user_defined)
@@ -175,8 +164,6 @@ class OutputLayer(NetworkObject):
     Args:
         representation_size (int or behavior): The size of each representation neurongroup.
         motor_size (int or behavior): The size of each motor neurongroup.
-        representation_trace (float): The spike trace of representation neurongroup.
-        motor_trace (float): The spike trace of motor neurongroup.
         representation_dendrite_structure (Callable): Dendrite structure for representation population.
         representation_dendrite_structure_params (dict): The parameters for dendrite structure of representation population.
         motor_dendrite_structure (Callable): Dendrite structure for motor population.
@@ -194,8 +181,6 @@ class OutputLayer(NetworkObject):
         net: Network,
         representation_size: Union[int, NeuronDimension] = None,
         motor_size: Union[int, NeuronDimension] = None,
-        representation_trace: Union[float, None] = None,
-        motor_trace: Union[float, None] = None,
         representation_dendrite_structure: Callable = SimpleDendriteStructure,
         representation_dendrite_structure_params: dict = None,
         motor_dendrite_structure: Callable = SimpleDendriteStructure,
@@ -226,7 +211,6 @@ class OutputLayer(NetworkObject):
                 net=net,
                 size=representation_size,
                 tag=representation_tag,
-                trace=representation_trace,
                 dendrite_structure=representation_dendrite_structure,
                 dendrite_structure_params=representation_dendrite_structure_params,
                 user_defined=representation_user_defined,
@@ -242,7 +226,6 @@ class OutputLayer(NetworkObject):
                 net=net,
                 size=motor_size,
                 tag=motor_tag,
-                trace=motor_trace,
                 dendrite_structure=motor_dendrite_structure,
                 dendrite_structure_params=motor_dendrite_structure_params,
                 user_defined=motor_user_defined,
@@ -261,7 +244,6 @@ class OutputLayer(NetworkObject):
         net: Network,
         size: Union[int, NeuronDimension],
         tag: Union[str, None],
-        trace: Union[float, None] = None,
         dendrite_structure: Callable = SimpleDendriteStructure,
         dendrite_structure_params: dict = None,
         user_defined: Dict[int, Behavior] = None,
@@ -275,9 +257,6 @@ class OutputLayer(NetworkObject):
             behavior[NEURON_PRIORITIES["SimpleDendriteStructure"]] = dendrite_structure(
                 **dendrite_structure_params
             )
-
-        if trace is not None:
-            behavior[NEURON_PRIORITIES["Trace"]] = SpikeTrace(tau_s=trace)
 
         if user_defined is not None:
             behavior.update(user_defined)

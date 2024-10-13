@@ -20,11 +20,14 @@ from conex.behaviors.neurons import (
     SimpleDendriteStructure,
     SimpleDendriteComputation,
     LIF,
-    SpikeTrace,
     NeuronAxon,
 )
 from conex.behaviors.synapses import (
     SynapseInit,
+    PreTrace,
+    PostTrace,
+    PreSpikeCatcher,
+    PostSpikeCatcher,
     WeightInitializer,
     SimpleDendriticInput,
     SimpleSTDP,
@@ -55,7 +58,6 @@ POISSON_RATIO = 5 / 30
 MNIST_ROOT = "~/Temp/MNIST/"
 SENSORY_SIZE_HEIGHT = 28
 SENSORY_SIZE_WIDTH = 28  # MNIST's image size
-SENSORY_TRACE_TAU_S = 2.7
 
 # Layer 4
 L4_EXC_DEPTH = 4
@@ -66,7 +68,6 @@ L4_EXC_THRESHOLD = 0.0
 L4_EXC_TAU = 10.0
 L4_EXC_V_RESET = 0.0
 L4_EXC_V_REST = 0.0
-L4_EXC_TRACE_TAU = 10.0
 
 L4_INH_SIZE = 576
 L4_INH_R = 5.0
@@ -95,10 +96,17 @@ L4_L2_A_MINUS = 0.002
 
 
 INP_CC_MODE = "random"
-INP_CC_WEIGHT_SHAPE = (4,1,5,5)
+INP_CC_WEIGHT_SHAPE = (4, 1, 5, 5)
 INP_CC_COEF = 1
 INP_CC_A_PLUS = 0.01
 INP_CC_A_MINUS = 0.002
+
+L4_EXC_L23_EXC_PRE_TRACE = 10.0
+L4_EXC_L23_EXC_POST_TRACE = 10.0
+
+
+SENSORY_L4_PRE_TRACE = 10.0
+SENSORY_L4_POST_TRACE = 10.0
 
 
 ##################################################
@@ -134,9 +142,8 @@ input_layer = InputLayer(
     sensory_size=NeuronDimension(
         depth=1, height=SENSORY_SIZE_HEIGHT, width=SENSORY_SIZE_WIDTH
     ),
-    sensory_trace=SENSORY_TRACE_TAU_S,
     instance_duration=POISSON_TIME,
-    output_ports={"data_out": (None,[("sensory_pop", {})])}
+    output_ports={"data_out": (None, [("sensory_pop", {})])},
 )
 
 ##################################################
@@ -159,7 +166,6 @@ pop_exc = NeuronGroup(
                 v_reset=L4_EXC_V_RESET,
                 v_rest=L4_EXC_V_REST,
             ),
-            SpikeTrace(tau_s=L4_EXC_TRACE_TAU),
             NeuronAxon(),
         ]
     ),
@@ -180,7 +186,6 @@ pop_inh = NeuronGroup(
                 v_reset=L4_INH_V_RESET,
                 v_rest=L4_INH_V_REST,
             ),
-            SpikeTrace(tau_s=L4_INH_TRACE_TAU),
             NeuronAxon(),
         ]
     ),
@@ -196,6 +201,7 @@ syn_exc_exc = SynapseGroup(
             SynapseInit(),
             WeightInitializer(mode=L4_EXC_EXC_MODE),
             SimpleDendriticInput(current_coef=L4_EXC_EXC_COEF),
+            PreSpikeCatcher(),
         ]
     ),
 )
@@ -210,6 +216,7 @@ syn_exc_inh = SynapseGroup(
             SynapseInit(),
             WeightInitializer(mode=L4_EXC_INH_MODE),
             SimpleDendriticInput(current_coef=L4_EXC_INH_COEF),
+            PreSpikeCatcher(),
         ]
     ),
 )
@@ -224,6 +231,7 @@ syn_inh_exc = SynapseGroup(
             SynapseInit(),
             WeightInitializer(mode=L4_INH_EXC_MODE),
             SimpleDendriticInput(current_coef=L4_INH_EXC_COEF),
+            PreSpikeCatcher(),
         ]
     ),
 )
@@ -238,6 +246,7 @@ syn_inh_inh = SynapseGroup(
             SynapseInit(),
             WeightInitializer(mode=L4_INH_INH_MODE),
             SimpleDendriticInput(current_coef=L4_INH_INH_COEF),
+            PreSpikeCatcher(),
         ]
     ),
 )
@@ -314,6 +323,10 @@ cortical_connection_l4_l2 = CorticalLayerConnection(
                     WeightInitializer(mode=L4_L2_MODE),
                     SimpleDendriticInput(current_coef=L4_L2_COEF),
                     SimpleSTDP(a_plus=L4_L2_A_PLUS, a_minus=L4_L2_A_MINUS),
+                    PreSpikeCatcher(),
+                    PostSpikeCatcher(),
+                    PreTrace(tau_s=L4_EXC_L23_EXC_PRE_TRACE),
+                    PostTrace(tau_s=L4_EXC_L23_EXC_POST_TRACE),
                 ]
             ),
             "Proximal",
@@ -357,9 +370,17 @@ synapsis_input_cc1 = Synapsis(
     synapsis_behavior=prioritize_behaviors(
         [
             SynapseInit(),
-            WeightInitializer(mode=INP_CC_MODE, weight_shape=INP_CC_WEIGHT_SHAPE, kernel_shape=INP_CC_WEIGHT_SHAPE),
+            WeightInitializer(
+                mode=INP_CC_MODE,
+                weight_shape=INP_CC_WEIGHT_SHAPE,
+                kernel_shape=INP_CC_WEIGHT_SHAPE,
+            ),
             Conv2dDendriticInput(current_coef=INP_CC_COEF),
             Conv2dSTDP(a_plus=INP_CC_A_PLUS, a_minus=INP_CC_A_MINUS),
+            PreSpikeCatcher(),
+            PostSpikeCatcher(),
+            PreTrace(tau_s=SENSORY_L4_PRE_TRACE),
+            PostTrace(tau_s=SENSORY_L4_POST_TRACE),
         ]
     ),
     synaptic_tag="Proximal",
