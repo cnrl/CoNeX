@@ -37,7 +37,7 @@ class GridEraseMask:
         for index, ij in enumerate(product(range(self.m), range(self.n))):
             i, j = ij
             h_cor = i * h_grid + gap_left
-            dh = h_cor if h_cor < 0 else 0
+            dh = min(h_cor, 0) 
             w_cor = j * w_grid + gap_top
             dw = w_cor if w_cor < 0 else 0
             result.append(
