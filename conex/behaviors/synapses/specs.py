@@ -5,6 +5,7 @@ Synapse-related behaviors.
 from pymonntorch import Behavior
 import random
 import torch
+from torch import Tensor
 
 
 class SynapseInit(Behavior):
@@ -54,18 +55,18 @@ class DelayInitializer(Behavior):
                               In number case the synapse delays will be filled with that number.
         offset (int): delay added to the all delays.
         scale (int): scales delay.
-        weights (tensor): giving the delays directly.
+        delays (tensor): giving the delays directly.
         destination (boolean): True for destination neurons. defaults to False.
     """
 
     def __init__(
         self,
         *args,
-        mode=None,
-        scale=1,
-        offset=0,
-        destination=False,
-        delays=None,
+        mode: int or str = None,
+        scale: int = 1,
+        offset: int = 0,
+        destination: bool = False,
+        delays: Tensor = None,
         **kwargs,
     ):
         super().__init__(
@@ -118,7 +119,7 @@ class WeightInitializer(Behavior):
         scale (float): Scaling factor to apply on the weight.
         offset (float): An offset to add to the weight.
         function (callable): A function to apply on weight.
-        density (flaot): The sparsity of weights. default is one.
+        density (float): The sparsity of weights. default is one.
         true_sparsity (bool) : If false, weights are created but have zero value. Defaults to True.
         weights (tensor): Optional parameter to specify the weights matrix directly.
         weight_shape (tuple): Optional parameter to specify the shape of the weights tensor.
@@ -128,15 +129,15 @@ class WeightInitializer(Behavior):
     def __init__(
         self,
         *args,
-        mode=None,
-        scale=1,
-        offset=0,
-        function=None,
-        density=1,
-        true_sparsity=True,
-        weight_shape=None,
-        kernel_shape=None,
-        weights=None,
+        mode: float or str = None,
+        scale: float = 1,
+        offset: float = 0,
+        function: callable = None,
+        density: float = 1,
+        true_sparsity: bool = True,
+        weight_shape: tuple = None,
+        kernel_shape: tuple = None,
+        weights: Tensor = None,
         **kwargs,
     ):
         super().__init__(
@@ -208,10 +209,10 @@ class WeightNormalization(Behavior):
     sum of its weight equal to ``norm``. Supporting `Simple`, `Local2d`, 'Conv2d'.
 
     Args:
-        norm (int): Desired sum of weights for each neuron.
+        norm (float): Desired sum of weights for each neuron.
     """
 
-    def __init__(self, *args, norm=1, **kwargs):
+    def __init__(self, *args, norm: float = 1, **kwargs):
         super().__init__(*args, norm=norm, **kwargs)
 
     def initialize(self, synapse):
@@ -234,10 +235,10 @@ class CurrentNormalization(Behavior):
     maximum input current is eight equal to ``norm``. Supporting `Simple`, `Local2d`, 'Conv2d'.
 
     Args:
-        norm (int): Desired maximum of current for each neuron.
+        norm (float): Desired maximum of current for each neuron.
     """
 
-    def __init__(self, *args, norm=1, **kwargs):
+    def __init__(self, *args, norm: float = 1, **kwargs):
         super().__init__(*args, norm=norm, **kwargs)
 
     def initialize(self, synapse):
@@ -268,7 +269,7 @@ class WeightClip(Behavior):
         w_max (float): Maximum weight constraint.
     """
 
-    def __init__(self, *args, w_min=0, w_max=1, **kwargs):
+    def __init__(self, *args, w_min: float = 0, w_max: float = 1, **kwargs):
         super().__init__(*args, w_min=w_min, w_max=w_max, **kwargs)
 
     def initialize(self, synapse):
@@ -299,6 +300,7 @@ class PreSpikeCatcher(Behavior):
 
     Note: Axon should be added to pre synaptice neuron group
     """
+
     initialize_last = True
 
     def initialize(self, synapse):
@@ -314,6 +316,7 @@ class PostSpikeCatcher(Behavior):
 
     Note: Axon should be added to post synaptice neuron group
     """
+
     initialize_last = True
 
     def initialize(self, synapse):
@@ -334,7 +337,7 @@ class PreTrace(Behavior):
         spike_scale (float): the increase effect of spikes on the trace.
     """
 
-    def __init__(self, tau_s, *args, spike_scale=1.0, **kwargs):
+    def __init__(self, tau_s: float, *args, spike_scale: float = 1.0, **kwargs):
         super().__init__(*args, tau_s=tau_s, spike_scale=spike_scale, **kwargs)
 
     def initialize(self, synapse):
@@ -364,7 +367,7 @@ class PostTrace(Behavior):
         spike_scale (float): the increase effect of spikes on the trace.
     """
 
-    def __init__(self, tau_s, *args, spike_scale=1.0, **kwargs):
+    def __init__(self, tau_s: float, *args, spike_scale: float = 1.0, **kwargs):
         super().__init__(*args, tau_s=tau_s, spike_scale=spike_scale, **kwargs)
 
     def initialize(self, synapse):

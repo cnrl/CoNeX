@@ -6,21 +6,22 @@ from pymonntorch import Behavior
 
 import torch
 import torch.nn.functional as F
+from torch import Tensor
 
 from conex.behaviors.synapses.specs import PreTrace, PostTrace
 
 # TODO docstring for bound functions
 
 
-def soft_bound(w, w_min, w_max):
+def soft_bound(w: Tensor, w_min: float or Tensor, w_max: float or Tensor):
     return (w - w_min) * (w_max - w)
 
 
-def hard_bound(w, w_min, w_max):
+def hard_bound(w: Tensor, w_min: float or Tensor, w_max: float or Tensor):
     return (w > w_min) * (w < w_max)
 
 
-def no_bound(w, w_min, w_max):
+def no_bound(w: Tensor, w_min: float or Tensor, w_max: float or Tensor):
     return 1
 
 
@@ -32,8 +33,7 @@ class BaseLearning(Behavior):
         super().__init__(*args, **kwargs)
         self.add_tag("weight_learning")
 
-    def compute_dw(self, synapse):
-        ...
+    def compute_dw(self, synapse): ...
 
     def forward(self, synapse):
         synapse.weights += self.compute_dw(synapse)
@@ -56,13 +56,13 @@ class SimpleSTDP(BaseLearning):
 
     def __init__(
         self,
-        a_plus,
-        a_minus,
+        a_plus: float,
+        a_minus: float,
         *args,
-        w_min=0.0,
-        w_max=1.0,
-        positive_bound=None,
-        negative_bound=None,
+        w_min: float = 0.0,
+        w_max: float = 1.0,
+        positive_bound: str or callable = None,
+        negative_bound: str or callable = None,
         **kwargs,
     ):
         super().__init__(
@@ -197,10 +197,10 @@ class SimpleiSTDP(BaseLearning):
     def __init__(
         self,
         *args,
-        rho=None,
-        alpha=None,
-        lr=1e-5,
-        is_inhibitory=True,
+        rho: float = None,
+        alpha: float = None,
+        lr: float = 1e-5,
+        is_inhibitory: bool = True,
         **kwargs,
     ):
         super().__init__(
@@ -405,20 +405,24 @@ class SimpleRSTDP(SimpleSTDP):
         a_plus (float): Coefficient for the positive weight change. The default is None.
         a_minus (float): Coefficient for the negative weight change. The default is None.
         tau_c (float): Time constant for the eligibility trace. The default is None.
-        init_c_mode (int): Initialization mode for the eligibility trace. The default is 0.
+        init_c_mode (float or str): Initialization mode for the eligibility trace. The default is 0.
+        w_min (float): Minimum for weights. The default is 0.0.
+        w_max (float): Maximum for weights. The default is 1.0.
+        positive_bound (str or function): Bounding mechanism for positive learning. Accepting "no_bound", "hard_bound" and "soft_bound". The default is "no_bound". "weights", "w_min" and "w_max" pass as arguments for a bounding function.
+        negative_bound (str or function): Bounding mechanism for negative learning. Accepting "no_bound", "hard_bound" and "soft_bound". The default is "no_bound". "weights", "w_min" and "w_max" pass as arguments for a bounding function.
     """
 
     def __init__(
         self,
-        a_plus,
-        a_minus,
-        tau_c,
+        a_plus: float,
+        a_minus: float,
+        tau_c: float,
         *args,
-        init_c_mode=0,
-        w_min=0.0,
-        w_max=1.0,
-        positive_bound=None,
-        negative_bound=None,
+        init_c_mode: float or str = 0,
+        w_min: float = 0.0,
+        w_max: float = 1.0,
+        positive_bound: str or callable = None,
+        negative_bound: str or callable = None,
         **kwargs,
     ):
         super().__init__(
@@ -473,19 +477,23 @@ class SparseRSTDP(SparseSTDP):
         a_minus (float): Coefficient for the negative weight change. The default is None.
         tau_c (float): Time constant for the eligibility trace. The default is None.
         init_c_mode (int): Initialization mode for the eligibility trace. The default is 0.
+        w_min (float): Minimum for weights. The default is 0.0.
+        w_max (float): Maximum for weights. The default is 1.0.
+        positive_bound (str or function): Bounding mechanism for positive learning. Accepting "no_bound", "hard_bound" and "soft_bound". The default is "no_bound". "weights", "w_min" and "w_max" pass as arguments for a bounding function.
+        negative_bound (str or function): Bounding mechanism for negative learning. Accepting "no_bound", "hard_bound" and "soft_bound". The default is "no_bound". "weights", "w_min" and "w_max" pass as arguments for a bounding function.
     """
 
     def __init__(
         self,
-        a_plus,
-        a_minus,
-        tau_c,
+        a_plus: float,
+        a_minus: float,
+        tau_c: float,
         *args,
-        init_c_mode=0,
-        w_min=0.0,
-        w_max=1.0,
-        positive_bound=None,
-        negative_bound=None,
+        init_c_mode: float or str = 0,
+        w_min: float = 0.0,
+        w_max: float = 1.0,
+        positive_bound: str or callable = None,
+        negative_bound: str or callable = None,
         **kwargs,
     ):
         super().__init__(

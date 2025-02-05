@@ -16,7 +16,7 @@ class Payoff(Behavior):
         initial_payoff (float): Initial reward/punishment value. Default is 0.0.
     """
 
-    def __init__(self, *args, initial_payoff=0.0, **kwargs):
+    def __init__(self, *args, initial_payoff: float = 0.0, **kwargs):
         super().__init__(*args, initial_payoff=initial_payoff, **kwargs)
 
     def initialize(self, network):

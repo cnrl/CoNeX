@@ -1,6 +1,7 @@
 """
 Dendritic behaviors.
 """
+
 from pymonntorch import Behavior
 
 import torch
@@ -27,7 +28,7 @@ class BaseDendriticInput(Behavior):
         current_coef (float): Scalar coefficient that multiplies weights.
     """
 
-    def __init__(self, *args, current_coef=1, **kwargs):
+    def __init__(self, *args, current_coef: float = 1, **kwargs):
         super().__init__(*args, current_coef=current_coef, **kwargs)
 
     def initialize(self, synapse):
@@ -47,8 +48,7 @@ class BaseDendriticInput(Behavior):
         self.def_dtype = synapse.def_dtype
         synapse.I = synapse.dst.vector(0)
 
-    def calculate_input(self, synapse):
-        ...
+    def calculate_input(self, synapse): ...
 
     def forward(self, synapse):
         synapse.I = (
@@ -78,7 +78,9 @@ class SparseDendriticInput(BaseDendriticInput):
             raise RuntimeError("Network should've made with SxD mode for synapses")
 
     def calculate_input(self, synapse):
-        return torch.matmul(synapse.pre_spike.to(synapse.weights.dtype), synapse.weights)
+        return torch.matmul(
+            synapse.pre_spike.to(synapse.weights.dtype), synapse.weights
+        )
 
 
 class One2OneDendriticInput(BaseDendriticInput):
@@ -127,7 +129,7 @@ class SimpleDendriticInput(BaseDendriticInput):
         super().initialize(synapse)
 
         if not synapse.network.transposed_synapse_matrix_mode:
-            raise RuntimeError(f"Network should've made with SxD mode for synapses")
+            raise RuntimeError("Network should've made with SxD mode for synapses")
 
     def calculate_input(self, synapse):
         return torch.sum(synapse.weights[synapse.pre_spike], axis=0)
@@ -177,7 +179,9 @@ class LateralDendriticInput(BaseDendriticInput):
         inhibitory (bool or None): If None, connection type respect the NeuronGroup type. if True, the effect in inhibitory and False is excitatory.
     """
 
-    def __init__(self, *args, current_coef=1, inhibitory=None, **kwargs):
+    def __init__(
+        self, *args, current_coef: float = 1, inhibitory: bool or None = None, **kwargs
+    ):
         super().__init__(
             *args, current_coef=current_coef, inhibitory=inhibitory, **kwargs
         )
@@ -224,7 +228,14 @@ class Conv2dDendriticInput(BaseDendriticInput):
         padding (int): Padding added to both sides of the input. The default is 0.
     """
 
-    def __init__(self, *args, current_coef=1, stride=1, padding=0, **kwargs):
+    def __init__(
+        self,
+        *args,
+        current_coef: float = 1,
+        stride: int = 1,
+        padding: int = 0,
+        **kwargs,
+    ):
         super().__init__(
             *args, current_coef=current_coef, stride=stride, padding=padding, **kwargs
         )
@@ -325,7 +336,14 @@ class Local2dDendriticInput(BaseDendriticInput):
         padding (int): Padding added to both sides of the input. The default is 0.
     """
 
-    def __init__(self, *args, current_coef=1, stride=1, padding=0, **kwargs):
+    def __init__(
+        self,
+        *args,
+        current_coef: float = 1,
+        stride: int = 1,
+        padding: int = 0,
+        **kwargs,
+    ):
         super().__init__(
             *args, current_coef=current_coef, stride=stride, padding=padding, **kwargs
         )

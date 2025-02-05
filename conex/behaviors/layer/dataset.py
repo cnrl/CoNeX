@@ -1,4 +1,5 @@
 import torch
+from torch.utils.data import DataLoader
 
 """
 Behaviors to load datasets 
@@ -26,16 +27,16 @@ class SpikeNdDataset(Behavior):
 
     def __init__(
         self,
-        dataloader,
-        instance_duration,
+        dataloader: DataLoader,
+        instance_duration: int,
         *args,
-        ndim_sensory=2,
-        ndim_location=2,
-        have_location=False,
-        have_sensory=True,
-        have_label=True,
-        silent_interval=0,
-        loop=True,
+        ndim_sensory: int = 2,
+        ndim_location: int = 2,
+        have_location: bool = False,
+        have_sensory: bool = True,
+        have_label: bool = True,
+        silent_interval: int = 0,
+        loop: bool = True,
         **kwargs
     ):
         super().__init__(
@@ -76,7 +77,7 @@ class SpikeNdDataset(Behavior):
                 batch_y = batch[-1] if self.have_label else None
 
                 if type(batch_x) is list:
-                    batch_x =  batch[0][0]
+                    batch_x = batch[0][0]
                     batch_loc = batch[0][1]
 
                 if batch_x is not None:

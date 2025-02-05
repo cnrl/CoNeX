@@ -16,7 +16,13 @@ class ActivityBaseHomeostasis(Behavior):
     """
 
     def __init__(
-        self, activity_rate, window_size, updating_rate, *args, decay_rate=1.0, **kwargs
+        self,
+        activity_rate: int,
+        window_size: int,
+        updating_rate: float,
+        *args,
+        decay_rate: float = 1.0,
+        **kwargs
     ):
         super().__init__(
             *args,
@@ -67,10 +73,10 @@ class VoltageBaseHomeostasis(Behavior):
     def __init__(
         self,
         *args,
-        target_voltage=None,
-        max_ta=None,
-        min_ta=None,
-        eta_ip=0.001,
+        target_voltage: float = None,
+        max_ta: float = None,
+        min_ta: float = None,
+        eta_ip: float = 0.001,
         **kwargs
     ):
         super().__init__(

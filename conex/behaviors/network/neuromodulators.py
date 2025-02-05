@@ -18,7 +18,11 @@ class Dopamine(Behavior):
     """
 
     def __init__(
-        self, *args, tau_dopamine=0.0, initial_dopamine_concentration=None, **kwargs
+        self,
+        *args,
+        tau_dopamine: float = 0.0,
+        initial_dopamine_concentration: float or None = None,
+        **kwargs
     ):
         super().__init__(
             *args,

@@ -10,7 +10,7 @@ class TimeResolution(Behavior):
         dt (float): Initial iteration time resolution. Default is 1
     """
 
-    def __init__(self, *args, dt=1, **kwargs):
+    def __init__(self, *args, dt: float = 1, **kwargs):
         super().__init__(*args, dt=dt, **kwargs)
 
     def initialize(self, network):

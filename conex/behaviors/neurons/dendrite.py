@@ -22,12 +22,12 @@ class SimpleDendriteStructure(Behavior):
     def __init__(
         self,
         *args,
-        Proximal_max_delay=1,
-        Distal_max_delay=1,
-        Apical_max_delay=None,
-        proximal_min_delay=0,
-        distal_min_delay=0,
-        apical_min_delay=None,
+        Proximal_max_delay: int = 1,
+        Distal_max_delay: int = 1,
+        Apical_max_delay: int = None,
+        proximal_min_delay: int = 0,
+        distal_min_delay: int = 0,
+        apical_min_delay: int = None,
         **kwargs,
     ):
         super().__init__(
@@ -143,9 +143,9 @@ class SimpleDendriteComputation(Behavior):
     def __init__(
         self,
         *args,
-        I_tau=None,
-        apical_provocativeness=None,
-        distal_provocativeness=None,
+        I_tau: float = None,
+        apical_provocativeness: float = None,
+        distal_provocativeness: float = None,
         **kwargs,
     ):
         super().__init__(

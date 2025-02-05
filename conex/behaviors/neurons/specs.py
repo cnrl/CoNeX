@@ -13,10 +13,17 @@ class InherentNoise(Behavior):
     Args:
         mode (str): Mode to be used in initialize the tensor. Accepts similar values to Pymonntorch's `tensor` function. Defaults to "rand".
         scale (float): Scale factor to multiply to the tensor. Default is 1.0.
-        offset (function): An offset value to be added to the tensor. Default is 0.0.
+        offset (float): An offset value to be added to the tensor. Default is 0.0.
     """
 
-    def __init__(self, *args, mode="rand", scale=1, offset=0, **kwargs):
+    def __init__(
+        self,
+        *args,
+        mode: float or str = "rand",
+        scale: float = 1,
+        offset: float = 0,
+        **kwargs
+    ):
         super().__init__(*args, mode=mode, scale=scale, offset=offset, **kwargs)
 
     def initialize(self, neurons):
@@ -26,8 +33,6 @@ class InherentNoise(Behavior):
 
     def forward(self, neurons):
         neurons.v += neurons.vector(mode=self.mode, scale=self.scale) + self.offset
-
-
 
 
 class Fire(Behavior):
@@ -53,7 +58,7 @@ class KWTA(Behavior):
         dimension (int, optional): K-WTA on specific dimension. defaults to None.
     """
 
-    def __init__(self, k, *args, dimension=None, **kwargs):
+    def __init__(self, k: int, *args, dimension: int = None, **kwargs):
         super().__init__(*args, k=k, dimension=dimension, **kwargs)
 
     def initialize(self, neurons):
@@ -76,9 +81,7 @@ class KWTA(Behavior):
         if (will_spike.sum(axis=dim) <= self.k).all():
             return
 
-        _, k_winners_indices = torch.topk(
-            v_values, self.k, dim=dim, sorted=False
-        )
+        _, k_winners_indices = torch.topk(v_values, self.k, dim=dim, sorted=False)
 
         ignored = will_spike
         ignored.scatter_(dim, k_winners_indices, False)

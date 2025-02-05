@@ -22,10 +22,10 @@ class NeuronAxon(Behavior):
     def __init__(
         self,
         *args,
-        max_delay=1,
-        proximal_min_delay=0,
-        distal_min_delay=0,
-        apical_min_delay=0,
+        max_delay: int = 1,
+        proximal_min_delay: int = 0,
+        distal_min_delay: int = 0,
+        apical_min_delay: int = 0,
         **kwargs,
     ):
         super().__init__(
