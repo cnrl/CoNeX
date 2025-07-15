@@ -1,4 +1,4 @@
-# CoNeX: A Cortical Network Simulation Framework <img align="right" src="./assets/logo.jpg" width="150px" >
+# CoNeX: Cortical network for everything <img align="right" src="./assets/logo.jpg" width="150px" >
 
 [![PyPI version](https://img.shields.io/pypi/v/cnrl-conex?style=flat-square&color=orange)](https://pypi.org/project/cnrl-conex/)
 [![Python versions](https://img.shields.io/pypi/pyversions/cnrl-conex?style=flat-square&color=crimson)](https://pypi.org/project/cnrl-conex/)
@@ -7,7 +7,6 @@
 [![Contributions welcome](https://img.shields.io/badge/Contributions-welcome-brightgreen.svg?style=flat-square&color=tomato)](https://github.com/cnrl/CoNeX/blob/master/CONTRIBUTING.rst)
 [![GitHub last commit](https://img.shields.io/github/last-commit/cnrl/CoNeX?style=flat-square&color=blue)](https://github.com/cnrl/CoNeX/commits/master)
 
-# CoNeX: A Cortical Network Simulation Framework
 
 **CoNeX** is a powerful and flexible Python framework for building, simulating, and experimenting with spiking neural networks, with a focus on modeling cortical structures. Built on `PyTorch` and `Pymonntorch`, CoNeX provides a high-level API to design complex network architectures inspired by the brain's neocortex, such as cortical layers and columns. 
 
