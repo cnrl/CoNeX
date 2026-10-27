@@ -104,15 +104,11 @@ class Synapsis(Container):
                     )
 
     def __repr__(self) -> str:
-        result = (
-            self.__class__.__name__
-            + str(self.tags)
-            + "(Synapses:"
-            + str([value.tags[0] for value in self.synapses])
-            + "){"
-        )
-        for k in sorted(list(self.behavior.keys())):
-            result += str(k) + ":" + str(self.behavior[k])
+        tag_str = self.tags[0] if self.tags else "untagged"
+        syn_tags = [v.tags[0] if v.tags else "?" for v in self.synapses]
+        result = f"{self.__class__.__name__}[{tag_str}](n_synapses={len(self.synapses)}, synapses={syn_tags}){{"
+        behaviors = [f"{k}:{self.behavior[k].__class__.__name__}" for k in sorted(self.behavior.keys())]
+        result += ", ".join(behaviors)
         return result + "}"
 
     def required_helper(self) -> List[NetworkObject]:

@@ -49,7 +49,7 @@ class CorticalLayerConnection(Container):
     def connect_dst(self, dst: NetworkObject):
         if self.dst is None and dst is not None:
             self.dst = dst
-        if self.dst is not None and self.dst is not None:
+        if self.src is not None and self.dst is not None:
             self.create_synapses()
 
     def create_synapses(self):
@@ -69,15 +69,13 @@ class CorticalLayerConnection(Container):
                 )
 
     def __repr__(self) -> str:
-        result = (
-            self.__class__.__name__
-            + str(self.tags)
-            + "(Synapses:"
-            + str([value.tags[0] for value in self.synapses])
-            + "){"
-        )
-        for k in sorted(list(self.behavior.keys())):
-            result += str(k) + ":" + str(self.behavior[k])
+        tag_str = self.tags[0] if self.tags else "untagged"
+        src_tag = self.src.tags[0] if self.src and self.src.tags else "None"
+        dst_tag = self.dst.tags[0] if self.dst and self.dst.tags else "None"
+        syn_tags = [v.tags[0] if v.tags else "?" for v in self.synapses]
+        result = f"{self.__class__.__name__}[{tag_str}](src={src_tag}, dst={dst_tag}, synapses={syn_tags}){{"
+        behaviors = [f"{k}:{self.behavior[k].__class__.__name__}" for k in sorted(self.behavior.keys())]
+        result += ", ".join(behaviors)
         return result + "}"
 
     def required_helper(self) -> List[NetworkObject]:

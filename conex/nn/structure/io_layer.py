@@ -143,18 +143,19 @@ class InputLayer(NetworkObject):
         return NeuronGroup(size=size, behavior=behavior, net=net, tag=tag)
 
     def __repr__(self) -> str:
-        result = (
-            self.__class__.__name__
-            + "("
-            + f"Sensory Population {self.sensory_pop.tags[0]}({self.sensory_pop.size})"
-            if hasattr(self, "sensory_pop")
-            else ""
-            + f"Location Population {self.location_pop.tags[0]}({self.location_pop.size})"
-            if hasattr(self, "location_pop")
-            else "" + "){"
-        )
+        parts = [self.__class__.__name__, "("]
+        if hasattr(self, "sensory_pop"):
+            parts.append(f"Sensory={self.sensory_pop.tags[0]}({self.sensory_pop.size})")
+        if hasattr(self, "location_pop"):
+            if len(parts) > 2:
+                parts.append(", ")
+            parts.append(f"Location={self.location_pop.tags[0]}({self.location_pop.size})")
+        parts.append("){")
+        result = "".join(parts
+)
         for k in sorted(list(self.behavior.keys())):
-            result += str(k) + ":" + str(self.behavior[k])
+            result += str(k) + ":" + str(self.behavior[k]) + ", "
+        result = result.rstrip(", ")
         return result + "}"
 
 
@@ -264,18 +265,19 @@ class OutputLayer(NetworkObject):
         return NeuronGroup(size, behavior, net, tag)
 
     def __repr__(self) -> str:
-        result = (
-            self.__class__.__name__
-            + "("
-            + f"representation Population {self.representation_pop.tags[0]}({self.representation_pop.size})"
-            if hasattr(self, "representation_pop")
-            else ""
-            + f"Motor Population {self.motor_pop.tags[0]}({self.motor_pop.size})"
-            if hasattr(self, "motor_pop")
-            else "" + "){"
-        )
+        parts = [self.__class__.__name__, "("]
+        if hasattr(self, "representation_pop"):
+            parts.append(f"Repr={self.representation_pop.tags[0]}({self.representation_pop.size})")
+        if hasattr(self, "motor_pop"):
+            if len(parts) > 2:
+                parts.append(", ")
+            parts.append(f"Motor={self.motor_pop.tags[0]}({self.motor_pop.size})")
+        parts.append("){")
+        result = "".join(parts
+)
         for k in sorted(list(self.behavior.keys())):
-            result += str(k) + ":" + str(self.behavior[k])
+            result += str(k) + ":" + str(self.behavior[k]) + ", "
+        result = result.rstrip(", ")
         return result + "}"
 
 

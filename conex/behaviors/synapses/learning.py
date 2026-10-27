@@ -381,7 +381,7 @@ class Local2dSTDP(SimpleSTDP):
             synapse.dst_shape[0], *src_spike_trace.shape
         )
 
-        dst_spike = synapse.pre_spike.view((synapse.dst_shape[0], -1, 1)).to(
+        dst_spike = synapse.post_spike.view((synapse.dst_shape[0], -1, 1)).to(
             self.def_dtype
         )
         dst_spike = dst_spike.expand(synapse.weights.shape)

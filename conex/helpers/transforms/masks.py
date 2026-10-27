@@ -1,6 +1,5 @@
 import math
 import torch
-import torchvision.transforms.functional as TF
 
 from itertools import product
 
@@ -23,6 +22,8 @@ class GridEraseMask:
         self.n = n
         self.random = random
         self.gap = gap
+        import torchvision.transforms.functional as TF
+        self.TF = TF
 
     def __call__(self, img):
         _, h, w = img.shape
@@ -41,7 +42,7 @@ class GridEraseMask:
             w_cor = j * w_grid + gap_top
             dw = min(w_cor, 0)
             result.append(
-                TF.erase(
+                self.TF.erase(
                     img,
                     max(h_cor, 0),
                     max(w_cor, 0),
@@ -138,6 +139,8 @@ class GridCropMask:
         self.n = n
         self.random = random
         self.gap = gap
+        import torchvision.transforms.functional as TF
+        self.TF = TF
 
     def __call__(self, img):
         _, h, w = img.shape
@@ -152,7 +155,7 @@ class GridCropMask:
         for index, ij in enumerate(product(range(self.m), range(self.n))):
             i, j = ij
             result.append(
-                TF.crop(
+                self.TF.crop(
                     img,
                     i * h_grid + gap_left,
                     j * w_grid + gap_top,

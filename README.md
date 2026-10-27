@@ -18,6 +18,9 @@ The framework is designed for researchers and developers in computational neuros
 
   * **Modular Architecture:** Build complex networks from reusable components like `Layers`, `CorticalColumns`, and `Synapses`.
   * **Biologically Plausible Models:** Includes built-in neuron models such as Leaky Integrate-and-Fire (LIF), Exponential LIF (ELIF), and Adaptive ELIF (AELIF). 
+  * **Thousand Brains Theory Support:** Implements key components from Numenta's Thousand Brains Theory including Grid Cells, Displacement Cells, Active Dendrites, Temporal Memory, Spatial Pooler, and inter-column Voting mechanisms.
+  * **HTM Algorithms:** Full implementations of Hierarchical Temporal Memory (HTM) algorithms for sequence learning, prediction, and anomaly detection.
+  * **Sparse Distributed Representations (SDR):** Native support for SDR operations including overlap, union, intersection, and similarity metrics.
   * **Advanced Learning Rules:** Implement various forms of STDP, including Reward-modulated STDP (RSTDP) and inhibitory STDP (iSTDP), for different connection types (dense, sparse, convolutional). 
   * **Flexible Connectivity:** Supports numerous connection styles, including one-to-one, sparse, convolutional, and local connections. 
   * **Structured Network Building:** Easily define hierarchical structures like `CorticalLayer` and `CorticalColumn` to model brain-like architectures. 
@@ -65,16 +68,25 @@ This module contains the building blocks for defining the dynamics of the networ
   * **`network`**: Defines network-wide dynamics.
       * `TimeResolution`: Sets the simulation time step (`dt`). 
       * `Payoff`: A base class for defining reward/punishment signals. 
-      * `Dopamine`: Models the effect of dopamine as a neuromodulator, influenced by the payoff signal. 
+      * `Dopamine`: Models the effect of dopamine as a neuromodulator, influenced by the payoff signal.
+      * `numenta.voting`: Inter-column voting and consensus for the Thousand Brains Theory (`ColumnVoting`, `ConsensusNetwork`, `SDROverlap`). 
   * **`neurons`**: Defines the behavior of individual neurons.
       * `neuron_types`: Includes LIF, ELIF, and AELIF neuron models.  These models define the fundamental voltage dynamics of a neuron.
       * `dendrite`: Models dendritic compartments (proximal, distal, apical) and computes the input current `I` by summing their contributions. 
       * `axon`: Propagates spikes from a neuron to its connected synapses, handling transmission delays. 
-      * `homeostasis`: Implements mechanisms to maintain stable network activity, either by regulating firing rates or membrane voltage. 
+      * `homeostasis`: Implements mechanisms to maintain stable network activity, either by regulating firing rates or membrane voltage.
+      * **`numenta`**: Components from Numenta's Thousand Brains Theory and HTM research.
+          * `grid_cells`: Hexagonal firing patterns for allocentric reference frames, plus displacement cells for movement encoding.
+          * `active_dendrites`: NMDA-based dendritic computation with segment-based learning, contextual prediction, and dendritic spikes.
+          * `sequence_memory`: HTM Temporal Memory for learning and predicting sequences of sparse patterns.
+          * `spatial_pooler`: HTM Spatial Pooler for encoding inputs as stable sparse distributed representations with homeostatic boosting.
+          * `sdr`: Sparse Distributed Representation operations including overlap, union, intersection, encoding, and classification.
+          * `predictive_coding`: Prediction and error units, precision weighting, and free energy tracking. 
   * **`synapses`**: Defines the behavior of synapses.
       * `dendrites`: Determines how pre-synaptic spikes are converted into post-synaptic current for various connection types (e.g., `SimpleDendriticInput`, `Conv2dDendriticInput`). 
       * `learning`: Implements synaptic plasticity rules like STDP and RSTDP.  These rules modify synaptic weights based on the timing of pre- and post-synaptic spikes, and in the case of RSTDP, a global reward signal (dopamine).
-      * `specs`: Includes essential synaptic mechanisms like weight initialization, spike catching, and calculating spike traces used in learning rules. 
+      * `specs`: Includes essential synaptic mechanisms like weight initialization, spike catching, and calculating spike traces used in learning rules.
+      * **`numenta.predictive`**: Feedback prediction, feedforward error, and lateral context connections for predictive coding. 
 
 ### `conex.nn`
 
@@ -87,9 +99,11 @@ This module provides the tools to construct and manage the network architecture.
       * `Layer` / `CorticalLayer`: A container for neuron groups (e.g., excitatory and inhibitory populations) and their local connections. 
       * `CorticalColumn`: A container that groups multiple `CorticalLayer` objects to form a column-like structure. 
       * `Synapsis`: A structure that connects two `Ports`, automatically creating the required `SynapseGroup` objects between them. 
-      * `InputLayer` / `OutputLayer`: Specialized layers for interfacing with data. 
+      * `InputLayer` / `OutputLayer`: Specialized layers for interfacing with data.
+      * **`numenta.predictive_hierarchy`**: `PredictiveHierarchy` for multi-level predictive coding networks and `PredictiveCorticalColumn` for the canonical L4/L2-3/L5/L6 microcircuit. 
   * **`utils`**: Provides utilities for network management.
-      * `replication`: Functions to save, load, and replicate network structures, enabling easy reuse of complex architectures. 
+      * `replication`: Functions to save, load, and replicate network structures, enabling easy reuse of complex architectures.
+      * `precision`: Mixed precision helpers for running parts of a network in float16 or bfloat16. 
 
 ### `conex.helpers`
 
@@ -99,6 +113,18 @@ This module contains utilities to assist with data preparation and processing.
       * `encoders`: Functions to convert raw data (like images) into spike trains, such as `Poisson` and `Intensity2Latency` encoding. 
       * `masks`: Transformers that can occlude or isolate parts of an input, useful for attention experiments. 
   * **`filters`**: Implementations of common visual filters like Difference of Gaussians (`DoGFilter`) and `GaborFilter`. 
+
+-----
+
+## Thousand Brains Theory Support
+
+CoNeX implements key components from Jeff Hawkins' **Thousand Brains Theory**
+and Numenta's **Hierarchical Temporal Memory (HTM)** research. They live under
+`numenta` subpackages, so they stay grouped and clearly separated from CoNeX's
+core behaviors.
+
+See [`Example/numenta/`](Example/numenta/) for the component reference and
+runnable examples.
 
 -----
 

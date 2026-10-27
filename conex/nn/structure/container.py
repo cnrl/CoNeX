@@ -43,15 +43,11 @@ class Container(NetworkObject):
             self.add_sub_structure(struc)
 
     def __repr__(self) -> str:
-        result = (
-            self.__class__.__name__
-            + str(self.tags)
-            + f"(SubStructures({len(self.sub_structures)}):"
-            + str([value.tags[0] for value in self.sub_structures])
-            + "){"
-        )
-        for k in sorted(list(self.behavior.keys())):
-            result += str(k) + ":" + str(self.behavior[k])
+        tag_str = self.tags[0] if self.tags else "untagged"
+        sub_tags = [v.tags[0] if v.tags else "?" for v in self.sub_structures]
+        result = f"{self.__class__.__name__}[{tag_str}](n_sub={len(self.sub_structures)}, subs={sub_tags}){{"
+        behaviors = [f"{k}:{self.behavior[k].__class__.__name__}" for k in sorted(self.behavior.keys())]
+        result += ", ".join(behaviors)
         return result + "}"
 
     def required_helper(self) -> List[NetworkObject]:
