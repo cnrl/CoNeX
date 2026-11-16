@@ -1,7 +1,6 @@
 """End-to-end HTM pipeline: encoder -> spatial pooler -> temporal memory.
 
-Local build_network helper: the shared tests/e2e/conftest.py is owned by
-another worker and not yet merged, so each file carries its own builder.
+Each file carries its own small network builder so it runs on its own.
 """
 
 import pytest

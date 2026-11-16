@@ -1,7 +1,6 @@
 """End-to-end tests for the CoNeX network structures.
 
-Local build_network helper: the shared tests/e2e/conftest.py is owned by
-another worker and not yet merged, so each file carries its own builder.
+Each file carries its own small network builder so it runs on its own.
 
 OutputLayer is NOT covered: its __get_ng calls NeuronGroup(size, behavior, net,
 tag) positionally, but pymonntorch 0.1.4's signature is (size, net, behavior,
