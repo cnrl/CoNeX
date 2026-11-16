@@ -111,6 +111,58 @@ class TestSpatialPoolerE2E:
         assert sp.sp_active_columns.sum().item() == 2
 
 
+class TestSpatialPoolerTieBreak:
+    """Tied overlaps must resolve to the lowest column indices, on any platform."""
+
+    def _tied_pooler(self, global_inhibition=True):
+        cfg = SP_CFG._replace(global_inhibition=global_inhibition)
+        net = build_network(seed=3)
+        sp = make_group(net, SP_CFG.n_columns, SpatialPooler(config=cfg), tag="sp")
+        # identical potential pools and permanences -> every column ties
+        sp.sp_potential_inputs[:] = torch.arange(sp.spatial_pooler.n_potential)
+        sp.sp_permanences[:] = 0.5
+        return net, sp
+
+    def test_tied_overlaps_pick_lowest_indices(self):
+        _, sp = self._tied_pooler()
+        out = sp.spatial_pooler.compute(sp, pattern(60, 0, 1, 2, 3, 4), learn=False)
+        assert out.nonzero(as_tuple=True)[0].tolist() == [0, 1]
+
+    def test_tied_overlaps_deterministic_across_runs_and_call_order(self):
+        def fresh():
+            _, sp = self._tied_pooler()
+            return sp.spatial_pooler.compute(
+                sp, pattern(60, 0, 1, 2, 3, 4), learn=False
+            ).clone()
+
+        a = fresh()
+        b = fresh()
+        assert torch.equal(a, b)
+        # same tied input after other calls must give the same winners
+        _, sp = self._tied_pooler()
+        sp.spatial_pooler.compute(sp, pattern(60, 10, 11), learn=False)
+        sp.spatial_pooler.compute(sp, pattern(60, 20, 21, 22), learn=False)
+        c = sp.spatial_pooler.compute(sp, pattern(60, 0, 1, 2, 3, 4), learn=False)
+        assert torch.equal(a, c)
+
+    def test_matches_python_reference(self):
+        _, sp = self._tied_pooler()
+        out = sp.spatial_pooler.compute(sp, pattern(60, 0, 1, 2, 3, 4), learn=False)
+        overlap = sp.sp_overlap.tolist()
+        n_active = sp.spatial_pooler.n_active
+        # reference rule: highest score first, ties to the lowest index
+        expected = [
+            i
+            for i, _ in sorted(enumerate(overlap), key=lambda t: (-t[1], t[0]))[:n_active]
+        ]
+        assert out.nonzero(as_tuple=True)[0].tolist() == sorted(expected)
+
+    def test_local_inhibition_ties_pick_lowest_indices(self):
+        _, sp = self._tied_pooler(global_inhibition=False)
+        out = sp.spatial_pooler.compute(sp, pattern(60, 0, 1, 2, 3, 4), learn=False)
+        assert out.nonzero(as_tuple=True)[0].tolist() == [0, 1]
+
+
 class TestTemporalMemoryE2E:
     def test_burst_then_prediction(self, pipeline):
         _, _, tm = pipeline
