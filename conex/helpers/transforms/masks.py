@@ -4,6 +4,23 @@ import torch
 from itertools import product
 
 
+def _erase(img, top, left, height, width, v=0):
+    """torchvision.transforms.functional.erase without the torchvision import."""
+    top, left = max(top, 0), max(left, 0)
+    height, width = max(height, 0), max(width, 0)
+    out = img.clone()
+    out[:, top : top + height, left : left + width] = v
+    return out
+
+
+def _crop(img, top, left, height, width):
+    """torchvision.transforms.functional.crop without the torchvision import."""
+    top, left = max(top, 0), max(left, 0)
+    height = min(height, img.size(1) - top)
+    width = min(width, img.size(2) - left)
+    return img[:, top : top + height, left : left + width]
+
+
 class GridEraseMask:
     """
     A Transformer that Grids input and removes only one cell.
@@ -22,8 +39,6 @@ class GridEraseMask:
         self.n = n
         self.random = random
         self.gap = gap
-        import torchvision.transforms.functional as TF
-        self.TF = TF
 
     def __call__(self, img):
         _, h, w = img.shape
@@ -42,7 +57,7 @@ class GridEraseMask:
             w_cor = j * w_grid + gap_top
             dw = min(w_cor, 0)
             result.append(
-                self.TF.erase(
+                _erase(
                     img,
                     max(h_cor, 0),
                     max(w_cor, 0),
@@ -139,8 +154,6 @@ class GridCropMask:
         self.n = n
         self.random = random
         self.gap = gap
-        import torchvision.transforms.functional as TF
-        self.TF = TF
 
     def __call__(self, img):
         _, h, w = img.shape
@@ -155,7 +168,7 @@ class GridCropMask:
         for index, ij in enumerate(product(range(self.m), range(self.n))):
             i, j = ij
             result.append(
-                self.TF.crop(
+                _crop(
                     img,
                     i * h_grid + gap_left,
                     j * w_grid + gap_top,

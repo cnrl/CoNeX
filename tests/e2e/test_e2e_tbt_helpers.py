@@ -1,12 +1,6 @@
 """End-to-end tests for the conex.helpers utilities.
 
 Each file carries its own small network builder so it runs on its own.
-
-GridEraseMask and GridCropMask are NOT covered: their __init__ imports
-torchvision.transforms.functional, and no torchvision release imports cleanly
-under the pinned torch==1.13.1 (torchvision 0.14.1 fails on
-torch.onnx.symbolic_opset9._cast_Long). GridKeepMask uses pure torch slicing
-and is covered.
 """
 
 import pytest
@@ -15,7 +9,7 @@ import torch
 from conex.helpers.data import LocationDataset
 from conex.helpers.filters import DoGFilter, GaborFilter
 from conex.helpers.transforms.encoders import SimplePoisson, Poisson, Intensity2Latency
-from conex.helpers.transforms.masks import GridKeepMask
+from conex.helpers.transforms.masks import GridEraseMask, GridKeepMask, GridCropMask
 from conex.helpers.transforms.misc import (
     UnsqueezeTransform,
     SqueezeTransform,
@@ -129,6 +123,50 @@ class TestGridKeepMask:
         result, location = GridKeepMask(2, 2, random=True)(img)
         assert result.shape == (4, 1, 8, 8)
         assert location.sum().item() == 4
+
+
+class TestGridEraseMask:
+    def test_shape_and_location(self):
+        img = torch.rand(1, 8, 8)
+        result, location = GridEraseMask(2, 2)(img)
+        assert result.shape == (4, 1, 8, 8)
+        assert location.shape == (4, 2, 2)
+        # location marks kept cells: each output erases exactly one cell
+        assert location.sum().item() == 12
+        assert (location.sum(dim=(1, 2)) == 3).all()
+
+    def test_erases_only_one_cell(self):
+        img = torch.arange(64.0).reshape(1, 8, 8)
+        result, _ = GridEraseMask(2, 2)(img)
+        # cell (0,0) erases the top-left 4x4 and keeps the rest
+        assert (result[0][0, :4, :4] == 0).all()
+        assert torch.equal(result[0][0, 4:, :4], img[0, 4:, :4])
+        assert torch.equal(result[0][0, :4, 4:], img[0, :4, 4:])
+
+    def test_invalid_size_raises(self):
+        img = torch.rand(1, 8, 8)
+        with pytest.raises(ZeroDivisionError):
+            GridEraseMask(2, 0)(img)
+
+
+class TestGridCropMask:
+    def test_shape_and_location(self):
+        img = torch.rand(1, 8, 8)
+        result, location = GridCropMask(2, 2)(img)
+        assert result.shape == (4, 1, 4, 4)
+        assert location.shape == (4, 2, 2)
+        assert location.sum().item() == 4
+
+    def test_crops_to_one_cell(self):
+        img = torch.arange(64.0).reshape(1, 8, 8)
+        result, _ = GridCropMask(2, 2)(img)
+        assert torch.equal(result[0], img[:, :4, :4])
+        assert torch.equal(result[3], img[:, 4:, 4:])
+
+    def test_invalid_size_raises(self):
+        img = torch.rand(1, 8, 8)
+        with pytest.raises(ZeroDivisionError):
+            GridCropMask(0, 2)(img)
 
 
 class TestMiscTransforms:
