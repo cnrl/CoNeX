@@ -608,43 +608,57 @@
     },
     "spatial_pooler|seed=0|float32": {
       "active": 2,
-      "indices": [
-        26,
-        31
+      "scores": [
+        14.0,
+        13.0
+      ],
+      "unambiguous_indices": [
+        26
       ]
     },
     "spatial_pooler|seed=0|float64": {
       "active": 2,
-      "indices": [
-        11,
-        35
+      "scores": [
+        15.0,
+        12.0
+      ],
+      "unambiguous_indices": [
+        11
       ]
     },
     "spatial_pooler|seed=1|float32": {
       "active": 2,
-      "indices": [
-        3,
-        23
-      ]
+      "scores": [
+        13.0,
+        13.0
+      ],
+      "unambiguous_indices": []
     },
     "spatial_pooler|seed=1|float64": {
       "active": 2,
-      "indices": [
-        8,
-        35
-      ]
+      "scores": [
+        13.0,
+        13.0
+      ],
+      "unambiguous_indices": []
     },
     "spatial_pooler|seed=2|float32": {
       "active": 2,
-      "indices": [
-        20,
-        32
+      "scores": [
+        14.0,
+        13.0
+      ],
+      "unambiguous_indices": [
+        20
       ]
     },
     "spatial_pooler|seed=2|float64": {
       "active": 2,
-      "indices": [
-        12,
+      "scores": [
+        13.0,
+        12.0
+      ],
+      "unambiguous_indices": [
         23
       ]
     },
@@ -1876,43 +1890,57 @@
     },
     "spatial_pooler|seed=0|float32": {
       "active": 2,
-      "indices": [
-        26,
-        31
+      "scores": [
+        14.0,
+        13.0
+      ],
+      "unambiguous_indices": [
+        26
       ]
     },
     "spatial_pooler|seed=0|float64": {
       "active": 2,
-      "indices": [
-        11,
-        35
+      "scores": [
+        15.0,
+        12.0
+      ],
+      "unambiguous_indices": [
+        11
       ]
     },
     "spatial_pooler|seed=1|float32": {
       "active": 2,
-      "indices": [
-        3,
-        23
-      ]
+      "scores": [
+        13.0,
+        13.0
+      ],
+      "unambiguous_indices": []
     },
     "spatial_pooler|seed=1|float64": {
       "active": 2,
-      "indices": [
-        8,
-        35
-      ]
+      "scores": [
+        13.0,
+        13.0
+      ],
+      "unambiguous_indices": []
     },
     "spatial_pooler|seed=2|float32": {
       "active": 2,
-      "indices": [
-        20,
-        32
+      "scores": [
+        14.0,
+        13.0
+      ],
+      "unambiguous_indices": [
+        20
       ]
     },
     "spatial_pooler|seed=2|float64": {
       "active": 2,
-      "indices": [
-        12,
+      "scores": [
+        13.0,
+        12.0
+      ],
+      "unambiguous_indices": [
         23
       ]
     },

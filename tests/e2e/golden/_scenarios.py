@@ -116,15 +116,31 @@ def scenario_stdp(seed, dtype):
 
 
 def scenario_spatial_pooler(seed, dtype):
-    """SP output for a fixed 35-of-60 input pattern (config seed = 7 + seed)."""
+    """SP output for a fixed 35-of-60 input pattern (config seed = 7 + seed).
+
+    Winner selection is torch.topk over overlap scores that have many ties,
+    and topk's tie order is platform dependent. So we record the active
+    count, the sorted overlap scores of the selected columns (platform
+    independent), and only the indices whose overlap is strictly above the
+    n-th selected score (no tie).
+    """
     net = build_network(seed, dtype)
     sp = make_group(net, SP_CFG.n_columns,
                     SpatialPooler(config=SP_CFG._replace(seed=7 + seed)), tag="sp")
     x = torch.zeros(60, dtype=dtype)
     x[5:40] = 1.0
     out = sp.spatial_pooler.compute(sp, x, learn=False)
-    return {"active": int(out.sum().item()),
-            "indices": sorted(int(i) for i in out.nonzero().flatten().tolist())}
+    # selection is on boosted overlap, so record and compare boosted scores
+    boosted = sp.spatial_pooler._compute_overlap(sp, x) * sp.sp_boost_factors
+    scores = boosted[out].sort(descending=True).values
+    n_active = int(out.sum().item())
+    min_score = scores[n_active - 1].item()
+    unambiguous = sorted(
+        int(i) for i in range(SP_CFG.n_columns) if boosted[i].item() > min_score
+    )
+    return {"active": n_active,
+            "scores": [float(v) for v in scores.tolist()],
+            "unambiguous_indices": unambiguous}
 
 
 def _columns(n, *active, dtype=torch.float32):
