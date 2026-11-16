@@ -68,6 +68,7 @@ jobs:
 
   github-release:
     needs: build
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: write
