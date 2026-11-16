@@ -163,6 +163,17 @@ class One2OneSTDP(SimpleSTDP):
         negative_bound (str or function): Bounding mechanism for negative learning. Accepting "no_bound", "hard_bound" and "soft_bound". The default is "no_bound". "weights", "w_min" and "w_max" pass as arguments for a bounding function.
     """
 
+    def initialize(self, synapse):
+        super().initialize(synapse)
+        # One-to-one connections have one weight per neuron pair, so the
+        # weight must be 1D; a 2D weight makes the elementwise update
+        # row-broadcast and One2OneDendriticInput emit a malformed I.
+        if synapse.weights.dim() != 1:
+            raise ValueError(
+                f"{type(self).__name__} needs a 1D weight, "
+                f"got shape {tuple(synapse.weights.shape)}"
+            )
+
     def compute_dw(self, synapse):
         dw_minus = (
             synapse.pre_spike
@@ -253,6 +264,16 @@ class One2OneiSTDP(SimpleiSTDP):
         rho (float): Constant that determines the fire rate of target neurons.
         alpha (float): Manual constant for target trace, which replace rho value.
     """
+
+    def initialize(self, synapse):
+        super().initialize(synapse)
+        # One-to-one connections have one weight per neuron pair, so the
+        # weight must be 1D (see One2OneSTDP.initialize).
+        if synapse.weights.dim() != 1:
+            raise ValueError(
+                f"{type(self).__name__} needs a 1D weight, "
+                f"got shape {tuple(synapse.weights.shape)}"
+            )
 
     def compute_dw(self, synapse):
         pre_spike_changes = (

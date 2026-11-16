@@ -49,7 +49,8 @@ def lif_group(net, tag, size=2, max_delay=1):
 
 
 def stdp_pair(
-    net, rule, tag="stdp", src_size=2, dst_size=2, with_traces=False
+    net, rule, tag="stdp", src_size=2, dst_size=2, with_traces=False,
+    weight_shape=None,
 ):
     """A 2x2 pair wired with the given rule (and traces if requested)."""
     from conex.behaviors.synapses import (
@@ -61,7 +62,7 @@ def stdp_pair(
 
     src = lif_group(net, tag + "_s", size=src_size)
     dst = lif_group(net, tag + "_d", size=dst_size)
-    behaviors = [SynapseInit(), WeightInitializer(mode=0.5)]
+    behaviors = [SynapseInit(), WeightInitializer(mode=0.5, weight_shape=weight_shape)]
     if with_traces:
         behaviors += [
             PreSpikeCatcher(),
@@ -169,11 +170,12 @@ def test_simple_stdp_full_network_potentiates():
 
 
 def test_one2one_stdp():
-    """Elementwise STDP. pre_trace=[1,0], post_spike=[1,0], a_plus=0.1
-    -> dw = [0.1, 0] (the LTD term is zero with pre_spike=[0,0])."""
+    """Elementwise STDP on a 1D one-to-one weight. pre_trace=[1,0],
+    post_spike=[1,0], a_plus=0.1 -> dw = [0.1, 0] (the LTD term is zero with
+    pre_spike=[0,0])."""
     net = make_network(dt=1.0)
     rule = One2OneSTDP(a_plus=0.1, a_minus=0.01)
-    _, _, syn = stdp_pair(net, rule)
+    _, _, syn = stdp_pair(net, rule, weight_shape=(2,))
     net.initialize()
     syn.pre_trace = torch.tensor([1.0, 0.0])
     syn.post_spike = torch.tensor([1.0, 0.0])
@@ -215,7 +217,7 @@ def test_one2one_istdp():
 
     net = make_network(dt=1.0)
     rule = One2OneiSTDP(rho=0.5, alpha=1.0, lr=1.0, is_inhibitory=True)
-    _, _, syn = stdp_pair(net, rule, with_traces=True)
+    _, _, syn = stdp_pair(net, rule, with_traces=True, weight_shape=(2,))
     net.initialize()
     syn.pre_spike = torch.tensor([1.0, 0.0])
     syn.post_trace = torch.tensor([0.0, 0.0])
@@ -393,7 +395,7 @@ def test_local2d_stdp():
 # --- RSTDP (reward-modulated) ---------------------------------------------
 
 
-def _rstdp_pair(net, rule, tag="rs"):
+def _rstdp_pair(net, rule, tag="rs", weight_shape=None):
     from conex.behaviors.synapses import (
         PostSpikeCatcher,
         PostTrace,
@@ -412,7 +414,7 @@ def _rstdp_pair(net, rule, tag="rs"):
         behavior=prioritize_behaviors(
             [
                 SynapseInit(),
-                WeightInitializer(mode=0.5),
+                WeightInitializer(mode=0.5, weight_shape=weight_shape),
                 PreSpikeCatcher(),
                 PostSpikeCatcher(),
                 PreTrace(tau_s=10.0),
@@ -445,15 +447,13 @@ def test_simple_rstdp_dopamine():
 
 
 def test_one2one_rstdp():
-    """One2OneRSTDP compute_dw is elementwise STDP: pre_trace=[1,0],
-    post_spike=[1,0], a_plus=0.1 -> [0.1, 0]. (Its forward is inherited from
-    SimpleRSTDP and expects a 2D weight, so the update is checked via
-    compute_dw, the part specific to the one-to-one rule.)"""
+    """One2OneRSTDP compute_dw is elementwise STDP on a 1D one-to-one weight:
+    pre_trace=[1,0], post_spike=[1,0], a_plus=0.1 -> [0.1, 0]."""
     from conex.behaviors.synapses import One2OneRSTDP
 
     net = make_network(dt=1.0)
     rule = One2OneRSTDP(a_plus=0.1, a_minus=0.01, tau_c=10.0)
-    _, _, syn = _rstdp_pair(net, rule)
+    _, _, syn = _rstdp_pair(net, rule, weight_shape=(2,))
     net.initialize()
     syn.pre_trace = torch.tensor([1.0, 0.0])
     syn.post_spike = torch.tensor([1.0, 0.0])
