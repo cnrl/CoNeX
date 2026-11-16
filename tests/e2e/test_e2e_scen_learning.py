@@ -257,7 +257,7 @@ def build_dataset(seedv=SEED):
         output_ports={"data_out": (None, [("sensory_pop", {})])},
     )
     out = lif_group(net, "out", 2)
-    syn = stdp_syn(net, il.sensory_pop, out, SimpleSTDP(a_plus=0.002, a_minus=0.0002))
+    syn = stdp_syn(net, il.sensory_pop, out, SimpleSTDP(a_plus=0.01, a_minus=0.002))
     net.initialize()
     return net, il, out, syn, spikes
 
@@ -275,12 +275,22 @@ def test_dataset_spike_statistics_labelwise():
 
 
 def test_dataset_readout_learns():
-    """The readout weights move as the network runs on the dataset."""
+    """The readout weights move clearly (above noise) and in the right direction.
+
+    Both labels are active, so STDP potentiates the connections from the active
+    input channels: label 0 drives channels 0-1 (weight rows 0-1), label 1
+    drives channels 2-3 (rows 2-3). The change is well above the 0.5 -> 0.52
+    noise floor (max |dw| 0.116-0.500 across seeds 0-4).
+    """
     net, il, out, syn, _ = build_dataset()
     w0 = syn.weights.clone()
-    for _ in range(16):
+    for _ in range(40):
         net.simulate_iterations(1)
-    assert not torch.equal(w0, syn.weights), "readout weights should learn"
+    d = syn.weights - w0
+    assert d.abs().max().item() > 0.1, "readout weight change should be above noise"
+    # direction per label: each label's active channels potentiate
+    assert d[:2, :].mean().item() > 0.0, "label0 channels (0-1) should potentiate"
+    assert d[2:, :].mean().item() > 0.0, "label1 channels (2-3) should potentiate"
     assert syn.weights.min().item() >= 0.0
     assert syn.weights.max().item() <= 1.0
 
@@ -320,10 +330,10 @@ def test_repro_rstdp_diff_seed_differs():
 def test_repro_dataset_same_seed_identical():
     """Same seed run twice in-process gives bit-identical readout weights."""
     net1, _, _, syn1, _ = build_dataset(SEED)
-    for _ in range(16):
+    for _ in range(40):
         net1.simulate_iterations(1)
     net2, _, _, syn2, _ = build_dataset(SEED)
-    for _ in range(16):
+    for _ in range(40):
         net2.simulate_iterations(1)
     assert torch.equal(syn1.weights, syn2.weights)
 
@@ -331,10 +341,10 @@ def test_repro_dataset_same_seed_identical():
 def test_repro_dataset_diff_seed_differs():
     """A different seed gives different readout weights (stochastic encoding)."""
     net1, _, _, syn1, _ = build_dataset(SEED)
-    for _ in range(16):
+    for _ in range(40):
         net1.simulate_iterations(1)
     net2, _, _, syn2, _ = build_dataset(OTHER_SEED)
-    for _ in range(16):
+    for _ in range(40):
         net2.simulate_iterations(1)
     assert not torch.equal(syn1.weights, syn2.weights)
 
