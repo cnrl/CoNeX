@@ -50,8 +50,37 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -e .
+          pip install pytest-xdist
       - name: Run tests
-        run: python -m pytest -q --maxfail=20 -ra tests/
+        run: python -m pytest -q --maxfail=20 -ra tests/ --ignore=tests/e2e -n auto
+
+  e2e:
+    name: E2E (${{ matrix.os }}, py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.8", "3.9", "3.10"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e .
+      - name: Run e2e tests
+        run: |
+          if [ ! -d tests/e2e ]; then
+            echo "tests/e2e does not exist yet; skipping e2e tests"
+            exit 0
+          fi
+          python -m pytest -q --maxfail=20 -ra tests/e2e
 
   build:
     name: Build wheel
@@ -76,7 +105,7 @@ jobs:
 
   ci-ok:
     name: CI OK
-    needs: [lint, test, build]
+    needs: [lint, test, e2e, build]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -85,8 +114,9 @@ jobs:
         run: |
           echo "lint=${{ needs.lint.result }}"
           echo "test=${{ needs.test.result }}"
+          echo "e2e=${{ needs.e2e.result }}"
           echo "build=${{ needs.build.result }}"
-          if [[ "${{ needs.lint.result }}" != "success" || "${{ needs.test.result }}" != "success" || "${{ needs.build.result }}" != "success" ]]; then
+          if [[ "${{ needs.lint.result }}" != "success" || "${{ needs.test.result }}" != "success" || "${{ needs.e2e.result }}" != "success" || "${{ needs.build.result }}" != "success" ]]; then
             echo "One or more required jobs did not succeed"
             exit 1
           fi
