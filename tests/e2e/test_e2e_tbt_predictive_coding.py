@@ -142,8 +142,9 @@ class TestErrorUnit:
 class TestPrecisionWeighting:
     def test_effective_precision_is_product(self):
         net = build_network()
-        g, beh = make_group(net, SIZE, PrecisionWeighting(config=linear_config(),
-                                                     learnable=False, attention_modulated=False))
+        beh = PrecisionWeighting(config=linear_config(),
+                                 learnable=False, attention_modulated=False)
+        g, beh = make_group(net, SIZE, beh)
         g.sensory_precision = torch.full((SIZE,), 2.0)
         g.prior_precision = torch.full((SIZE,), 3.0)
         beh.forward(g)
@@ -151,16 +152,18 @@ class TestPrecisionWeighting:
 
     def test_attention_scales_precision(self):
         net = build_network()
-        g, beh = make_group(net, SIZE, PrecisionWeighting(config=linear_config(),
-                                                     learnable=False, attention_modulated=True))
+        beh = PrecisionWeighting(config=linear_config(),
+                                 learnable=False, attention_modulated=True)
+        g, beh = make_group(net, SIZE, beh)
         g.attention = torch.ones(SIZE)
         beh.forward(g)
         assert torch.allclose(g.effective_precision, torch.full((SIZE,), 2.0))
 
     def test_precision_written_back_to_error_state(self):
         net = build_network()
-        g, beh = make_group(net, SIZE, PrecisionWeighting(config=linear_config(),
-                                                     learnable=False, attention_modulated=False))
+        beh = PrecisionWeighting(config=linear_config(),
+                                 learnable=False, attention_modulated=False)
+        g, beh = make_group(net, SIZE, beh)
         g.precision = torch.zeros(SIZE)
         beh.forward(g)
         assert torch.allclose(g.precision, torch.ones(SIZE))
@@ -192,8 +195,8 @@ class TestTopDownPrediction:
 class TestPredictiveCodingLearning:
     def test_weights_move_on_error(self):
         net = build_network()
-        g, beh = make_group(net, SIZE, PredictiveCodingLearning(config=linear_config(),
-                                                           use_hebbian=False))
+        beh = PredictiveCodingLearning(config=linear_config(), use_hebbian=False)
+        g, beh = make_group(net, SIZE, beh)
         # prediction_weights is normally allocated by PredictionUnit
         g.prediction_weights = torch.eye(SIZE)
         g.activity = torch.full((SIZE,), 1.0)
@@ -240,9 +243,9 @@ class TestFreeEnergyMinimization:
 class TestHierarchicalPredictiveCoding:
     def test_level_states_allocated(self):
         net = build_network()
-        g, beh = make_group(net, 32, HierarchicalPredictiveCoding(config=linear_config(),
-                                                              n_levels=3, level_sizes=[16, 8, 4]))
-        beh = beh
+        beh = HierarchicalPredictiveCoding(config=linear_config(),
+                                           n_levels=3, level_sizes=[16, 8, 4])
+        g, beh = make_group(net, 32, beh)
         assert beh.level_sizes == [16, 8, 4]
         assert len(g.level_predictions) == 3
         assert g.level_predictions[0].shape == (16,)
@@ -251,8 +254,9 @@ class TestHierarchicalPredictiveCoding:
 
     def test_forward_propagates_error_and_prediction(self):
         net = build_network()
-        g, beh = make_group(net, 32, HierarchicalPredictiveCoding(config=linear_config(),
-                                                              n_levels=3, level_sizes=[16, 8, 4]))
+        beh = HierarchicalPredictiveCoding(config=linear_config(),
+                                           n_levels=3, level_sizes=[16, 8, 4])
+        g, beh = make_group(net, 32, beh)
         g.activity = torch.zeros(32)
         g.activity[:16] = 1.0  # sensory input at the bottom level
         beh.forward(g)

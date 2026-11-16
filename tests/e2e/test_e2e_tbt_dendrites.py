@@ -178,9 +178,9 @@ class TestActiveDendriteComputation:
 @pytest.fixture
 def ctx_group():
     net = build_network(seed=4)
-    g = make_group(net, N_CELLS, ContextualPrediction(depolarization_threshold=0.5,
-                                                       prediction_window=3, burst_threshold=0.3))
-    return g
+    beh = ContextualPrediction(
+        depolarization_threshold=0.5, prediction_window=3, burst_threshold=0.3)
+    return make_group(net, N_CELLS, beh)
 
 
 class TestContextualPrediction:

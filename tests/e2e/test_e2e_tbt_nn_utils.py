@@ -32,7 +32,6 @@ from conex import (
     load_structure_dict_from_json,
     get_all_required_structures,
     save_ports,
-    build_ports,
     object_hook,
     ExtraCallableJSONEncoder,
     ELEMENTAL_STRUCTURE,
@@ -172,6 +171,23 @@ class TestReplication:
         assert new_layer.exc_pop.size == 8
         assert new_layer.inh_pop.size == 4
         assert len(new_layer.synapsegroups) == 1
+
+    def test_create_structure_from_dict_rebuilds_neurongroup(self):
+        # a bare NeuronGroup has no required_helper, so save_structure can't
+        # serialize it on its own; the NeuronGroup branch of
+        # create_structure_from_dict is reached via a parent's built_structures.
+        # Exercise that branch directly with the dict shape save_structure emits.
+        net = build_network(seed=6)
+        d = {
+            "class": NeuronGroup,
+            "size": 5,
+            "tag": "p",
+            "behavior": behaviors_to_list({220: SimpleDendriteStructure()}),
+        }
+        rebuilt = create_structure_from_dict(net, d)
+        assert rebuilt.__class__ is NeuronGroup
+        assert rebuilt.size == 5
+        assert 220 in rebuilt.behavior
 
     def test_get_all_required_structures(self):
         net = build_network(seed=3)

@@ -97,7 +97,8 @@ class TestSDRConfig:
 class TestSDREncoder:
     def test_scalar_bucket_math(self):
         enc = SDREncoder(size=100, n_active=5, encoder_type="scalar", min_val=0.0, max_val=1.0)
-        g = make_group(build_network(), 100, enc)
+        # make_group runs net.initialize(), which binds the encoder's params
+        _ = make_group(build_network(), 100, enc)
         s = enc.encode_scalar(0.5)
         # center = int(0.5 * (100-5)) = 47, indices 47..51
         assert sorted(s.indices.tolist()) == [47, 48, 49, 50, 51]

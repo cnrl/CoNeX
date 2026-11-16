@@ -10,7 +10,6 @@ AttributeError. This is a pre-existing bug in conex/nn/structure/io_layer.py
 that no existing test exercises, and it is outside this task's file ownership.
 """
 
-import pytest
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 

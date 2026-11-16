@@ -4,7 +4,6 @@ Local build_network helper: the shared tests/e2e/conftest.py is owned by
 another worker and not yet merged, so each file carries its own builder.
 """
 
-import pytest
 import torch
 
 from conex import (
@@ -54,7 +53,7 @@ class TestPredictiveHierarchy:
     def test_default_names(self):
         net = build_network(seed=2)
         h = PredictiveHierarchy(net, level_sizes=[8, 4], config=linear_config())
-        assert [l.name for l in h.levels] == ["level_0", "level_1"]
+        assert [level.name for level in h.levels] == ["level_0", "level_1"]
 
     def test_set_input_and_getters(self):
         net = build_network(seed=3)

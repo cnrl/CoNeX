@@ -4,7 +4,6 @@ Local build_network helper: the shared tests/e2e/conftest.py is owned by
 another worker and not yet merged, so each file carries its own builder.
 """
 
-import pytest
 import torch
 
 from conex import (
@@ -50,8 +49,9 @@ class TestPredictiveSynapseInit:
     def test_feedforward_state(self):
         net = build_network(seed=1)
         src, dst = make_group(net, SRC, "src"), make_group(net, DST, "dst")
-        s, beh = make_synapse(net, src, dst,
-                         {100: PredictiveSynapseInit(config=cfg(), connection_type="feedforward")})
+        beh = {100: PredictiveSynapseInit(config=cfg(),
+                                          connection_type="feedforward")}
+        s, beh = make_synapse(net, src, dst, beh)
         assert s.weights.shape == (SRC, DST)
         assert s.eligibility.shape == (SRC, DST)
         assert s.is_feedforward and not s.is_feedback and not s.is_lateral
@@ -61,16 +61,18 @@ class TestPredictiveSynapseInit:
     def test_feedback_state(self):
         net = build_network(seed=2)
         src, dst = make_group(net, SRC, "src"), make_group(net, DST, "dst")
-        s, beh = make_synapse(net, src, dst,
-                         {100: PredictiveSynapseInit(config=cfg(), connection_type="feedback")})
+        beh = {100: PredictiveSynapseInit(config=cfg(),
+                                          connection_type="feedback")}
+        s, beh = make_synapse(net, src, dst, beh)
         assert s.is_feedback
         assert s.prediction_output.shape == (DST,)
 
     def test_lateral_state(self):
         net = build_network(seed=3)
         src, dst = make_group(net, SRC, "src"), make_group(net, DST, "dst")
-        s, beh = make_synapse(net, src, dst,
-                         {100: PredictiveSynapseInit(config=cfg(), connection_type="lateral")})
+        beh = {100: PredictiveSynapseInit(config=cfg(),
+                                          connection_type="lateral")}
+        s, beh = make_synapse(net, src, dst, beh)
         assert s.is_lateral
 
 
