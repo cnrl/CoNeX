@@ -163,10 +163,49 @@ class TestGridCropMask:
         assert torch.equal(result[0], img[:, :4, :4])
         assert torch.equal(result[3], img[:, 4:, 4:])
 
+    def test_non_divisible_grid_zero_pads(self):
+        # 7x7 split into a 2x2 grid of 4x4 cells: the last row/col of each
+        # tile overruns the image and must be zero-padded, not dropped.
+        img = torch.arange(49.0).reshape(1, 7, 7)
+        result, _ = GridCropMask(2, 2)(img)
+        assert result.shape == (4, 1, 4, 4)
+        # tile (0,0): fully inside
+        assert torch.equal(result[0], img[:, :4, :4])
+        # tile (0,1): right column overruns -> zero-padded
+        assert torch.equal(result[1][:, :, :3], img[:, :4, 4:7])
+        assert (result[1][:, :, 3] == 0).all()
+        # tile (1,1): bottom row and right column overrun -> zero-padded
+        assert torch.equal(result[3][:, :3, :3], img[:, 4:7, 4:7])
+        assert (result[3][:, 3, :] == 0).all()
+        assert (result[3][:, :, 3] == 0).all()
+
     def test_invalid_size_raises(self):
         img = torch.rand(1, 8, 8)
         with pytest.raises(ZeroDivisionError):
             GridCropMask(0, 2)(img)
+
+
+class TestCropHelper:
+    """_crop must match torchvision.transforms.functional.crop semantics."""
+
+    def test_window_fully_outside_is_all_zeros(self):
+        from conex.helpers.transforms.masks import _crop
+
+        img = torch.arange(16.0).reshape(1, 4, 4)
+        # window starts past the bottom edge: no overlap at all
+        out = _crop(img, top=10, left=0, height=2, width=2)
+        assert out.shape == (1, 2, 2)
+        assert (out == 0).all()
+
+    def test_negative_offset_zero_pads_not_clamps(self):
+        from conex.helpers.transforms.masks import _crop
+
+        img = torch.arange(16.0).reshape(1, 4, 4)
+        # top=-2: the top two rows of the window are outside -> zero-padded
+        out = _crop(img, top=-2, left=0, height=4, width=4)
+        assert out.shape == (1, 4, 4)
+        assert (out[:, :2, :] == 0).all()
+        assert torch.equal(out[:, 2:, :], img[:, :2, :])
 
 
 class TestMiscTransforms:

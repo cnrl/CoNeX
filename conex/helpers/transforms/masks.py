@@ -14,11 +14,20 @@ def _erase(img, top, left, height, width, v=0):
 
 
 def _crop(img, top, left, height, width):
-    """torchvision.transforms.functional.crop without the torchvision import."""
-    top, left = max(top, 0), max(left, 0)
-    height = min(height, img.size(1) - top)
-    width = min(width, img.size(2) - left)
-    return img[:, top : top + height, left : left + width]
+    """torchvision.transforms.functional.crop without the torchvision import.
+
+    Always returns (C, height, width): the window is zero-padded where it lies
+    outside the image, and a negative top/left pads (rather than clamps).
+    """
+    _, h, w = img.shape
+    out = torch.zeros(img.shape[0], height, width, dtype=img.dtype, device=img.device)
+    src_top, src_left = max(top, 0), max(left, 0)
+    src_bottom, src_right = min(top + height, h), min(left + width, w)
+    if src_bottom > src_top and src_right > src_left:
+        out[:, src_top - top : src_bottom - top, src_left - left : src_right - left] = (
+            img[:, src_top:src_bottom, src_left:src_right]
+        )
+    return out
 
 
 class GridEraseMask:
