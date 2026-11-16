@@ -24,6 +24,40 @@ HERE = Path(__file__).resolve().parent
 VALUES = HERE / "values.json"
 SEEDS = (0, 1, 2)
 DTYPES = ("float32", "float64")
+# Tolerances for the committed-vs-fresh check: float32 rtol=1e-5/atol=1e-6
+# (~100x float32 eps), float64 rtol=1e-12/atol=1e-14. Ints and bools compare
+# exactly. This keeps the check robust to tiny cross-platform float drift
+# (different BLAS/libm) while still catching a real behavior change.
+TOL = {"float32": (1e-5, 1e-6), "float64": (1e-12, 1e-14)}
+
+
+def close(a, b, rtol, atol):
+    """Recursive tolerance comparison of two scenario results."""
+    if isinstance(a, bool) or isinstance(b, bool):
+        return a is b
+    if isinstance(a, int) and isinstance(b, int):
+        return a == b
+    if isinstance(a, float) and isinstance(b, float):
+        return abs(a - b) <= atol + rtol * abs(b)
+    if isinstance(a, dict):
+        return set(a) == set(b) and all(close(a[k], b[k], rtol, atol)
+                                        for k in a)
+    if isinstance(a, list):
+        return len(a) == len(b) and all(close(x, y, rtol, atol)
+                                        for x, y in zip(a, b))
+    return a == b
+
+
+def sections_close(old, fresh):
+    """Compare two {key: result} maps, using the tolerance of each key's dtype."""
+    if set(old) != set(fresh):
+        return False
+    for key, val in old.items():
+        dtype_name = key.rsplit("|", 1)[1]
+        rtol, atol = TOL[dtype_name]
+        if not close(val, fresh[key], rtol, atol):
+            return False
+    return True
 
 
 def collect():
@@ -71,7 +105,7 @@ def main():
     if old is None:
         print(f"no section for torch {major} in {args.out}; run with --write")
         return 1
-    if old == fresh:
+    if sections_close(old, fresh):
         print(f"{args.out.name} section {major!r} matches the running library "
               f"(torch {torch.__version__})")
         return 0

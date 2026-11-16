@@ -95,8 +95,15 @@ def test_generator_output_matches_committed_json():
     assert "matches the running library" in proc.stdout
 
 
-def test_generator_rewrite_is_byte_identical(tmp_path):
-    """A --write regeneration into a fresh file matches the committed json."""
+def test_generator_rewrite_matches_committed(tmp_path):
+    """A --write regeneration matches the committed json (within tolerance).
+
+    We compare the parsed running-torch section with tolerance, not raw bytes:
+    float formatting can differ across platforms (different BLAS/libm), so a
+    byte comparison would be brittle.
+    """
+    from .golden.generate import sections_close
+
     target = tmp_path / "values.json"
     target.write_bytes(VALUES.read_bytes())
     proc = subprocess.run(
@@ -106,4 +113,8 @@ def test_generator_rewrite_is_byte_identical(tmp_path):
         text=True,
     )
     assert proc.returncode == 0, proc.stdout + proc.stderr
-    assert target.read_bytes() == VALUES.read_bytes()
+    with open(target) as f:
+        regenerated = json.load(f)
+    committed = section()
+    assert sections_close(committed, regenerated[MAJOR]), (
+        "regenerated section differs from committed beyond tolerance")
