@@ -2,7 +2,7 @@
 
 import pytest
 import torch
-from pymonntorch import NeuronGroup, SynapseGroup
+from pymonntorch import Network, NeuronGroup, SynapseGroup
 
 from conex import TimeResolution, prioritize_behaviors
 from conex.behaviors.neurons import (
@@ -13,6 +13,7 @@ from conex.behaviors.neurons import (
     SimpleDendriteStructure,
 )
 from conex.behaviors.synapses import (
+    CurrentNormalization,
     DelayInitializer,
     PostSpikeCatcher,
     PostTrace,
@@ -25,7 +26,7 @@ from conex.behaviors.synapses import (
     WeightNormalization,
 )
 
-from .conftest import make_network
+from .conftest import make_network, seed
 
 
 def lif_group(net, tag, size=2, max_delay=1):
@@ -161,6 +162,42 @@ def test_weight_normalization():
     net.initialize()
     net.simulate_iterations(1)
     assert torch.allclose(syn.weights.sum(dim=0), torch.ones(2))
+
+
+def test_current_normalization():
+    """SxD mode: CurrentNormalization scales I so each destination neuron's max
+    input equals norm. Weights all 1.0 (3x2), all 3 src fire -> I=[3,3];
+    per-dst weight sum is 3, so I *= 1/3 -> [1,1]."""
+    seed()
+    net = Network(
+        behavior={1: TimeResolution(dt=1.0)},
+        dtype=torch.float32,
+        device="cpu",
+        synapse_mode="SxD",
+    )
+    src = lif_group(net, "s", size=3)
+    dst = lif_group(net, "d", size=2)
+    cn = CurrentNormalization(norm=1.0)
+    syn = SynapseGroup(
+        net=net,
+        src=src,
+        dst=dst,
+        tag="Proximal",
+        behavior=prioritize_behaviors(
+            [
+                SynapseInit(),
+                WeightInitializer(mode=1.0),
+                SimpleDendriticInput(current_coef=1.0),
+                PreSpikeCatcher(),
+                cn,
+            ]
+        ),
+    )
+    net.initialize()
+    syn.pre_spike = torch.tensor([True, True, True])
+    syn.behavior[180].forward(syn)  # dendritic input -> I = [3, 3]
+    cn.forward(syn)
+    assert syn.I.tolist() == [1.0, 1.0]
 
 
 def test_weight_clip():
