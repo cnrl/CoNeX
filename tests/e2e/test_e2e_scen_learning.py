@@ -18,6 +18,7 @@ from conex import (
     Dopamine,
     Fire,
     InputLayer,
+    Intensity2Latency,
     KWTA,
     LIF,
     Neocortex,
@@ -295,6 +296,60 @@ def test_dataset_readout_learns():
     # direction per label: each label's active channels potentiate
     assert d[:2, :].mean().item() > 0.0, "label0 channels (0-1) should potentiate"
     assert d[2:, :].mean().item() > 0.0, "label1 channels (2-3) should potentiate"
+    assert syn.weights.min().item() >= 0.0
+    assert syn.weights.max().item() <= 1.0
+
+
+# --- Scenario 3b: Intensity2Latency encoder ---------------------------------
+
+
+def build_i2l(seedv=SEED, time_window=10):
+    """Intensity2Latency-encoded intensities -> LIF readout, SimpleSTDP.
+
+    Two intensity patterns are presented over a time window: P0 is strong on
+    channels 0-1, P1 strong on channels 2-3. I2L makes a stronger value spike
+    sooner, so the readout sees a latency-ordered spike train.
+    """
+    torch.manual_seed(seedv)
+    net = make_net()
+    inp = input_group(net, "in", 4)
+    out = lif_group(net, "out", 2)
+    syn = stdp_syn(net, inp, out, SimpleSTDP(a_plus=0.05, a_minus=0.002))
+    net.initialize()
+    enc = Intensity2Latency(time_window=time_window)
+    P0 = torch.tensor([0.9, 0.8, 0.1, 0.1])
+    P1 = torch.tensor([0.1, 0.1, 0.9, 0.8])
+    return net, inp, out, syn, enc, P0, P1
+
+
+def test_i2l_stronger_spikes_sooner():
+    """A stronger intensity spikes earlier in the window (latency coding)."""
+    _, _, _, _, enc, P0, _ = build_i2l()
+    s0 = enc(P0)  # shape (time_window, 4)
+    # channel 0 (0.9) is stronger than channel 2 (0.1) -> spikes sooner
+    first0 = int(s0[:, 0].nonzero().flatten()[0])
+    first2 = int(s0[:, 2].nonzero().flatten()[0])
+    assert first0 < first2, "stronger intensity should spike sooner"
+    # each channel fires exactly once in the window
+    assert int(s0[:, 0].sum()) == 1
+    assert int(s0[:, 2].sum()) == 1
+
+
+def test_i2l_readout_learns():
+    """The readout weights move as the I2L-encoded patterns drive the network."""
+    net, inp, out, syn, enc, P0, P1 = build_i2l()
+    w0 = syn.weights.clone()
+    tw = enc.time_window
+    s0 = enc(P0)
+    s1 = enc(P1)
+    for t in range(tw):
+        inp.spikes = s0[t]
+        net.simulate_iterations(1)
+    for t in range(tw):
+        inp.spikes = s1[t]
+        net.simulate_iterations(1)
+    d = syn.weights - w0
+    assert d.abs().max().item() > 0.0, "readout weights should learn from I2L input"
     assert syn.weights.min().item() >= 0.0
     assert syn.weights.max().item() <= 1.0
 
