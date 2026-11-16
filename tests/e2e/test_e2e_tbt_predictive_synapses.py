@@ -97,13 +97,16 @@ class TestFeedbackPredictionSynapse:
             110: FeedbackPredictionSynapse(config=cfg(), delay=2),
         })
         assert s.prediction_buffer.shape == (2, DST)
+        # the ring buffer lags by `delay` steps, so the first two outputs are
+        # the stale zero slots and the third emits step 1's prediction
         src.activity = torch.full((SRC,), 1.0)
         beh[110].forward(s)
-        # first step emits the stale (zero) buffer entry
         assert torch.allclose(s.prediction_output, torch.zeros(DST))
         src.activity = torch.full((SRC,), 2.0)
         beh[110].forward(s)
-        # second step emits what the first step computed
+        assert torch.allclose(s.prediction_output, torch.zeros(DST))
+        src.activity = torch.full((SRC,), 3.0)
+        beh[110].forward(s)
         assert torch.allclose(s.prediction_output, torch.matmul(s.weights.T, torch.full((SRC,), 1.0)))
 
 
