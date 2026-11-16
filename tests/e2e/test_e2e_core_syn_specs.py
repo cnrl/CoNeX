@@ -135,12 +135,10 @@ def test_weight_initializer_scale_offset():
 
 
 def test_weight_initializer_sparse_density():
-    """density=0.5, true_sparsity=True -> a sparse matrix with ~half the nnz.
+    """density=0.5, true_sparsity=True -> a COO sparse matrix with ~half the nnz.
 
-    On torch < 2.0 the WeightInitializer crashes: it converts the weights to
-    CSC (specs.py:189) then multiplies by scale (specs.py:198), and torch 1.x
-    cannot multiply a CSC sparse tensor by a scalar ("Expected result Tensor to
-    be of format CSR"). On torch >= 2.0 the same code builds the sparse matrix.
+    The weights stay in COO layout (not CSC) so the sparse learning rules can
+    read .values() and the scalar scale/offset apply on both torch 1.x and 2.x.
     """
     net = make_network(dt=1.0)
     _, _, syn = pair(
@@ -151,14 +149,15 @@ def test_weight_initializer_sparse_density():
             WeightInitializer(mode=1.0, density=0.5, true_sparsity=True),
         ],
     )
-    if int(torch.__version__.split(".")[0]) < 2:
-        with pytest.raises(RuntimeError, match="format CSR"):
-            net.initialize()
-    else:
-        net.initialize()
-        # 3x2 = 6 entries, density 0.5 -> 3 non-zero, in sparse_csc layout
-        assert syn.weights.layout == torch.sparse_csc
-        assert syn.weights._nnz() == 3
+    net.initialize()
+    # 3x2 = 6 entries, density 0.5 -> 3 non-zero, in COO layout
+    assert syn.weights.layout == torch.sparse_coo
+    assert syn.weights._nnz() == 3
+    # src/dst index vectors line up with the stored entries
+    assert syn.src_idx.numel() == 3
+    assert syn.dst_idx.numel() == 3
+    assert torch.all(syn.src_idx < 3)
+    assert torch.all(syn.dst_idx < 2)
 
 
 # --- WeightNormalization / WeightClip -------------------------------------
