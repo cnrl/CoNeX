@@ -2,11 +2,8 @@
 
 Each file carries its own small network builder so it runs on its own.
 
-OutputLayer is NOT covered: its __get_ng calls NeuronGroup(size, behavior, net,
-tag) positionally, but pymonntorch 0.1.4's signature is (size, net, behavior,
-tag), so `net` receives the behavior dict and construction raises
-AttributeError. This is a pre-existing bug in conex/nn/structure/io_layer.py
-that no existing test exercises, and it is outside this task's file ownership.
+OutputLayer is covered in tests/e2e/test_e2e_fix_a_output_layer.py (its
+positional NeuronGroup call was fixed to keyword arguments).
 """
 
 import torch

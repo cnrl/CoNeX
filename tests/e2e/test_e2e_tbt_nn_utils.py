@@ -207,8 +207,6 @@ class TestReplication:
         assert "built_structures" in loaded
 
     def test_save_ports_serializes(self):
-        # a port with no behavior hits a pre-existing bug (behaviors_to_list
-        # on None), so give it one to exercise the working path
         net = build_network(seed=5)
         pop = NeuronGroup(net=net, size=4, tag="p", behavior=pop_behavior())
         ports = {"in": (None, [Port(object=pop, label=None,

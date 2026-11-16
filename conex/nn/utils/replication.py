@@ -147,6 +147,8 @@ def behaviors_to_list(
     save_behavior_priority: bool = True,
 ) -> List[dict]:
     result = []
+    if behavior is None:
+        return result
     for key, value in behavior.items():
         behave_dict = {}
         if save_behavior_priority:
