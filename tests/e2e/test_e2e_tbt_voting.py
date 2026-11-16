@@ -80,10 +80,10 @@ class TestColumnVoting:
     def test_receive_and_consensus_pipeline(self, column):
         memories = object_memories()
         votes = column.voting_module.cast_vote(column, memories[1].clone(), memories)
-        # a full match casts a vote of 1.0; min_votes_for_consensus is 2, so
-        # receive the same vote twice to clear the threshold
-        column.voting_module.receive_votes(column, votes)
-        column.voting_module.receive_votes(column, votes)
+        # a full match casts a vote of 1.0; the accumulator decays by 10% per
+        # receive, so three receives (1.0, 1.9, 2.71) clear min_votes=2
+        for _ in range(3):
+            column.voting_module.receive_votes(column, votes)
         assert column.voting_module.check_consensus(column, n_columns=3)
         assert column.consensus_object == 1
 
