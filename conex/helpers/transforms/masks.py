@@ -5,9 +5,11 @@ from itertools import product
 
 
 def _erase(img, top, left, height, width, v=0):
-    """torchvision.transforms.functional.erase without the torchvision import."""
-    top, left = max(top, 0), max(left, 0)
-    height, width = max(height, 0), max(width, 0)
+    """torchvision.transforms.functional.erase without the torchvision import.
+
+    A faithful port: torchvision does a plain slice assignment with no
+    clamping, so a negative or out-of-range window erases only the overlap.
+    """
     out = img.clone()
     out[:, top : top + height, left : left + width] = v
     return out

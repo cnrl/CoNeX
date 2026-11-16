@@ -149,6 +149,30 @@ class TestGridEraseMask:
             GridEraseMask(2, 0)(img)
 
 
+class TestEraseHelper:
+    """_erase must match torchvision.transforms.functional.erase semantics."""
+
+    def test_negative_offset_is_a_noop_not_clamped(self):
+        from conex.helpers.transforms.masks import _erase
+
+        img = torch.arange(16.0).reshape(1, 4, 4)
+        # torchvision does img[..., -2:2, ...] which is an empty slice (no-op);
+        # a clamped port would wrongly erase rows 0-3.
+        out = _erase(img, top=-2, left=0, height=4, width=4, v=0)
+        assert out.shape == (1, 4, 4)
+        assert torch.equal(out, img)
+
+    def test_out_of_range_erases_only_overlap(self):
+        from conex.helpers.transforms.masks import _erase
+
+        img = torch.arange(16.0).reshape(1, 4, 4)
+        # window overruns the bottom-right corner: only the in-bounds part erases
+        out = _erase(img, top=2, left=2, height=4, width=4, v=0)
+        assert (out[:, 2:, 2:] == 0).all()
+        assert torch.equal(out[:, :2, :], img[:, :2, :])
+        assert torch.equal(out[:, 2:, :2], img[:, 2:, :2])
+
+
 class TestGridCropMask:
     def test_shape_and_location(self):
         img = torch.rand(1, 8, 8)
