@@ -262,7 +262,7 @@ class OutputLayer(NetworkObject):
         if user_defined is not None:
             behavior.update(user_defined)
 
-        return NeuronGroup(size, behavior, net, tag)
+        return NeuronGroup(size=size, behavior=behavior, net=net, tag=tag)
 
     def __repr__(self) -> str:
         parts = [self.__class__.__name__, "("]
