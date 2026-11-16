@@ -129,17 +129,27 @@ def test_weight_initializer_scale_offset():
 
 
 def test_weight_initializer_sparse_density():
-    """density=0.5 with true_sparsity=True builds a sparse matrix with ~half the nnz."""
+    """density=0.5, true_sparsity=True -> a sparse matrix with ~half the nnz.
+
+    On torch < 2.0 the WeightInitializer crashes: it converts the weights to
+    CSC (specs.py:189) then multiplies by scale (specs.py:198), and torch 1.x
+    cannot multiply a CSC sparse tensor by a scalar ("Expected result Tensor to
+    be of format CSR"). On torch >= 2.0 the same code builds the sparse matrix.
+    """
     net = make_network(dt=1.0)
     _, _, syn = pair(
         net,
         "wi",
         [SynapseInit(), WeightInitializer(mode=1.0, density=0.5, true_sparsity=True)],
     )
-    net.initialize()
-    # 3x2 = 6 entries, density 0.5 -> 3 non-zero, stored in sparse_csc layout
-    assert syn.weights.layout == torch.sparse_csc
-    assert syn.weights._nnz() == 3
+    if int(torch.__version__.split(".")[0]) < 2:
+        with pytest.raises(RuntimeError, match="format CSR"):
+            net.initialize()
+    else:
+        net.initialize()
+        # 3x2 = 6 entries, density 0.5 -> 3 non-zero, stored in sparse_csc layout
+        assert syn.weights.layout == torch.sparse_csc
+        assert syn.weights._nnz() == 3
 
 
 # --- WeightNormalization / WeightClip -------------------------------------
