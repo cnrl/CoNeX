@@ -54,3 +54,16 @@ class TestSavePortsNoneBehavior:
         port = rebuilt["in"][1][0]
         assert port.object is pop
         assert port.behavior == {}
+
+    def test_build_ports_is_inverse_of_save_ports(self):
+        net = build_network(seed=12)
+        pop = NeuronGroup(net=net, size=4, tag="p", behavior={})
+        ports = {"in": (None, [Port(object=pop, label="x",
+                                    behavior={220: SimpleDendriteStructure()})])}
+        rebuilt = build_ports(save_ports(ports, True, True))
+        assert rebuilt["in"][0] is None  # v0 survives
+        port = rebuilt["in"][1][0]
+        assert port.object is pop  # object identity survives
+        assert port.label == "x"
+        assert set(port.behavior) == {220}
+        assert port.behavior[220].__class__ is SimpleDendriteStructure
