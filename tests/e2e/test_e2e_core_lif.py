@@ -3,7 +3,7 @@
 import torch
 from pymonntorch import NeuronGroup
 
-from conex import TimeResolution, prioritize_behaviors
+from conex import prioritize_behaviors
 from conex.behaviors.neurons import (
     AELIF,
     ELIF,
@@ -36,7 +36,8 @@ def lif_group(net, tag, **lif_kwargs):
 
 
 def test_lif_integrates_and_fires():
-    """v=1.5, v_rest=0, tau=10, dt=1: v += (0-1.5)*1/10 = 1.35 >= 1.0 -> spike, reset to 0."""
+    """v=1.5, v_rest=0, tau=10, dt=1: v += (0-1.5)*1/10 = 1.35 >= 1.0 -> spike,
+    reset to 0."""
     net = make_network(dt=1.0)
     n = lif_group(
         net,
@@ -55,7 +56,7 @@ def test_lif_integrates_and_fires():
 
 
 def test_lif_no_fire_below_threshold():
-    """v=0.9, v_rest=0, tau=10, dt=1: v += (0-0.9)*1/10 = 0.81 < 1.0 -> no spike."""
+    """v=0.9, v_rest=0, tau=10: v += (0-0.9)/10 = 0.81 < 1.0, no spike."""
     net = make_network(dt=1.0)
     n = lif_group(
         net,
@@ -90,7 +91,7 @@ def test_lif_current_drives_voltage():
         ),
     )
     net.initialize()
-    n.I = torch.tensor([1.0])
+    n.I = torch.tensor([1.0])  # noqa: E741  (library attribute name)
     net.simulate_iterations(1)
     assert n.spikes[0].item() is False
     assert n.v[0].item() == torch.tensor(0.5).item()
@@ -98,7 +99,7 @@ def test_lif_current_drives_voltage():
 
 def test_elif_exponential_boost():
     """ELIF adds delta*exp((v-theta_rh)/delta) to the leak. With v=theta_rh the
-    boost is exactly delta, so the step is larger than a plain LIF at the same v."""
+    boost is exactly delta, so the step is larger than a plain LIF there."""
     net = make_network(dt=1.0)
     n = NeuronGroup(
         net=net,
@@ -162,5 +163,6 @@ def test_aelif_adaptation_after_spike():
     n.v[0] = 1.5  # forces a spike so the adaptation current is triggered
     net.simulate_iterations(1)
     assert n.spikes[0].item() is True
-    # spike_adaptation = beta*w_tau*spikes = 0.5*10*1 = 5.0; domega = 5.0*1/10 = 0.5
+    # spike_adaptation = beta*w_tau*spikes = 0.5*10*1 = 5.0
+    # domega = 5.0/10 = 0.5
     assert n.omega[0].item() == torch.tensor(0.5).item()

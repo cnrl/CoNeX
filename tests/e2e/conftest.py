@@ -18,7 +18,7 @@ def seed():
 
 
 def make_network(dt=1.0, dtype=torch.float32):
-    """A fresh CPU network carrying a time resolution (behaviors read net.dt)."""
+    """A fresh CPU network carrying a time resolution (behaviors read dt)."""
     seed()
     return Network(
         behavior={1: TimeResolution(dt=dt)}, dtype=dtype, device="cpu"

@@ -62,7 +62,7 @@ def _sxd_network():
 
 def test_simple_dendritic_input_current():
     """SxD mode: I = sum of weights of the fired pre-synaptic neurons.
-    Weights all 1.0, src neurons 0 and 2 fire -> each dst gets 1.0+1.0 = 2.0."""
+    Weights all 1.0, src 0 and 2 fire -> each dst gets 1.0+1.0 = 2.0."""
     net = _sxd_network()
     src = lif_group(net, "s", size=3)
     dst = lif_group(net, "d", size=2)
@@ -101,7 +101,12 @@ def test_one2one_dendritic_input():
         dst=dst,
         tag="Proximal",
         behavior=prioritize_behaviors(
-            [SynapseInit(), WeightInitializer(mode=2.0), o2o, PreSpikeCatcher()]
+            [
+                SynapseInit(),
+                WeightInitializer(mode=2.0),
+                o2o,
+                PreSpikeCatcher(),
+            ]
         ),
     )
     net.initialize()
@@ -162,7 +167,12 @@ def test_dendritic_input_inhibitory_sign():
         dst=dst,
         tag="Proximal",
         behavior=prioritize_behaviors(
-            [SynapseInit(), WeightInitializer(mode=2.0), o2o, PreSpikeCatcher()]
+            [
+                SynapseInit(),
+                WeightInitializer(mode=2.0),
+                o2o,
+                PreSpikeCatcher(),
+            ]
         ),
     )
     net.initialize()
@@ -239,7 +249,8 @@ def test_conv2d_bad_channels():
         behavior=prioritize_behaviors(
             [
                 SynapseInit(),
-                WeightInitializer(mode=1.0, weight_shape=(1, 2, 3, 3)),  # 2 in-channels
+                # 2 in-channels
+                WeightInitializer(mode=1.0, weight_shape=(1, 2, 3, 3)),
                 Conv2dDendriticInput(current_coef=1.0),
                 PreSpikeCatcher(),
             ]
@@ -253,7 +264,8 @@ def test_conv2d_bad_channels():
 
 
 def test_average_pool2d():
-    """adaptive_avg_pool2d of a 4x4 all-spike input to 2x2 -> each output is 1.0."""
+    """adaptive_avg_pool2d of a 4x4 all-spike input to 2x2 -> each output 1.0.
+    """
     net = make_network(dt=1.0)
     src = lif_group(net, "s", size=NeuronDimension(depth=1, height=4, width=4))
     dst = lif_group(net, "d", size=NeuronDimension(depth=1, height=2, width=2))
@@ -326,7 +338,9 @@ def test_local2d_dendritic_input():
             [
                 SynapseInit(),
                 WeightInitializer(
-                    mode=1.0, weight_shape=(1, 4, 9), kernel_shape=(1, 2, 2, 1, 3, 3)
+                    mode=1.0,
+                    weight_shape=(1, 4, 9),
+                    kernel_shape=(1, 2, 2, 1, 3, 3),
                 ),
                 loc,
                 PreSpikeCatcher(),

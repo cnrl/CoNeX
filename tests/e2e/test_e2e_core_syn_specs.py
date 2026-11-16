@@ -50,7 +50,11 @@ def pair(net, tag, syn_beh, src_size=3, dst_size=2, max_delay=1):
     src = lif_group(net, tag + "_s", size=src_size, max_delay=max_delay)
     dst = lif_group(net, tag + "_d", size=dst_size, max_delay=max_delay)
     syn = SynapseGroup(
-        net=net, src=src, dst=dst, tag="Proximal", behavior=prioritize_behaviors(syn_beh)
+        net=net,
+        src=src,
+        dst=dst,
+        tag="Proximal",
+        behavior=prioritize_behaviors(syn_beh),
     )
     return src, dst, syn
 
@@ -59,7 +63,7 @@ def pair(net, tag, syn_beh, src_size=3, dst_size=2, max_delay=1):
 
 
 def test_synapse_init_delays():
-    """SynapseInit allocates zero src/dst delay tensors sized to the populations."""
+    """SynapseInit allocates zero src/dst delay tensors."""
     net = make_network(dt=1.0)
     _, _, syn = pair(net, "si", [SynapseInit()])
     net.initialize()
@@ -122,7 +126,9 @@ def test_weight_initializer_scale_offset():
     """mode=1, scale=2, offset=0.5 -> every weight is 1*2+0.5 = 2.5."""
     net = make_network(dt=1.0)
     _, _, syn = pair(
-        net, "wi", [SynapseInit(), WeightInitializer(mode=1, scale=2, offset=0.5)]
+        net,
+        "wi",
+        [SynapseInit(), WeightInitializer(mode=1, scale=2, offset=0.5)],
     )
     net.initialize()
     assert torch.allclose(syn.weights, torch.full((3, 2), 2.5))
@@ -140,14 +146,17 @@ def test_weight_initializer_sparse_density():
     _, _, syn = pair(
         net,
         "wi",
-        [SynapseInit(), WeightInitializer(mode=1.0, density=0.5, true_sparsity=True)],
+        [
+            SynapseInit(),
+            WeightInitializer(mode=1.0, density=0.5, true_sparsity=True),
+        ],
     )
     if int(torch.__version__.split(".")[0]) < 2:
         with pytest.raises(RuntimeError, match="format CSR"):
             net.initialize()
     else:
         net.initialize()
-        # 3x2 = 6 entries, density 0.5 -> 3 non-zero, stored in sparse_csc layout
+        # 3x2 = 6 entries, density 0.5 -> 3 non-zero, in sparse_csc layout
         assert syn.weights.layout == torch.sparse_csc
         assert syn.weights._nnz() == 3
 

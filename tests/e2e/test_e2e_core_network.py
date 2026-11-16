@@ -9,7 +9,7 @@ from conex import Dopamine, Payoff, TimeResolution
 from conex.behaviors.layer.dataset import SpikeNdDataset
 from conex.nn.structure.layer import Layer
 
-from .conftest import make_network, seed
+from .conftest import make_network
 
 
 # --- TimeResolution -------------------------------------------------------
@@ -51,12 +51,14 @@ def test_payoff_default_zero():
 
 
 def test_dopamine_decay():
-    """d += -d/tau + payoff. With payoff=0, d0=1.0, tau=2: d -> 1.0 - 0.5 = 0.5."""
+    """d += -d/tau + payoff. payoff=0, d0=1.0, tau=2: d -> 1.0 - 0.5 = 0.5."""
     net = Network(
         behavior={
             1: TimeResolution(dt=1.0),
             100: Payoff(initial_payoff=0.0),
-            120: Dopamine(tau_dopamine=2.0, initial_dopamine_concentration=1.0),
+            120: Dopamine(
+                tau_dopamine=2.0, initial_dopamine_concentration=1.0
+            ),
         },
         dtype=torch.float32,
         device="cpu",
@@ -68,12 +70,15 @@ def test_dopamine_decay():
 
 
 def test_dopamine_with_payoff():
-    """d += -d/tau + payoff. With payoff=1.0, d0=1.0, tau=2: d -> 1.0 - 0.5 + 1.0 = 1.5."""
+    """d += -d/tau + payoff. payoff=1.0, d0=1.0, tau=2:
+    d -> 1.0 - 0.5 + 1.0 = 1.5."""
     net = Network(
         behavior={
             1: TimeResolution(dt=1.0),
             100: Payoff(initial_payoff=1.0),
-            120: Dopamine(tau_dopamine=2.0, initial_dopamine_concentration=1.0),
+            120: Dopamine(
+                tau_dopamine=2.0, initial_dopamine_concentration=1.0
+            ),
         },
         dtype=torch.float32,
         device="cpu",
@@ -97,7 +102,8 @@ def _dataset_layer(net, data, **kwargs):
 
 
 def test_spike_nd_dataset_feeds_layer():
-    """The dataset yields each instance's sensory vector as layer.x in order."""
+    """The dataset yields each instance's sensory vector as layer.x in order.
+    """
     net = make_network(dt=1.0)
     data = torch.tensor([[1, 0, 1, 0], [0, 1, 0, 1]], dtype=torch.bool)
     layer = _dataset_layer(
@@ -116,7 +122,7 @@ def test_spike_nd_dataset_feeds_layer():
 
 
 def test_spike_nd_dataset_silent_interval():
-    """With silent_interval=1, a silent (all-zero) step separates two instances."""
+    """With silent_interval=1, a silent (all-zero) step separates instances."""
     net = make_network(dt=1.0)
     data = torch.tensor([[1, 0, 1, 0], [0, 1, 0, 1]], dtype=torch.bool)
     layer = _dataset_layer(

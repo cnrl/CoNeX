@@ -4,7 +4,7 @@ import pytest
 import torch
 from pymonntorch import NeuronGroup, SynapseGroup
 
-from conex import TimeResolution, prioritize_behaviors
+from conex import prioritize_behaviors
 from conex.behaviors.neurons import (
     Fire,
     LIF,
@@ -14,8 +14,6 @@ from conex.behaviors.neurons import (
 )
 from conex.behaviors.synapses import (
     BOUNDS,
-    Conv2dSTDP,
-    Local2dSTDP,
     One2OneSTDP,
     PostSpikeCatcher,
     PostTrace,
@@ -50,8 +48,10 @@ def lif_group(net, tag, size=2, max_delay=1):
     )
 
 
-def stdp_pair(net, rule, tag="stdp", src_size=2, dst_size=2, with_traces=False):
-    """A 2x2 pair wired with the given learning rule (and traces if requested)."""
+def stdp_pair(
+    net, rule, tag="stdp", src_size=2, dst_size=2, with_traces=False
+):
+    """A 2x2 pair wired with the given rule (and traces if requested)."""
     from conex.behaviors.synapses import (
         PostSpikeCatcher,
         PostTrace,
@@ -84,7 +84,7 @@ def stdp_pair(net, rule, tag="stdp", src_size=2, dst_size=2, with_traces=False):
 
 
 def test_bound_functions():
-    """soft/hard/no bound return the documented values for a weight in (min, max)."""
+    """soft/hard/no bound return the documented values for a weight."""
     assert soft_bound(0.5, 0.0, 1.0) == 0.25  # (0.5-0)*(1-0.5)
     assert hard_bound(0.5, 0.0, 1.0) == 1
     assert hard_bound(1.5, 0.0, 1.0) == 0
@@ -126,7 +126,7 @@ def test_simple_stdp_ltd():
 
 
 def test_simple_stdp_full_network_potentiates():
-    """Repeated co-firing of src0 and dst0 potentiates weight (0,0) over time."""
+    """Repeated co-firing of src0 and dst0 potentiates weight (0,0)."""
     from conex.behaviors.synapses import (
         PostSpikeCatcher,
         PostTrace,
@@ -169,8 +169,8 @@ def test_simple_stdp_full_network_potentiates():
 
 
 def test_one2one_stdp():
-    """Elementwise: dw = pre_trace*post_spike*a_plus - pre_spike*post_trace*a_minus.
-    pre_trace=[1,0], post_spike=[1,0] -> [0.1, 0]."""
+    """Elementwise STDP. pre_trace=[1,0], post_spike=[1,0], a_plus=0.1
+    -> dw = [0.1, 0] (the LTD term is zero with pre_spike=[0,0])."""
     net = make_network(dt=1.0)
     rule = One2OneSTDP(a_plus=0.1, a_minus=0.01)
     _, _, syn = stdp_pair(net, rule)
@@ -260,9 +260,11 @@ def _sparse_pair(net, rule, tag="sp", include_rule=True):
 
 def _set_coo(syn):
     """Give the synapse a coalesced COO weight and per-entry src/dst indices,
-    which the sparse rules read (WeightInitializer alone leaves a CSC tensor)."""
+    which the sparse rules read (WeightInitializer leaves a CSC tensor)."""
     idx = torch.tensor([[0, 1, 0, 1], [0, 0, 1, 1]])
-    syn.weights = torch.sparse_coo_tensor(idx, torch.full((4,), 0.5), (2, 2)).coalesce()
+    syn.weights = torch.sparse_coo_tensor(
+        idx, torch.full((4,), 0.5), (2, 2)
+    ).coalesce()
     syn.src_idx = torch.tensor([0, 1, 0, 1])
     syn.dst_idx = torch.tensor([0, 0, 1, 1])
 
@@ -286,8 +288,8 @@ def test_sparse_stdp():
 
 
 def test_sparse_istdp():
-    """SparseiSTDP: pre_spike[src_idx]=[1,0,1,0], (alpha-post_trace)[dst_idx]=1,
-    sign=-1, lr=1 -> [-1, 0, -1, 0]."""
+    """SparseiSTDP on the (src0,dst0) and (src1,dst1) entries.
+    pre_spike=[1,0], post_trace=[0,0], sign=-1, lr=1 -> [-1, 0, -1, 0]."""
     from conex.behaviors.synapses import SparseiSTDP
 
     net = make_network(dt=1.0)
@@ -365,7 +367,9 @@ def test_local2d_stdp():
             [
                 SynapseInit(),
                 WeightInitializer(
-                    mode=0.5, weight_shape=(1, 4, 9), kernel_shape=(1, 2, 2, 1, 3, 3)
+                    mode=0.5,
+                    weight_shape=(1, 4, 9),
+                    kernel_shape=(1, 2, 2, 1, 3, 3),
                 ),
                 Local2dDendriticInput(current_coef=1.0),
                 PreSpikeCatcher(),
@@ -460,9 +464,10 @@ def test_one2one_rstdp():
 
 
 def test_sparse_rstdp():
-    """SparseRSTDP: eligibility on the (src0,dst0) nnz entry, scaled by dopamine.
+    """SparseRSTDP: eligibility on the (src0,dst0) nnz entry, dopamine-scaled.
     The rule is initialized by hand on a COO weight because WeightInitializer
-    leaves a CSC tensor whose _nnz() is unsupported on CPU."""
+    leaves a CSC tensor whose _nnz() is unsupported on CPU.
+    """
     from conex.behaviors.synapses import SparseRSTDP
 
     net = make_network(dt=1.0)
@@ -539,7 +544,9 @@ def test_local2d_rstdp():
             [
                 SynapseInit(),
                 WeightInitializer(
-                    mode=0.5, weight_shape=(1, 4, 9), kernel_shape=(1, 2, 2, 1, 3, 3)
+                    mode=0.5,
+                    weight_shape=(1, 4, 9),
+                    kernel_shape=(1, 2, 2, 1, 3, 3),
                 ),
                 Local2dDendriticInput(current_coef=1.0),
                 PreSpikeCatcher(),
