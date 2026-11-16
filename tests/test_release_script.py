@@ -83,6 +83,26 @@ def test_missing_history_entry(tmp_path):
     assert "no entry" in message
 
 
+SETUP_PY_015 = SETUP_PY.replace('version="1.2.3"', 'version="0.1.5"')
+
+
+def test_history_version_not_substring(tmp_path):
+    """0.1.50 in history must not satisfy a check for 0.1.5."""
+    history = "=======\nHistory\n=======\n\n0.1.50 (2026-01-01)\n\n- A change.\n"
+    make_repo(tmp_path, setup_text=SETUP_PY_015, history_text=history)
+    ok, message = check("v0.1.5", tmp_path / "setup.py", tmp_path / "HISTORY.rst")
+    assert ok is False
+    assert "no entry" in message
+
+
+def test_history_version_at_end_of_file(tmp_path):
+    """A version at the very end of the file (no trailing newline) must match."""
+    history = "=======\nHistory\n=======\n\n0.1.5 (2026-01-01)"
+    make_repo(tmp_path, setup_text=SETUP_PY_015, history_text=history)
+    ok, _ = check("v0.1.5", tmp_path / "setup.py", tmp_path / "HISTORY.rst")
+    assert ok is True
+
+
 def test_real_repo_current_version():
     """Real repo files: tag matches setup.py, but HISTORY.rst has no entries."""
     version = parse_version_from_setup(REPO_ROOT / "setup.py")

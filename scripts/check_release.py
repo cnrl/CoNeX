@@ -44,7 +44,8 @@ def check(tag, setup_path, history_path):
     if tag_version != version:
         return False, f"tag {tag!r} does not match setup.py version {version!r}"
     history = Path(history_path).read_text(encoding="utf-8")
-    if tag_version not in history:
+    # whole-token match so e.g. 0.1.5 does not match inside 10.1.50
+    if not re.search(rf"(?<![\d.]){re.escape(tag_version)}(?![\d.])", history):
         return False, f"HISTORY.rst has no entry for version {tag_version!r}"
     return True, f"tag {tag!r} matches version {version!r} and HISTORY.rst"
 
