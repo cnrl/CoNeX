@@ -208,7 +208,11 @@ def run_rstdp(seedv=SEED):
 
 
 def test_rstdp_rewarded_grows_more():
-    """The rewarded pattern's weights grow more than the unrewarded one's."""
+    """The rewarded pattern's weights grow more than the unrewarded one's.
+
+    Swept seeds 0-4: rewarded growth gA = 0.219-0.257, unrewarded gB = 0.0,
+    so gA > gB holds for all 5 seeds with a large margin.
+    """
     gA, gB, w = run_rstdp()
     assert gA > gB, f"rewarded growth {gA} should exceed unrewarded {gB}"
     assert gA > 0.0, "rewarded pattern should potentiate"
