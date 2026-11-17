@@ -178,8 +178,6 @@ class TemporalMemory(Behavior):
         - If any cells were predicted, activate only those cells
         - Otherwise, activate all cells (burst)
         """
-        device = neurons.device
-        
         # Reset active and winner cells
         neurons.tm_active_cells.zero_()
         neurons.tm_winner_cells.zero_()

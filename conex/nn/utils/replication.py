@@ -70,7 +70,17 @@ def save_ports(
     return result
 
 
-def build_ports(ports: Dict[str, Tuple[dict, List[Port]]]) -> Dict[str, tuple]:
+def build_ports(
+    ports: Dict[str, Tuple[dict, List[Tuple[NetworkObject, str, List[dict]]]]]
+) -> Dict[str, Tuple[dict, List[Port]]]:
+    """Inverse of save_ports: rebuild Port objects from the serialized format.
+
+    Args:
+        ports: the serialized format save_ports emits,
+            {name: (v0, [(object, label, behavior_list), ...])}.
+    Returns:
+        The original port format {name: (v0, [Port, ...])}.
+    """
     result = {}
     for key, v in ports.items():
         result[key] = (
@@ -147,6 +157,8 @@ def behaviors_to_list(
     save_behavior_priority: bool = True,
 ) -> List[dict]:
     result = []
+    if behavior is None:
+        return result
     for key, value in behavior.items():
         behave_dict = {}
         if save_behavior_priority:

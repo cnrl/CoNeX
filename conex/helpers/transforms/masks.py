@@ -4,6 +4,34 @@ import torch
 from itertools import product
 
 
+def _erase(img, top, left, height, width, v=0):
+    """torchvision.transforms.functional.erase without the torchvision import.
+
+    A faithful port: torchvision does a plain slice assignment with no
+    clamping, so a negative or out-of-range window erases only the overlap.
+    """
+    out = img.clone()
+    out[:, top : top + height, left : left + width] = v
+    return out
+
+
+def _crop(img, top, left, height, width):
+    """torchvision.transforms.functional.crop without the torchvision import.
+
+    Always returns (C, height, width): the window is zero-padded where it lies
+    outside the image, and a negative top/left pads (rather than clamps).
+    """
+    _, h, w = img.shape
+    out = torch.zeros(img.shape[0], height, width, dtype=img.dtype, device=img.device)
+    src_top, src_left = max(top, 0), max(left, 0)
+    src_bottom, src_right = min(top + height, h), min(left + width, w)
+    if src_bottom > src_top and src_right > src_left:
+        out[:, src_top - top : src_bottom - top, src_left - left : src_right - left] = (
+            img[:, src_top:src_bottom, src_left:src_right]
+        )
+    return out
+
+
 class GridEraseMask:
     """
     A Transformer that Grids input and removes only one cell.
@@ -22,8 +50,6 @@ class GridEraseMask:
         self.n = n
         self.random = random
         self.gap = gap
-        import torchvision.transforms.functional as TF
-        self.TF = TF
 
     def __call__(self, img):
         _, h, w = img.shape
@@ -42,7 +68,7 @@ class GridEraseMask:
             w_cor = j * w_grid + gap_top
             dw = min(w_cor, 0)
             result.append(
-                self.TF.erase(
+                _erase(
                     img,
                     max(h_cor, 0),
                     max(w_cor, 0),
@@ -139,8 +165,6 @@ class GridCropMask:
         self.n = n
         self.random = random
         self.gap = gap
-        import torchvision.transforms.functional as TF
-        self.TF = TF
 
     def __call__(self, img):
         _, h, w = img.shape
@@ -155,7 +179,7 @@ class GridCropMask:
         for index, ij in enumerate(product(range(self.m), range(self.n))):
             i, j = ij
             result.append(
-                self.TF.crop(
+                _crop(
                     img,
                     i * h_grid + gap_left,
                     j * w_grid + gap_top,

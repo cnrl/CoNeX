@@ -1,0 +1,478 @@
+"""E2E learning scenarios: several modules working together in one running network.
+
+Each scenario builds a small network from the public API and asserts on what it
+LEARNs (selectivity, reward-modulated growth, label-wise spike statistics,
+reproducibility), not on a single function. Inputs are Poisson-encoded so the
+networks are genuinely stochastic and seed-dependent.
+
+Reference style: end-to-end learning checks, seeded reproducibility, tiny sizes.
+"""
+
+import pytest
+import torch
+from pymonntorch import NeuronGroup, SynapseGroup
+from torch.utils.data import DataLoader, TensorDataset
+
+from conex import (
+    ActivityBaseHomeostasis,
+    Dopamine,
+    Fire,
+    InputLayer,
+    Intensity2Latency,
+    KWTA,
+    LIF,
+    Neocortex,
+    NeuronAxon,
+    Payoff,
+    Poisson,
+    PostSpikeCatcher,
+    PostTrace,
+    PreSpikeCatcher,
+    PreTrace,
+    SimpleDendriteComputation,
+    SimpleDendriteStructure,
+    SimpleDendriticInput,
+    SimpleRSTDP,
+    SimpleSTDP,
+    SynapseInit,
+    WeightClip,
+    WeightInitializer,
+    prioritize_behaviors,
+)
+
+SEED = 1234
+OTHER_SEED = 999
+
+
+def make_net(net_beh=None):
+    """A fresh CPU Neocortex (dt=1.0) carrying optional network behaviors."""
+    return Neocortex(dt=1.0, behavior=net_beh or {})
+
+
+def input_group(net, tag, size=4):
+    """A spiking input population: axon only, spikes set externally each step."""
+    return NeuronGroup(
+        net=net, size=size, tag=tag,
+        behavior=prioritize_behaviors([NeuronAxon(max_delay=1)]),
+    )
+
+
+def lif_group(net, tag, size=4, homeo=False, kwta=False):
+    """A LIF output population with optional homeostasis and KWTA competition."""
+    beh = [
+        SimpleDendriteStructure(),
+        SimpleDendriteComputation(),
+        LIF(R=5.0, threshold=1.0, tau=10.0, v_reset=0.0, v_rest=0.0),
+    ]
+    if homeo:
+        beh.append(ActivityBaseHomeostasis(activity_rate=1, window_size=10, updating_rate=0.05))
+    if kwta:
+        beh.append(KWTA(k=1))
+    beh += [Fire(), NeuronAxon(max_delay=1)]
+    return NeuronGroup(net=net, size=size, tag=tag, behavior=prioritize_behaviors(beh))
+
+
+def stdp_syn(net, src, dst, rule, clip=True):
+    """A Proximal synapse wired with the given learning rule (and clip if set)."""
+    beh = [
+        SynapseInit(),
+        WeightInitializer(mode=0.5),
+        SimpleDendriticInput(current_coef=1.0),
+        PreSpikeCatcher(),
+        PostSpikeCatcher(),
+        PreTrace(tau_s=10.0),
+        PostTrace(tau_s=10.0),
+        rule,
+    ]
+    if clip:
+        beh.append(WeightClip(w_min=0.0, w_max=1.0))
+    return SynapseGroup(net=net, src=src, dst=dst, tag="Proximal",
+                        behavior=prioritize_behaviors(beh))
+
+
+def poisson(pattern, enc):
+    """Encode a float intensity vector into a bool spike vector for one step."""
+    return enc(pattern).view(-1)
+
+
+# --- Scenario 1: competitive STDP ------------------------------------------
+
+
+def build_competitive(seedv=SEED):
+    """Poisson input -> LIF+KWTA+homeostasis output, SimpleSTDP + WeightClip.
+
+    Two input patterns (A: channels 0-1, B: channels 2-3) are presented
+    alternately. The weights start from an UNBIASED init (0.5 for every
+    connection, symmetry broken only by tiny seeded noise), so any selectivity
+    must be created by STDP, not baked in.
+    """
+    torch.manual_seed(seedv)
+    net = make_net()
+    inp = input_group(net, "in", 4)
+    out = lif_group(net, "out", 2, homeo=True, kwta=True)
+    syn = stdp_syn(net, inp, out, SimpleSTDP(a_plus=0.002, a_minus=0.002))
+    net.initialize()
+    # unbiased init: same 0.5 base for every connection, tiny seeded noise
+    syn.weights = torch.clip(syn.weights + 0.1 * (torch.rand(4, 2) - 0.5), 0.0, 1.0)
+    return net, inp, out, syn
+
+
+def run_competitive(seedv=SEED, steps=200):
+    """Run the competitive network, returning the weights before and after."""
+    net, inp, out, syn = build_competitive(seedv)
+    enc = Poisson(time_window=1, ratio=1.0)
+    A = torch.tensor([1.0, 1.0, 0.0, 0.0])
+    B = torch.tensor([0.0, 0.0, 1.0, 1.0])
+    w0 = syn.weights.clone()
+    for step in range(steps):
+        inp.spikes = poisson(A if step % 2 == 0 else B, enc)
+        net.simulate_iterations(1)
+    return w0, syn.weights
+
+
+def test_competitive_stdp_selectivity():
+    """STDP makes the weights diverge from an unbiased init (selectivity emerges).
+
+    Correct STDP has both LTP and LTD active: some weights potentiate and some
+    depress. Asserting both directions is what makes this test fail if the
+    learning rule is broken (a_plus=0 removes LTP; flipping the LTD sign to
+    LTP removes LTD).
+    """
+    w0, w = run_competitive()
+    # LTP is active: at least one weight potentiated (a_plus=0 -> none do).
+    # Swept seeds 0-4: n_potentiated = 4-6 of 8 weights.
+    assert int((w > w0).sum().item()) > 0, "STDP should potentiate at least one weight"
+    # LTD is active: at least one weight depressed (LTD->LTP mutation -> none do).
+    # Swept seeds 0-4: n_depressed = 2-4 of 8 weights.
+    assert int((w < w0).sum().item()) > 0, "STDP should depress at least one weight"
+    # weights stay inside the clip bounds
+    assert w.min().item() >= 0.0
+    assert w.max().item() <= 1.0
+
+
+def test_competitive_stdp_weights_bounded():
+    """WeightClip keeps every weight in [0, 1] throughout learning."""
+    _, w = run_competitive(steps=100)
+    assert w.min().item() >= 0.0
+    assert w.max().item() <= 1.0
+
+
+# --- Scenario 2: reward-modulated STDP -------------------------------------
+
+
+def build_rstdp(seedv=SEED):
+    """Poisson input -> LIF output, SimpleRSTDP + WeightClip, with Payoff/Dopamine.
+
+    SimpleRSTDP (not One2OneRSTDP, which is known broken) accumulates an
+    eligibility trace scaled by the network dopamine concentration.
+    """
+    torch.manual_seed(seedv)
+    net = make_net({
+        100: Payoff(initial_payoff=0.0),
+        120: Dopamine(tau_dopamine=10.0, initial_dopamine_concentration=0.0),
+    })
+    inp = input_group(net, "in", 4)
+    out = lif_group(net, "out", 2)
+    syn = stdp_syn(net, inp, out, SimpleRSTDP(a_plus=0.0002, a_minus=0.00002, tau_c=10.0))
+    net.initialize()
+    return net, inp, out, syn
+
+
+def run_rstdp(seedv=SEED):
+    """Reward pattern A, let dopamine decay, then present unrewarded pattern B.
+
+    Returns the total weight growth for the A-connected and B-connected rows.
+    """
+    net, inp, out, syn = build_rstdp(seedv)
+    w0 = syn.weights.clone()
+    enc = Poisson(time_window=1, ratio=1.0)
+    A = torch.tensor([1.0, 1.0, 0.0, 0.0])
+    B = torch.tensor([0.0, 0.0, 1.0, 1.0])
+    inp.spikes = torch.zeros(4)
+    for _ in range(50):  # baseline, no reward
+        net.simulate_iterations(1)
+    for _ in range(30):  # reward + pattern A
+        net.payoff = 0.1
+        inp.spikes = poisson(A, enc)
+        net.simulate_iterations(1)
+    for _ in range(100):  # dopamine decays, no input
+        net.payoff = 0.0
+        inp.spikes = torch.zeros(4)
+        net.simulate_iterations(1)
+    for _ in range(30):  # no reward + pattern B
+        net.payoff = 0.0
+        inp.spikes = poisson(B, enc)
+        net.simulate_iterations(1)
+    gA = syn.weights[:2].sum().item() - w0[:2].sum().item()
+    gB = syn.weights[2:].sum().item() - w0[2:].sum().item()
+    return gA, gB, syn.weights
+
+
+def test_rstdp_rewarded_grows_more():
+    """The rewarded pattern's weights grow more than the unrewarded one's.
+
+    Swept seeds 0-4: rewarded growth gA = 0.219-0.257, unrewarded gB = 0.0,
+    so gA > gB holds for all 5 seeds with a large margin.
+    """
+    gA, gB, w = run_rstdp()
+    assert gA > gB, f"rewarded growth {gA} should exceed unrewarded {gB}"
+    assert gA > 0.0, "rewarded pattern should potentiate"
+    assert w.min().item() >= 0.0
+    assert w.max().item() <= 1.0
+
+
+def test_rstdp_dopamine_decays():
+    """Dopamine rises with reward and decays back toward zero after it stops."""
+    net, inp, out, syn = build_rstdp()
+    enc = Poisson(time_window=1, ratio=1.0)
+    A = torch.tensor([1.0, 1.0, 0.0, 0.0])
+    inp.spikes = torch.zeros(4)
+    for _ in range(30):
+        net.payoff = 0.1
+        inp.spikes = poisson(A, enc)
+        net.simulate_iterations(1)
+    peak = net.dopamine_concentration
+    for _ in range(100):
+        net.payoff = 0.0
+        inp.spikes = torch.zeros(4)
+        net.simulate_iterations(1)
+    assert peak > 0.0, "dopamine should rise under reward"
+    assert net.dopamine_concentration < peak, "dopamine should decay after reward"
+
+
+# --- Scenario 3: dataset to network ----------------------------------------
+
+
+def build_dataset(seedv=SEED):
+    """Poisson-encoded synthetic dataset -> InputLayer -> LIF readout.
+
+    Label 0 instances are strong on channels 0-1, label 1 on channels 2-3, so
+    the encoded spike statistics differ by label.
+    """
+    torch.manual_seed(seedv)
+    net = make_net()
+    raw = torch.tensor([[0.9, 0.1, 0.1, 0.1]] * 8 + [[0.1, 0.1, 0.9, 0.1]] * 8)
+    labels = torch.tensor([0] * 8 + [1] * 8)
+    enc = Poisson(time_window=1, ratio=3.0)
+    spikes = enc(raw).view(16, 4)
+    dl = DataLoader(TensorDataset(spikes, labels), batch_size=16)
+    il = InputLayer(
+        net=net, input_dataloader=dl, sensory_size=4, instance_duration=1,
+        have_location=False, have_label=True, sensory_data_dim=1,
+        output_ports={"data_out": (None, [("sensory_pop", {})])},
+    )
+    out = lif_group(net, "out", 2)
+    syn = stdp_syn(net, il.sensory_pop, out, SimpleSTDP(a_plus=0.01, a_minus=0.002))
+    net.initialize()
+    return net, il, out, syn, spikes
+
+
+def test_dataset_spike_statistics_labelwise():
+    """The Poisson encoder produces label-wise different spike statistics."""
+    _, _, _, _, spikes = build_dataset()
+    r0 = spikes[:8].float().mean(0)  # label 0: channels 0-1 strong
+    r1 = spikes[8:].float().mean(0)  # label 1: channels 2-3 strong
+    # label 0 fires channel 0 more than channel 2; label 1 the reverse
+    assert r0[0].item() > r0[2].item(), "label0 should be strong on ch0"
+    assert r1[2].item() > r1[0].item(), "label1 should be strong on ch2"
+    # the two labels differ in their spike statistics
+    assert not torch.allclose(r0, r1), "labels should have different spike stats"
+
+
+def test_dataset_readout_learns():
+    """The readout weights move clearly (above noise) and in the right direction.
+
+    Both labels are active, so STDP potentiates the connections from the active
+    input channels: label 0 drives channels 0-1 (weight rows 0-1), label 1
+    drives channels 2-3 (rows 2-3). The change is well above the 0.5 -> 0.52
+    noise floor (max |dw| 0.116-0.500 across seeds 0-4).
+    """
+    net, il, out, syn, _ = build_dataset()
+    w0 = syn.weights.clone()
+    for _ in range(40):
+        net.simulate_iterations(1)
+    d = syn.weights - w0
+    assert d.abs().max().item() > 0.1, "readout weight change should be above noise"
+    # direction per label: each label's active channels potentiate
+    assert d[:2, :].mean().item() > 0.0, "label0 channels (0-1) should potentiate"
+    assert d[2:, :].mean().item() > 0.0, "label1 channels (2-3) should potentiate"
+    assert syn.weights.min().item() >= 0.0
+    assert syn.weights.max().item() <= 1.0
+
+
+# --- Scenario 3b: Intensity2Latency encoder ---------------------------------
+
+
+def build_i2l(seedv=SEED, time_window=10):
+    """Intensity2Latency-encoded intensities -> LIF readout, SimpleSTDP.
+
+    Two intensity patterns are presented over a time window: P0 is strong on
+    channels 0-1, P1 strong on channels 2-3. I2L makes a stronger value spike
+    sooner, so the readout sees a latency-ordered spike train.
+    """
+    torch.manual_seed(seedv)
+    net = make_net()
+    inp = input_group(net, "in", 4)
+    out = lif_group(net, "out", 2)
+    syn = stdp_syn(net, inp, out, SimpleSTDP(a_plus=0.05, a_minus=0.002))
+    net.initialize()
+    enc = Intensity2Latency(time_window=time_window)
+    P0 = torch.tensor([0.9, 0.8, 0.1, 0.1])
+    P1 = torch.tensor([0.1, 0.1, 0.9, 0.8])
+    return net, inp, out, syn, enc, P0, P1
+
+
+def test_i2l_stronger_spikes_sooner():
+    """A stronger intensity spikes earlier in the window (latency coding)."""
+    _, _, _, _, enc, P0, _ = build_i2l()
+    s0 = enc(P0)  # shape (time_window, 4)
+    # channel 0 (0.9) is stronger than channel 2 (0.1) -> spikes sooner
+    first0 = int(s0[:, 0].nonzero().flatten()[0])
+    first2 = int(s0[:, 2].nonzero().flatten()[0])
+    assert first0 < first2, "stronger intensity should spike sooner"
+    # each channel fires exactly once in the window
+    assert int(s0[:, 0].sum()) == 1
+    assert int(s0[:, 2].sum()) == 1
+
+
+def test_i2l_readout_learns():
+    """The readout weights move as the I2L-encoded patterns drive the network."""
+    net, inp, out, syn, enc, P0, P1 = build_i2l()
+    w0 = syn.weights.clone()
+    tw = enc.time_window
+    s0 = enc(P0)
+    s1 = enc(P1)
+    for t in range(tw):
+        inp.spikes = s0[t]
+        net.simulate_iterations(1)
+    for t in range(tw):
+        inp.spikes = s1[t]
+        net.simulate_iterations(1)
+    d = syn.weights - w0
+    assert d.abs().max().item() > 0.0, "readout weights should learn from I2L input"
+    assert syn.weights.min().item() >= 0.0
+    assert syn.weights.max().item() <= 1.0
+
+
+# --- Scenario 4: reproducibility matrix ------------------------------------
+
+
+def test_repro_competitive_same_seed_identical():
+    """Same seed run twice in-process gives bit-identical weights."""
+    _, w1 = run_competitive(SEED)
+    _, w2 = run_competitive(SEED)
+    assert torch.equal(w1, w2)
+
+
+def test_repro_competitive_diff_seed_differs():
+    """A different seed gives different weights (stochastic Poisson input)."""
+    _, w1 = run_competitive(SEED)
+    _, w2 = run_competitive(OTHER_SEED)
+    assert not torch.equal(w1, w2)
+
+
+def test_repro_rstdp_same_seed_identical():
+    """Same seed run twice in-process gives bit-identical weights."""
+    gA1, gB1, w1 = run_rstdp(SEED)
+    gA2, gB2, w2 = run_rstdp(SEED)
+    assert torch.equal(w1, w2)
+    assert gA1 == gA2 and gB1 == gB2
+
+
+def test_repro_rstdp_diff_seed_differs():
+    """A different seed gives different weights (stochastic Poisson input)."""
+    _, _, w1 = run_rstdp(SEED)
+    _, _, w2 = run_rstdp(OTHER_SEED)
+    assert not torch.equal(w1, w2)
+
+
+def test_repro_dataset_same_seed_identical():
+    """Same seed run twice in-process gives bit-identical readout weights."""
+    net1, _, _, syn1, _ = build_dataset(SEED)
+    for _ in range(40):
+        net1.simulate_iterations(1)
+    net2, _, _, syn2, _ = build_dataset(SEED)
+    for _ in range(40):
+        net2.simulate_iterations(1)
+    assert torch.equal(syn1.weights, syn2.weights)
+
+
+def test_repro_dataset_diff_seed_differs():
+    """A different seed gives different readout weights (stochastic encoding)."""
+    net1, _, _, syn1, _ = build_dataset(SEED)
+    for _ in range(40):
+        net1.simulate_iterations(1)
+    net2, _, _, syn2, _ = build_dataset(OTHER_SEED)
+    for _ in range(40):
+        net2.simulate_iterations(1)
+    assert not torch.equal(syn1.weights, syn2.weights)
+
+
+# --- Failure / edge cases ---------------------------------------------------
+
+
+def test_edge_zero_input_no_learning():
+    """With zero input, no pre/post spikes fire, so weights stay unchanged."""
+    torch.manual_seed(SEED)
+    net = make_net()
+    inp = input_group(net, "in", 4)
+    out = lif_group(net, "out", 2)
+    syn = stdp_syn(net, inp, out, SimpleSTDP(a_plus=0.002, a_minus=0.0002))
+    net.initialize()
+    w0 = syn.weights.clone()
+    inp.spikes = torch.zeros(4)
+    for _ in range(50):
+        net.simulate_iterations(1)
+    assert torch.equal(w0, syn.weights), "zero input should not change weights"
+
+
+def test_edge_saturated_weights_stay_bounded():
+    """Weights already at the clip bound stay inside [0, 1] under strong input."""
+    torch.manual_seed(SEED)
+    net = make_net()
+    inp = input_group(net, "in", 4)
+    out = lif_group(net, "out", 2)
+    syn = stdp_syn(net, inp, out, SimpleSTDP(a_plus=0.5, a_minus=0.0002))
+    net.initialize()
+    syn.weights = torch.ones(4, 2)  # saturated at w_max
+    inp.spikes = torch.ones(4)
+    for _ in range(50):
+        net.simulate_iterations(1)
+    assert syn.weights.max().item() <= 1.0
+    assert syn.weights.min().item() >= 0.0
+
+
+def test_edge_wrong_input_layer_shape_raises():
+    """A sensory_size that does not match the data's last dim raises on run."""
+    torch.manual_seed(SEED)
+    net = make_net()
+    data = torch.zeros(4, 4, dtype=torch.bool)  # last dim 4
+    dl = DataLoader(TensorDataset(data), batch_size=4)
+    InputLayer(
+        net=net, input_dataloader=dl, sensory_size=3, instance_duration=1,
+        have_location=False, have_label=False, sensory_data_dim=1,
+        output_ports={"data_out": (None, [("sensory_pop", {})])},
+    )
+    net.initialize()
+    with pytest.raises(RuntimeError):
+        net.simulate_iterations(1)
+
+
+def test_edge_wrong_weight_shape_raises():
+    """A WeightInitializer weight matrix with the wrong shape raises on run."""
+    torch.manual_seed(SEED)
+    net = make_net()
+    src = lif_group(net, "s", 4)
+    dst = lif_group(net, "d", 2)
+    SynapseGroup(
+        net=net, src=src, dst=dst, tag="Proximal",
+        behavior=prioritize_behaviors([
+            SynapseInit(),
+            WeightInitializer(weights=torch.zeros(3, 2)),  # should be 4x2
+            SimpleDendriticInput(current_coef=1.0),
+            PreSpikeCatcher(),
+        ]),
+    )
+    net.initialize()
+    with pytest.raises(IndexError):
+        net.simulate_iterations(1)

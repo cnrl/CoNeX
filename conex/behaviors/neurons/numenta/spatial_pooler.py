@@ -235,19 +235,27 @@ class SpatialPooler(Behavior):
         With local inhibition: Select top-k within each local region.
         """
         active = torch.zeros(self.n_columns, device=neurons.device, dtype=torch.bool)
-        
+
         if self.global_inhibition:
             # Global winner-take-all
             if overlap.sum() > 0:
-                _, top_indices = torch.topk(overlap, self.n_active)
-                active[top_indices] = True
+                active[self._winning_indices(overlap)] = True
         else:
             # Local inhibition (simplified version)
             # In full implementation, would use topology
-            _, top_indices = torch.topk(overlap, self.n_active)
-            active[top_indices] = True
-        
+            active[self._winning_indices(overlap)] = True
+
         return active
+
+    def _winning_indices(self, overlap: torch.Tensor) -> torch.Tensor:
+        """Indices of the top n_active scores, ties broken to the lowest index.
+
+        torch.topk's tie order is platform dependent, so a stable descending
+        sort (equal scores keep their original, i.e. lowest-index, order) is
+        used instead to make winners deterministic across platforms.
+        """
+        _, order = torch.sort(overlap, descending=True, stable=True)
+        return order[: self.n_active]
     
     def _learn(self, neurons, input_sdr: torch.Tensor) -> None:
         """
