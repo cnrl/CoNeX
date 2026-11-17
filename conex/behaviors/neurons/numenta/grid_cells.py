@@ -179,8 +179,7 @@ class GridCellModule(Behavior):
             position = position.unsqueeze(0)
         
         batch_size = position.shape[0]
-        n_cells = self.n_modules * self.cells_per_module
-        
+
         # Compute phase-adjusted position: x - phase
         # phase: (n_cells, 2), position: (batch, 2)
         adjusted_pos = position.unsqueeze(1) - neurons.grid_phase.unsqueeze(0)

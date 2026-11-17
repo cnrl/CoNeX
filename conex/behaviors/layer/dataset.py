@@ -5,7 +5,6 @@ Behaviors to load datasets
 """
 
 from pymonntorch import Behavior
-import torch
 
 
 class SpikeNdDataset(Behavior):

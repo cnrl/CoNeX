@@ -348,10 +348,7 @@ class ActiveDendriteComputation(Behavior):
         self.integration_tau = self.parameter("integration_tau", 10.0)
         self.calcium_tau = self.parameter("calcium_tau", 20.0)
         self.backprop_strength = self.parameter("backprop_strength", 0.3)
-        
-        device = neurons.device
-        dtype = neurons.network.def_dtype
-        
+
         # Dendritic potential for each dendrite type
         neurons.proximal_potential = neurons.vector(0.0)
         neurons.distal_potential = neurons.vector(0.0)
@@ -528,10 +525,7 @@ class ContextualPrediction(Behavior):
         self.depol_threshold = self.parameter("depolarization_threshold", 0.5)
         self.pred_window = self.parameter("prediction_window", 10)
         self.burst_threshold = self.parameter("burst_threshold", 0.3)
-        
-        device = neurons.device
-        dtype = neurons.network.def_dtype
-        
+
         # Predictive state (depolarized by context)
         neurons.predictive = neurons.vector(dtype=torch.bool)
         
@@ -591,10 +585,7 @@ class ContextualPrediction(Behavior):
         """
         # Which cells would activate from feedforward input alone
         would_activate = feedforward_input >= self.burst_threshold
-        
-        # Predicted cells activate normally
-        predicted_activation = would_activate & neurons.predictive
-        
+
         # Unpredicted cells burst (stronger activation, learning signal)
         bursting = would_activate & ~neurons.predictive
         neurons.bursting = bursting

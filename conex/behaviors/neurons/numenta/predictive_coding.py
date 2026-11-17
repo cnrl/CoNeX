@@ -109,7 +109,8 @@ class PredictionUnit(Behavior):
         
         # Determine dimensions
         n_neurons = neurons.size
-        pred_dim = self.parameter("prediction_dim", n_neurons)
+        # keep the parameter() call: it registers the key in used_attr_keys
+        self.parameter("prediction_dim", n_neurons)
         ctx_dim = self.parameter("context_dim", 0)
         
         device = neurons.network.device
@@ -149,10 +150,7 @@ class PredictionUnit(Behavior):
     def forward(self, neurons: NeuronGroup) -> None:
         """Update predictions based on top-down input."""
         cfg = self.config
-        dt = neurons.network.dt
-        tau = cfg.prediction_tau
-        alpha = dt / tau
-        
+
         # Get top-down input if available
         top_down = getattr(neurons, "top_down_input", None)
         if top_down is not None:
@@ -451,8 +449,6 @@ class TopDownPrediction(Behavior):
     
     def forward(self, neurons: NeuronGroup) -> None:
         """Generate top-down prediction."""
-        cfg = self.config
-        
         # Get source layer activity
         if self.source_layer is not None:
             # Look up source layer in network
@@ -722,8 +718,6 @@ class HierarchicalPredictiveCoding(Behavior):
     
     def forward(self, neurons: NeuronGroup) -> None:
         """Process hierarchy: predictions down, errors up."""
-        cfg = self.config
-        
         # Get sensory input (bottom level)
         sensory = neurons.activity[:self.level_sizes[0]]
         
